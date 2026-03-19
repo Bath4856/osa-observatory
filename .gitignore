@@ -205,3 +205,25 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+# === OSA Observatory ===
+
+# Secrets et données sensibles
+.env
+.env.local
+*.env
+
+# Exports de données (ne pas versionner les CSV/JSON de production)
+opendata/exports/
+*.csv
+*.json
+
+# Logs Python
+logs/
+*.log
+
+# PostgreSQL dumps locaux
+*.sql.gz
+*.dump
+
+# VS Code local (Codespaces gère ses propres settings)
+.vscode/settings.json
