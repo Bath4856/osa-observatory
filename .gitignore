@@ -227,3 +227,4 @@ logs/
 
 # VS Code local (Codespaces gère ses propres settings)
 .vscode/settings.json
+.env
