@@ -1,0 +1,443 @@
+version: "1.0"
+generated_at: "2026-04-07"
+scope: "OSA - ingestion internationale"
+
+sources:
+  - source_id: WB
+    name: World Bank
+    organization: "World Bank Group"
+    api_type: REST
+    base_url: "https://api.worldbank.org/v2"
+    status: GO
+    priority: 1
+    coverage: "Global (54/54 Afrique)"
+    stability: "Tres elevee"
+    indicators:
+      - osa_code: ECO_GDP
+        source_code: NY.GDP.MKTP.CD
+        endpoint: "/country/{country}/indicator/{indicator}?date={year}"
+        fallback: null
+        unit: USD
+        frequency: annual
+        decision: GO
+      - osa_code: ENV_CO2
+        source_code: EN.ATM.CO2E.KT
+        endpoint: "/country/{country}/indicator/{indicator}"
+        fallback: null
+        unit: TONNES
+        frequency: annual
+        decision: GO
+
+  - source_id: IMF
+    name: IMF IFS
+    organization: "International Monetary Fund"
+    api_type: SDMX
+    base_url: "https://dataservices.imf.org/REST/SDMX_JSON.svc"
+    status: GO
+    priority: 1
+    stability: "Elevee (latence variable)"
+    indicators:
+      - osa_code: MON_INF
+        source_code: PCPI_IX
+        endpoint: "/CompactData/IFS/A.{country}.PCPI_IX"
+        fallback: "WB inflation si indisponible"
+        unit: PERCENT
+        frequency: annual
+        decision: GO
+      - osa_code: MON_RES
+        source_code: RAFA_USD
+        endpoint: "/CompactData/IFS/A.{country}.RAFA_USD"
+        fallback: null
+        unit: USD
+        frequency: annual
+        decision: GO
+
+  - source_id: IMF_WEO
+    name: IMF World Economic Outlook (CSV)
+    organization: "International Monetary Fund"
+    api_type: CSV_BULK
+    base_url: "https://www.imf.org/en/Publications/WEO/weo-database/"
+    status: GO
+    priority: 1
+    stability: "Haute"
+    limits: "Téléchargement manuel annuel (avril/octobre)"
+    indicators:
+      - osa_code: MON_INF
+        source_code: PCPIPCH
+        endpoint: "WEO_CSV"
+        fallback: null
+        unit: PERCENT
+        frequency: annual
+        decision: GO
+      - osa_code: ECO_GDP
+        source_code: NGDPDPC
+        endpoint: "WEO_CSV"
+        fallback: null
+        unit: USD
+        frequency: annual
+        decision: GO
+      - osa_code: ECO_GRW
+        source_code: NGDP_RPCH
+        endpoint: "WEO_CSV"
+        fallback: null
+        unit: PERCENT
+        frequency: annual
+        decision: GO
+
+  - source_id: IMF_DOTS
+    name: IMF Direction of Trade Statistics (CSV)
+    organization: "International Monetary Fund"
+    api_type: CSV_BULK
+    base_url: "https://data.imf.org/?sk=9d6028d4-f14a-464c-a2f2-59b2cd424b85"
+    status: GO
+    priority: 1
+    stability: "Haute"
+    indicators:
+      - osa_code: ECO_EXP
+        source_code: TXG_FOB_USD
+        endpoint: "DOTS_CSV"
+        fallback: null
+        unit: USD
+        frequency: annual
+        decision: GO
+
+  - source_id: IMF_BOP
+    name: IMF Balance of Payments (CSV)
+    organization: "International Monetary Fund"
+    api_type: CSV_BULK
+    base_url: "https://data.imf.org/?sk=7a51304b-6426-40c0-83dd-ca473ca1fd52"
+    status: GO
+    priority: 1
+    stability: "Haute"
+    indicators:
+      - osa_code: MON_PAY
+        source_code: BCA_USD
+        endpoint: "BOP_CSV"
+        fallback: null
+        unit: USD
+        frequency: annual
+        decision: GO
+
+  - source_id: FAO
+    name: FAOSTAT
+    organization: "Food and Agriculture Organization"
+    api_type: CSV_BULK
+    base_url: "https://www.fao.org/faostat/en/#data"
+    status: GO
+    priority: 1
+    stability: "Haute (CSV bulk)"
+    indicators:
+      - osa_code: HUM_FOO
+        source_code: Food_Supply_Kcal
+        endpoint: "FAOSTAT_CSV"
+        fallback: null
+        unit: SCORE_0_100
+        frequency: annual
+        decision: GO
+      - osa_code: ENV_FOR
+        source_code: Land_Use
+        endpoint: "FAOSTAT_CSV"
+        fallback: null
+        unit: PERCENT
+        frequency: annual
+        decision: GO
+
+  - source_id: WHO
+    name: WHO GHO
+    organization: "World Health Organization"
+    api_type: REST
+    base_url: "https://ghoapi.azureedge.net/api"
+    status: GO
+    priority: 1
+    indicators:
+      - osa_code: HUM_HEA
+        source_code: LifeExpectancy
+        endpoint: "/IndicatorData/{indicator}"
+        fallback: null
+        unit: YEARS
+        frequency: annual
+        decision: GO
+
+  - source_id: ITU
+    name: ITU World Telecommunication Indicators
+    organization: "International Telecommunication Union"
+    api_type: API_JSON
+    base_url: "https://datahub.itu.int/api/"
+    status: GO
+    priority: 2
+    stability: "Moyenne"
+    limits: "Rate limit modéré"
+    indicators:
+      - osa_code: NUM_INT
+        source_code: i99H
+        endpoint: "/api/1/sdmx/rest/data"
+        fallback: null
+        unit: PERCENT
+        frequency: annual
+        decision: GO
+      - osa_code: NUM_CYB
+        source_code: GCI
+        endpoint: "/api/1/sdmx/rest/data"
+        fallback: null
+        unit: SCORE_0_100
+        frequency: annual
+        decision: GO
+      - osa_code: MIL_CYB
+        source_code: GCI
+        endpoint: "/api/1/sdmx/rest/data"
+        fallback: null
+        unit: SCORE_0_100
+        frequency: annual
+        decision: GO
+        notes: "Alias de NUM_CYB — même source GCI, pilier PMIL"
+
+  - source_id: UNESCO
+    name: UNESCO Institute for Statistics
+    organization: "UNESCO"
+    api_type: API_JSON
+    base_url: "https://api.uis.unesco.org/"
+    status: GO
+    priority: 2
+    stability: "Moyenne"
+    coverage: "53 pays africains — sans clé API"
+    indicators:
+      - osa_code: HUM_LIT
+        source_code: LR.AG15T99
+        endpoint: "/api/public/data/indicators"
+        fallback: null
+        unit: PERCENT
+        frequency: annual
+        decision: GO
+      - osa_code: HUM_EDU
+        source_code: HDI_EDU
+        endpoint: "/api/public/data/indicators"
+        fallback: null
+        unit: INDEX
+        frequency: annual
+        decision: GO
+
+  - source_id: UNDP
+    name: UNDP Human Development Report (CSV)
+    organization: "United Nations Development Programme"
+    api_type: CSV_BULK
+    base_url: "https://hdr.undp.org/data-center/documentation-and-downloads"
+    status: GO
+    priority: 2
+    stability: "Haute"
+    coverage: "54 pays africains — 1990-2022 sans clé"
+    indicators:
+      - osa_code: HUM_EDU
+        source_code: HDI_EDU
+        endpoint: "UNDP_HDR_CSV"
+        fallback: null
+        unit: INDEX
+        frequency: annual
+        decision: GO
+      - osa_code: HUM_GEN
+        source_code: GII
+        endpoint: "UNDP_HDR_CSV"
+        fallback: null
+        unit: SCORE_0_100
+        frequency: annual
+        decision: GO
+      - osa_code: HUM_LIT
+        source_code: ADLIT
+        endpoint: "UNDP_HDR_CSV"
+        fallback: null
+        unit: PERCENT
+        frequency: annual
+        decision: GO
+
+  - source_id: COMTRADE
+    name: UN Comtrade
+    organization: "United Nations"
+    api_type: REST_PUBLIC
+    base_url: "https://comtradeapi.un.org/public/v1"
+    status: PILOT
+    priority: 2
+    limits: "100 req/h sans clé — prévoir clé gratuite pour production"
+    indicators:
+      - osa_code: ECO_EXP
+        source_code: TradeValue_HS_manuf
+        endpoint: "/preview/C/A/HS"
+        fallback: "WB manufactured exports (TX.VAL.MANF.ZS.UN)"
+        unit: PERCENT
+        frequency: annual
+        decision: PILOT
+      - osa_code: ECO_IMP
+        source_code: TradeValue_TOTAL_import
+        endpoint: "/preview/C/A/HS"
+        fallback: "WB imports (NE.IMP.GNFS.CD)"
+        unit: USD
+        frequency: annual
+        decision: PILOT
+      - osa_code: MIN_EXP
+        source_code: TradeValue_HS26_export
+        endpoint: "/preview/C/A/HS"
+        fallback: null
+        unit: USD
+        frequency: annual
+        decision: PILOT
+
+  - source_id: UNCTAD
+    name: UNCTADstat
+    organization: "UN Trade and Development"
+    api_type: CSV_BULK
+    base_url: "https://unctadstat.unctad.org/datacentre/"
+    status: GO
+    priority: 2
+    stability: "Haute (CSV bulk sans clé)"
+    indicators:
+      - osa_code: ECO_FDI
+        source_code: FDI_inflows
+        endpoint: "https://unctadstat.unctad.org/datacentre/dataviewer/US.FdiFlows"
+        fallback: "WB FDI (BX.KLT.DINV.CD.WD)"
+        unit: USD
+        frequency: annual
+        decision: GO
+
+  - source_id: EITI
+    name: Extractive Industries Transparency Initiative (CSV)
+    organization: "EITI International Secretariat"
+    api_type: CSV_BULK
+    base_url: "https://eiti.org/data"
+    status: GO
+    priority: 3
+    stability: "Moyenne"
+    coverage: "Pays membres EITI en Afrique"
+    limits: "Couverture partielle (pays membres uniquement)"
+    indicators:
+      - osa_code: MIN_GOV
+        source_code: EITI_score
+        endpoint: "EITI_CSV"
+        fallback: null
+        unit: SCORE_0_100
+        frequency: annual
+        decision: GO
+
+  - source_id: SIPRI
+    name: SIPRI Military Expenditure Database (CSV)
+    organization: "Stockholm International Peace Research Institute"
+    api_type: CSV_BULK
+    base_url: "https://www.sipri.org/databases/milex"
+    status: GO
+    priority: 3
+    stability: "Haute"
+    coverage: "54 pays africains"
+    indicators:
+      - osa_code: MIL_EXP
+        source_code: MilEx_USD
+        endpoint: "SIPRI_CSV"
+        fallback: null
+        unit: USD
+        frequency: annual
+        decision: GO
+
+  - source_id: OECD
+    name: OECD SDMX
+    organization: "Organisation for Economic Co-operation and Development"
+    api_type: SDMX
+    base_url: "https://stats.oecd.org/restsdmx/sdmx.ashx"
+    status: NO_GO
+    priority: 3
+    reason: "Fetcher non implémenté — GOV_EDU sans couverture alternative"
+    indicators:
+      - osa_code: GOV_EDU
+        source_code: EDU_SPENDING
+        endpoint: "/data/EDU_DATA/{country}"
+        fallback: "WB education indicators"
+        unit: PERCENT
+        frequency: annual
+        decision: PILOT
+
+  - source_id: ACLED
+    name: ACLED
+    organization: "Armed Conflict Location & Event Data"
+    api_type: REST
+    base_url: "https://api.acleddata.com"
+    status: PILOT
+    priority: 4
+    indicators:
+      - osa_code: GEO_CON
+        source_code: Event_Count
+        endpoint: "/acled/read"
+        fallback: null
+        unit: NB
+        frequency: annual
+        decision: PILOT
+
+  - source_id: USGS
+    name: USGS Mineral Resources Data System (CSV)
+    organization: "U.S. Geological Survey"
+    api_type: CSV_BULK
+    base_url: "https://mrdata.usgs.gov/"
+    status: PILOT
+    priority: 4
+    reason: "En évaluation — couverture africaine à confirmer"
+    indicators:
+      - osa_code: MIN_RES
+        source_code: MineralResources
+        endpoint: "USGS_CSV"
+        fallback: null
+        unit: USD
+        frequency: annual
+        decision: PILOT
+
+  - source_id: ADB
+    name: African Development Bank
+    organization: "African Development Bank"
+    api_type: REST
+    base_url: "https://api.afdb.org"
+    status: PILOT
+    priority: 3
+    reason: "Indicateur ECO_INFRA absent du référentiel rf.indicators — à créer"
+    indicators:
+      - osa_code: ECO_LOG
+        source_code: Infrastructure_Index
+        endpoint: "/datasets/{dataset}"
+        fallback: "WB logistics performance (LP.LPI.OVRL.XQ)"
+        unit: SCORE_0_100
+        frequency: annual
+        decision: PILOT
+
+  - source_id: UNPK
+    name: IPI Peacekeeping Database
+    organization: "International Peace Institute / Humanitarian Data Exchange"
+    api_type: CSV_BULK
+    base_url: "https://data.humdata.org/dataset/ipi-peacekeeping-database"
+    status: PILOT
+    priority: 4
+    stability: "MEDIUM"
+    limits: "Données jusqu'en 2018 uniquement — série historique"
+    reason: "Série historique fiable, arrêtée en 2018"
+    indicators:
+      - osa_code: MIL_MIS
+        source_code: total_troops
+        endpoint: "https://data.humdata.org/dataset/ipi-peacekeeping-database"
+        fallback: null
+        unit: PERSONS
+        frequency: annual
+        decision: PILOT
+      - osa_code: GEO_PEA
+        source_code: total_personnel
+        endpoint: "https://data.humdata.org/dataset/ipi-peacekeeping-database"
+        fallback: null
+        unit: PERSONS
+        frequency: annual
+        decision: PILOT
+
+  - source_id: UA
+    name: African Union / StatAfric
+    organization: "African Union"
+    status: NO_GO
+    reason: "Absence API stable / industrialisable"
+
+  - source_id: RECS
+    name: Regional Economic Communities
+    status: NO_GO
+    reason: "Données PDF/Excel non industrialisables"
+
+quality:
+  freshness_score: 0.90
+  completeness_score: 0.85
+  reliability_score: 0.95

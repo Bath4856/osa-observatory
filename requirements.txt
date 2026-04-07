@@ -1,0 +1,19 @@
+# ============================================================
+# OSA / ISA OBSERVATORY — requirements.txt
+# Sprint 2 : fetchers Python
+# ============================================================
+
+# PostgreSQL
+psycopg2-binary>=2.9.9
+
+# HTTP
+requests>=2.31.0
+
+# Variables d'environnement
+python-dotenv>=1.0.0
+
+# YAML
+PyYAML>=6.0.1
+
+# Optionnel : rich pour logs colorés en développement
+# rich>=13.0.0

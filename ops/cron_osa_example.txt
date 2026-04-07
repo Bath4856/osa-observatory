@@ -1,0 +1,10 @@
+# OSA nightly pipeline (2h00 UTC)
+# Ajuster PROJECT_DIR, PYTHON_BIN et OSA_ALERT_WEBHOOK_URL.
+
+0 2 * * * cd /workspaces/osa-observatory && PYTHON_BIN=/usr/local/bin/python INCLUDE_PILOT=false REQUIRE_VALIDATION=true EXPORT_AUDIT_CSV=true OSA_ALERT_WEBHOOK_URL="" bash ops/run_osa_nightly.sh
+
+# Variante GO+PILOT
+# 0 2 * * * cd /workspaces/osa-observatory && PYTHON_BIN=/usr/local/bin/python INCLUDE_PILOT=true REQUIRE_VALIDATION=true EXPORT_AUDIT_CSV=true OSA_ALERT_WEBHOOK_URL="" bash ops/run_osa_nightly.sh
+
+# Variante technique sans gate humain (non recommandee production)
+# 0 2 * * * cd /workspaces/osa-observatory && PYTHON_BIN=/usr/local/bin/python REQUIRE_VALIDATION=false EXPORT_AUDIT_CSV=true OSA_ALERT_WEBHOOK_URL="" bash ops/run_osa_nightly.sh

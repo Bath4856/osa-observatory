@@ -1,0 +1,162 @@
+# ============================================================
+# OSA / ISA OBSERVATORY
+# GUIDE DE TÉLÉCHARGEMENT DES CSV
+# Fetchers priorité 1 : IMF WEO + DOTS + BOP + FAO
+# ============================================================
+#
+# Créer la structure de dossiers :
+#   mkdir -p data/imf data/fao
+#
+# ============================================================
+# 1. IMF WEO — World Economic Outlook
+# ============================================================
+# URL : https://www.imf.org/en/Publications/WEO/weo-database/2026/April
+#
+# Procédure :
+#   1. Cliquer "By Countries (all countries)"
+#   2. Cocher : Select All Countries
+#   3. Cocher : Select All Subjects
+#   4. Format : Tab-delimited values (*.csv)
+#   5. Cliquer Download
+#   6. Renommer → data/imf/WEO_2026_Apr.csv
+#
+# Indicateurs OSA couverts (10) :
+#   MON_INF  PCPIPCH   Inflation IPC %
+#   MON_EXT  GGXWDG_NGDP  Dette publique % PIB
+#   MON_PAY  BCA_NGDPD    Balance courante % PIB
+#   MON_DET  GGXONLB_NGDP Solde budgétaire primaire % PIB
+#   MON_AUT  GGX_NGDP     Dépenses publiques % PIB
+#   ECO_GDP  NGDPDPC      PIB/habitant USD
+#   ECO_GRW  NGDP_RPCH    Croissance PIB réel %
+#   ECO_UNE  LUR          Chômage %
+#   ECO_INF  PCPIEPCH     Inflation fin de période %
+#   HUM_POP  LP           Population (millions)
+#
+# Usage :
+#   python fetcher_imf_weo_csv.py --file data/imf/WEO_2026_Apr.csv
+#   python fetcher_imf_weo_csv.py --file data/imf/WEO_2026_Apr.csv --detect
+#
+# ============================================================
+# 2. IMF DOTS — Direction of Trade Statistics
+# ============================================================
+# URL : https://data.imf.org/?sk=9d6028d4-f14a-464c-a2f2-59b2cd424b85
+#
+# Procédure :
+#   1. Cliquer "Download entire dataset" (Annual)
+#   2. Format CSV
+#   3. Renommer → data/imf/DOTS_2024.csv
+#
+# Indicateurs OSA couverts (4) :
+#   ECO_EXP  TXG_FOB_USD    Exportations biens FOB (millions USD)
+#   ECO_IMP  TMG_CIF_USD    Importations biens CIF (millions USD)
+#   ECO_COM  TXG_FOB_USD_AF Exports intra-africains (millions USD)
+#   ECO_DIV  TBAL_USD       Balance commerciale (millions USD)
+#
+# Usage :
+#   python fetcher_imf_dots_csv.py --file data/imf/DOTS_2024.csv
+#   python fetcher_imf_dots_csv.py --file data/imf/DOTS_2024.csv --detect
+#
+# ============================================================
+# 3. IMF BOP — Balance of Payments Statistics
+# ============================================================
+# URL : https://data.imf.org/?sk=7a51304b-6426-40c0-83dd-ca473ca1fd52
+#
+# Procédure :
+#   1. Sélectionner : Frequency = Annual
+#   2. Sélectionner : Countries = All African countries
+#   3. Sélectionner : Indicators = Standard Components
+#   4. Télécharger CSV
+#   5. Renommer → data/imf/BOP_2024.csv
+#
+# Indicateurs OSA couverts (3) :
+#   MON_DEP  BIP_USD     Revenus primaires nets (dépendance devises)
+#   MON_PAY  BCA_USD     Solde compte courant USD (complément WEO)
+#   ECO_FDI  BFA_FDI_USD IDE nets (complément WB)
+#
+# Usage :
+#   python fetcher_imf_bop_csv.py --file data/imf/BOP_2024.csv
+#   python fetcher_imf_bop_csv.py --file data/imf/BOP_2024.csv --detect
+#
+# ============================================================
+# 4. FAO — FAOSTAT (6 datasets)
+# ============================================================
+# URL base : https://www.fao.org/faostat/en/#data
+#
+# Procédure commune pour chaque dataset :
+#   1. Aller sur fao.org/faostat/en/#data
+#   2. Cliquer sur le dataset
+#   3. Countries : sélectionner "Africa" ou tous les pays africains
+#   4. Elements : sélectionner ceux listés ci-dessous
+#   5. Years : All years
+#   6. Télécharger CSV
+#   7. Placer dans data/fao/{CODE}.csv
+#
+# Datasets à télécharger :
+#
+#   GF.csv  — Forest Resources Assessment
+#   URL     : https://www.fao.org/faostat/en/#data/GF
+#   Element : Area (5110)
+#   Item    : Forest (6646)
+#   → ENV_FOR : couverture forestière
+#
+#   RL.csv  — Land Use
+#   URL     : https://www.fao.org/faostat/en/#data/RL
+#   Elements: Area (5110)
+#   Items   : Arable land (6655), Permanent crops (6725),
+#             Permanent meadows (6670), Irrigated land (4551)
+#   → ENV_LAN, ENV_ECO, ENV_PRO, ENV_WAT
+#
+#   QCL.csv — Crops and Livestock Products
+#   URL     : https://www.fao.org/faostat/en/#data/QCL
+#   Element : Production (5510)
+#   Item    : Cereals Total (2041)
+#   → ECO_AGR
+#
+#   FS.csv  — Food Security Indicators
+#   URL     : https://www.fao.org/faostat/en/#data/FS
+#   Element : Value (6121)
+#   Item    : Prevalence of undernourishment (21010)
+#   → HUM_FOO
+#
+#   OA.csv  — Annual Population
+#   URL     : https://www.fao.org/faostat/en/#data/OA
+#   Element : Total Population (511)
+#   Item    : Population Total (3010)
+#   → HUM_POP
+#
+#   FBS.csv — Food Balance Sheets
+#   URL     : https://www.fao.org/faostat/en/#data/FBS
+#   Element : Food supply quantity (kg/capita/yr) (5142)
+#   Item    : Fish and Seafood (2761)
+#   → ENV_FIS
+#
+#   GT.csv  — Emissions - Agriculture Total
+#   URL     : https://www.fao.org/faostat/en/#data/GT
+#   Element : Emissions (Gigagrams CO2 eq) (7231)
+#   Item    : Agriculture Total (1711)
+#   → ENV_CO2
+#
+# Vérifier les fichiers manquants :
+#   python fetcher_fao_csv.py --dir data/fao/ --list-missing
+#
+# Usage :
+#   python fetcher_fao_csv.py --dir data/fao/
+#   python fetcher_fao_csv.py --dir data/fao/ --dry-run
+#
+# ============================================================
+# RÉSUMÉ — Indicateurs couverts après téléchargement
+# ============================================================
+#
+#  Source   Fichier              Indicateurs  Piliers
+#  ───────  ───────────────────  ───────────  ──────────────
+#  WEO      data/imf/WEO_*.csv       10       PMON, PECO
+#  DOTS     data/imf/DOTS_*.csv       4       PECO
+#  BOP      data/imf/BOP_*.csv        3       PMON
+#  FAO      data/fao/*.csv           10       PENV, PHUM
+#  ───────  ───────────────────  ───────────  ──────────────
+#  TOTAL                            27       4 piliers
+#
+# Combiné avec WB (31 indicateurs déjà collectés) :
+#   58 indicateurs disponibles — ISA calculable sur 6/8 piliers
+#
+# ============================================================

@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+
+  # ── Base de données PostgreSQL ───────────────────────────
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       osa_db
+      POSTGRES_USER:     osa_user
+      POSTGRES_PASSWORD: osa_pass
+      # Optimisations pour environnement dev (Codespaces 2-4 cores)
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=fr_FR.UTF-8"
+    volumes:
+      # Données persistantes entre les sessions Codespaces
+      - postgres_data:/var/lib/postgresql/data
+      # Scripts SQL montés automatiquement (exécutés au 1er démarrage)
+      # NON utilisé ici — on préfère contrôler l'ordre via setup.sh
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U osa_user -d osa_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    command: >
+      postgres
+        -c shared_buffers=256MB
+        -c effective_cache_size=512MB
+        -c work_mem=16MB
+        -c maintenance_work_mem=64MB
+        -c max_connections=20
+        -c log_min_duration_statement=1000
+        -c log_statement=none
+
+  # ── Application Python ───────────────────────────────────
+  app:
+    image: mcr.microsoft.com/devcontainers/python:3.11-bullseye
+    volumes:
+      - ..:/workspace:cached
+    working_dir: /workspace
+    # Le container reste actif — VS Code s'y connecte
+    command: sleep infinity
+    environment:
+      OSA_DB_HOST: db
+      OSA_DB_PORT: "5432"
+      OSA_DB_NAME: osa_db
+      OSA_DB_USER: osa_user
+      OSA_DB_PASS: osa_pass
+      OSA_LOG_LEVEL: INFO
+      PYTHONPATH: /workspace/collectors
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
