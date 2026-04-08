@@ -1,5 +1,6 @@
 -- ============================================================
 -- QUALITÉ DES DONNÉES — OSA
+-- Corrigé pour le schéma réel : country_iso3, value_raw
 -- ============================================================
 
 -- 1. Complétude par indicateur
@@ -7,9 +8,9 @@ CREATE OR REPLACE VIEW collect.v_quality_completeness AS
 SELECT
     indicator_code,
     year,
-    COUNT(DISTINCT country_code) AS nb_countries
+    COUNT(DISTINCT country_iso3) AS nb_countries
 FROM collect.raw_data
-WHERE value IS NOT NULL
+WHERE value_raw IS NOT NULL
 GROUP BY indicator_code, year;
 
 -- 2. Score qualité global
@@ -24,12 +25,12 @@ BEGIN
     SELECT
         i.code,
         ROUND(
-            COUNT(DISTINCT rd.country_code) * 100.0 /
-            NULLIF((SELECT COUNT(*) FROM rf.countries),0),
+            COUNT(DISTINCT rd.country_iso3) * 100.0 /
+            NULLIF((SELECT COUNT(*) FROM rf.countries), 0),
         0),
         CASE
-            WHEN COUNT(DISTINCT rd.country_code) >= 40 THEN 'GO'
-            WHEN COUNT(DISTINCT rd.country_code) >= 20 THEN 'PARTIAL'
+            WHEN COUNT(DISTINCT rd.country_iso3) >= 40 THEN 'GO'
+            WHEN COUNT(DISTINCT rd.country_iso3) >= 20 THEN 'PARTIAL'
             ELSE 'NO_GO'
         END
     FROM rf.indicators i
@@ -44,6 +45,5 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE VIEW collect.v_quality_anomalies AS
 SELECT *
 FROM collect.raw_data
-WHERE value IS NULL
-   OR value < 0;
-   
+WHERE value_raw IS NULL
+   OR value_raw < 0;
