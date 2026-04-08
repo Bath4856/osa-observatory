@@ -60,6 +60,56 @@ FETCHER_REGISTRY: dict[str, str] = {
 }
 
 
+# ── Fallback automatique par indicateur ───────────────────────────────────
+# Quand un provider échoue sur un indicateur, ce dict indique
+# quel provider alternatif utiliser et quel code source mapper.
+# Format : {osa_code: {"provider": str, "wb_code": str, "note": str}}
+#
+# ITU → WB : la Banque Mondiale réexpose les données ITU via WDI.
+# Quand ITU répond 403, WB prend le relais automatiquement.
+# Quand une clé ITU sera disponible, désactiver le fallback en
+# passant ITU en statut GO prioritaire et WB en secondaire.
+
+INDICATOR_FALLBACK: dict[str, dict] = {
+    "NUM_INT": {
+        "provider": "WB",
+        "wb_code":  "IT.NET.USER.ZS",
+        "note":     "WB réexpose données ITU — proxy exact",
+    },
+    "NUM_MOB": {
+        "provider": "WB",
+        "wb_code":  "IT.CEL.SETS.P2",
+        "note":     "WB réexpose données ITU — proxy exact",
+    },
+    "NUM_FIB": {
+        "provider": "WB",
+        "wb_code":  "IT.NET.BBND.P2",
+        "note":     "WB broadband fixe — proxy fibre",
+    },
+    "NUM_DAT": {
+        "provider": "WB",
+        "wb_code":  "IT.NET.BBND.P2",
+        "note":     "WB broadband fixe — proxy infrastructure",
+    },
+    "NUM_RES": {
+        "provider": "WB",
+        "wb_code":  "IT.MLT.MAIN.P2",
+        "note":     "WB téléphonie fixe — proxy résilience réseau",
+    },
+    "NUM_STU": {
+        "provider": "WB",
+        "wb_code":  "IT.CEL.SETS.P2",
+        "note":     "WB mobile — proxy formation numérique mobile",
+    },
+    "NUM_FIN": {
+        "provider": "WB",
+        "wb_code":  "IT.CEL.SETS.P2",
+        "note":     "WB mobile — proxy fintech/paiements mobiles",
+    },
+    # NUM_CYB, MIL_CYB, NUM_GOV, NUM_DIG : pas de fallback WB disponible
+}
+
+
 def _load_fetcher_class(module_name: str):
     from fetcher_base import BaseFetcher
     mod = importlib.import_module(module_name)
@@ -180,7 +230,30 @@ def execute_plan(
                 duration,
             )
             if failed_ind:
-                summary["failed"].append(source_id)
+                # Tenter les fallbacks pour les indicateurs en échec
+                fb_results = run_fallback_for_indicators(
+                    failed_indicators=failed_ind,
+                    source_id=source_id,
+                    year_from=year_from,
+                    year_to=year_to,
+                    dry_run=dry_run,
+                )
+                still_failed = [
+                    ind for ind, status in fb_results.items()
+                    if status != "ok"
+                ]
+                if still_failed:
+                    log.warning(
+                        "  [FALLBACK] %d indicateurs sans fallback : %s",
+                        len(still_failed), ", ".join(still_failed),
+                    )
+                    summary["failed"].append(source_id)
+                else:
+                    log.info(
+                        "  [FALLBACK] Tous les échecs de %s couverts par fallback ✓",
+                        source_id,
+                    )
+                    summary["ok"].append(f"{source_id}(fallback)")
             else:
                 summary["ok"].append(source_id)
         except Exception as exc:
@@ -190,6 +263,99 @@ def execute_plan(
             fetcher.disconnect()
 
     return summary
+
+
+
+def run_fallback_for_indicators(
+    failed_indicators: list[str],
+    source_id: str,
+    year_from: int,
+    year_to: int,
+    dry_run: bool,
+) -> dict[str, list]:
+    """
+    Pour chaque indicateur en échec, vérifie si un fallback est disponible
+    et lance le fetcher alternatif avec notification claire dans les logs.
+    Retourne un dict {osa_code: "ok"|"no_fallback"|"fallback_failed"}
+    """
+    results = {}
+
+    for osa_code in failed_indicators:
+        fallback = INDICATOR_FALLBACK.get(osa_code)
+        if not fallback:
+            log.warning(
+                "  [FALLBACK] %-14s — aucun fallback disponible pour %s",
+                osa_code, source_id,
+            )
+            results[osa_code] = "no_fallback"
+            continue
+
+        fb_provider = fallback["provider"]
+        wb_code     = fallback["wb_code"]
+        note        = fallback["note"]
+
+        if fb_provider not in FETCHER_REGISTRY:
+            log.warning(
+                "  [FALLBACK] %-14s — provider fallback %s non disponible",
+                osa_code, fb_provider,
+            )
+            results[osa_code] = "no_fallback"
+            continue
+
+        log.warning(
+            "  [FALLBACK] %-14s | %s → %s (%s) | %s",
+            osa_code, source_id, fb_provider, wb_code, note,
+        )
+
+        try:
+            module_name  = FETCHER_REGISTRY[fb_provider]
+            FetcherClass = _load_fetcher_class(module_name)
+            fetcher      = FetcherClass(dry_run=dry_run)
+            fetcher.connect()
+
+            # Injecter temporairement le code WB dans le fetcher
+            original_map = fetcher.INDICATOR_MAP.copy()
+            fetcher.INDICATOR_MAP = {
+                osa_code: {
+                    **original_map.get(osa_code, {}),
+                    "wb_code":    wb_code,
+                    "name_fr":    f"{osa_code} (fallback depuis {source_id})",
+                    "unit_code":  "INDEX",
+                    "direction":  "+",
+                    "multiplier": 1.0,
+                    "notes":      f"FALLBACK {source_id}→{fb_provider} : {note}",
+                }
+            }
+
+            result = fetcher.run(year_from, year_to, osa_code)
+            fb_failed = result.get("failed", [])
+
+            if not fb_failed:
+                log.info(
+                    "  [FALLBACK] %-14s | +%d enregistrements via %s ✓",
+                    osa_code, result.get("inserted", 0), fb_provider,
+                )
+                results[osa_code] = "ok"
+            else:
+                log.error(
+                    "  [FALLBACK] %-14s | échec via %s aussi",
+                    osa_code, fb_provider,
+                )
+                results[osa_code] = "fallback_failed"
+
+        except Exception as exc:
+            log.error(
+                "  [FALLBACK] %-14s | erreur fatale %s : %s",
+                osa_code, fb_provider, exc,
+            )
+            results[osa_code] = "fallback_failed"
+        finally:
+            try:
+                fetcher.disconnect()
+            except Exception:
+                pass
+
+    return results
 
 
 def preview_fallback(
@@ -386,3 +552,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+    
