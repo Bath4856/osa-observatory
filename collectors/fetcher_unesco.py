@@ -25,7 +25,9 @@ class UNESCOFetcher(BaseFetcher):
         self.log.info("UNESCO -- API accessible (sans cle)")
         super().connect()
 
-    def fetch_indicator(self, osa_code, cfg, countries, year_from, year_to):
+    def fetch_indicator(self, osa_code, cfg, year_from, year_to):
+        from fetcher_base import AFRICAN_ISO3 as _ISO3
+        countries = list(_ISO3)
         records = []
         uis_code = cfg["uis_code"]
         params = f"?indicator={uis_code}&format=json"
@@ -54,31 +56,6 @@ class UNESCOFetcher(BaseFetcher):
         except Exception as e:
             self.log.error("UNESCO %s erreur: %s", uis_code, e)
         return records
-
-    def run(self, year_from=2000, year_to=2024, countries=None, dry_run=False):
-        if countries is None:
-            countries = list(AFRICAN_ISO3)
-        ok=failed=inserted=rejected=0
-        countries_seen=set()
-        total=len(UNESCO_INDICATOR_MAP)
-        for idx,(osa_code,cfg) in enumerate(UNESCO_INDICATOR_MAP.items(),1):
-            self.log.info("[%d/%d] %s", idx, total, osa_code)
-            try:
-                records=self.fetch_indicator(osa_code,cfg,countries,year_from,year_to)
-                countries_seen.update(r["country_iso3"] for r in records)
-                nb_c=len(set(r["country_iso3"] for r in records))
-                if dry_run:
-                    self.log.info("[DRY-RUN] %-18s -> %d enregistrements (skippes)", osa_code, len(records))
-                    ins,rej=len(records),0
-                else:
-                    ins,rej=self.insert_records(osa_code,records,cfg["multiplier"])
-                inserted+=ins; rejected+=rej; ok+=1
-                self.log.info("  %-18s -> %3d inseres, %2d rejetes, %2d pays", osa_code, ins, rej, nb_c)
-            except Exception as e:
-                self.log.error("Echec %s : %s", osa_code, e)
-                failed+=1
-        return {"provider":self.PROVIDER_CODE,"ok":ok,"failed":failed,
-                "inserted":inserted,"rejected":rejected,"countries":len(countries_seen)}
 
     def probe(self):
         results=[]
