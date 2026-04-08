@@ -36,7 +36,7 @@ info "Vérification état de la base..."
 # Installer psql si absent
 if ! command -v psql &>/dev/null; then
     info "Installation postgresql-client..."
-    sudo apt-get update -q
+    sudo apt-get update -q --ignore-missing 2>/dev/null || true
     sudo apt-get install -y postgresql-client -q
     info "postgresql-client installé"
 fi
