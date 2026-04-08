@@ -191,6 +191,8 @@ psql -h localhost -U osa_user -d osa_db \
     -f "$PROJET/db/patch_comtrade_unctad_providers.sql" -q && info "  patch_comtrade_unctad_providers OK"
 psql -h localhost -U osa_user -d osa_db \
     -f "$PROJET/db/patch_unpk_milcyb_providers.sql" -q && info "  patch_unpk_milcyb_providers OK"
+psql -h localhost -U osa_user -d osa_db \
+    -f "$PROJET/db/patch_indicator_source_v2.sql" -q && info "  patch_indicator_source_v2 OK" -q && info "  patch_unpk_milcyb_providers OK"
 
 # ── 4. Vérifications finales ──────────────────────────────
 info "Vérifications..."
