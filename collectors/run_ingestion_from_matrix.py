@@ -475,6 +475,9 @@ def main() -> None:
     parser.add_argument("--to",               dest="year_to",     type=int, default=2024)
     parser.add_argument("--include-pilot",    action="store_true")
     parser.add_argument("--requested-by",     type=str,           default="OPS")
+    parser.add_argument("--skip",             type=str, nargs="+", default=[],
+                        metavar="PROVIDER",
+                        help="Exclure ces providers (ex: --skip ITU COMTRADE)")
     parser.add_argument("--dry-run",          action="store_true")
     parser.add_argument("--print-plan",       action="store_true",
                         help="Afficher le plan d'exécution sans lancer les fetchers")
@@ -539,6 +542,10 @@ def main() -> None:
 
     if args.coverage_report and not args.dry_run:
         print_coverage_report(args.year_to)
+
+    if args.skip:
+        log.info("Providers exclus manuellement : %s", ", ".join(args.skip))
+        plan = [p for p in plan if p["source_id"] not in args.skip]
 
     if args.cleanup and not args.dry_run:
         project_dir = os.path.dirname(COLLECTORS_DIR)
