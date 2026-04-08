@@ -337,15 +337,17 @@ def run_fallback_for_indicators(
             fetcher.connect()
 
             # Injecter temporairement le code WB dans le fetcher
-            original_map = fetcher.INDICATOR_MAP.copy()
+            # Priorité : config native du fetcher WB > config source > défauts
+            native_map = fetcher.INDICATOR_MAP.get(osa_code, {})
             fetcher.INDICATOR_MAP = {
                 osa_code: {
-                    **original_map.get(osa_code, {}),
-                    "wb_code":    wb_code,
-                    "name_fr":    f"{osa_code} (fallback depuis {source_id})",
-                    "unit_code":  "INDEX",
-                    "direction":  "+",
-                    "multiplier": 1.0,
+                    **native_map,
+                    "wb_code":    native_map.get("wb_code", wb_code),
+                    "name_fr":    native_map.get("name_fr",
+                                  f"{osa_code} (fallback depuis {source_id})"),
+                    "unit_code":  native_map.get("unit_code",  "INDEX"),
+                    "direction":  native_map.get("direction",  "+"),
+                    "multiplier": native_map.get("multiplier", 1.0),
                     "notes":      f"FALLBACK {source_id}→{fb_provider} : {note}",
                 }
             }
