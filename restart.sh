@@ -43,7 +43,7 @@ fi
 
 # Configurer .pgpass
 if [ ! -f ~/.pgpass ]; then
-    echo "db:5432:osa_db:osa_user:osa_pass" > ~/.pgpass
+    echo "localhost:5432:osa_db:osa_user:osa_pass" > ~/.pgpass
     chmod 600 ~/.pgpass
     info ".pgpass configuré"
 fi
