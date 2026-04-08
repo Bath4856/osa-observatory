@@ -13,10 +13,12 @@ Corrections v2 :
 from __future__ import annotations
 
 import argparse
+import glob
 import importlib
 import inspect
 import logging
 import os
+import shutil
 import sys
 import time
 from typing import Optional
@@ -246,6 +248,61 @@ def print_coverage_report(year: int) -> None:
         log.warning("run_collect_all introuvable — rapport de couverture ignoré")
 
 
+
+# Fichiers CSV à conserver même après nettoyage (données non re-téléchargeables)
+CSV_KEEP = {
+    "data/unpk/Country_Level_data.csv",  # IPI 1990-2018 — série arrêtée
+}
+
+# Dossiers CSV temporaires à nettoyer après collecte réussie
+CSV_CLEANUP_DIRS = [
+    "data/imf",
+    "data/fao",
+    "data/undp",
+    "data/unctad",
+    "data/sipri",
+    "data/eiti",
+    "data/usgs",
+]
+
+
+def cleanup_csv_files(project_dir: str, dry_run: bool = False) -> None:
+    """
+    Supprime les fichiers CSV temporaires après une collecte réussie.
+    Les données sont déjà en base — les CSV ne sont plus nécessaires.
+    Conserve les fichiers listés dans CSV_KEEP (séries arrêtées).
+    """
+    deleted = 0
+    kept    = 0
+    total   = 0
+
+    for data_dir in CSV_CLEANUP_DIRS:
+        full_dir = os.path.join(project_dir, data_dir)
+        if not os.path.exists(full_dir):
+            continue
+
+        for filepath in glob.glob(os.path.join(full_dir, "*.csv")) +                         glob.glob(os.path.join(full_dir, "*.xlsx")) +                         glob.glob(os.path.join(full_dir, "*.xls")):
+
+            total += 1
+            rel_path = os.path.relpath(filepath, project_dir)
+
+            if rel_path in CSV_KEEP:
+                log.info("  CONSERVÉ  %s (série arrêtée)", rel_path)
+                kept += 1
+                continue
+
+            if dry_run:
+                log.info("  [DRY-RUN] Supprimerait : %s (%.1f Mo)",
+                         rel_path, os.path.getsize(filepath) / 1_048_576)
+            else:
+                size_mb = os.path.getsize(filepath) / 1_048_576
+                os.remove(filepath)
+                log.info("  SUPPRIMÉ  %s (%.1f Mo libérés)", rel_path, size_mb)
+            deleted += 1
+
+    log.info("Nettoyage CSV — %d supprimés, %d conservés, %d total",
+             deleted, kept, total)
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="OSA — Ingestion pilotée par matrice")
     parser.add_argument("--from",             dest="year_from",   type=int, default=2010)
@@ -258,6 +315,11 @@ def main() -> None:
     parser.add_argument("--coverage-report",  action="store_true")
     parser.add_argument("--fallback-indicator", type=str, default=None)
     parser.add_argument("--fallback-year",    type=int, default=None)
+    parser.add_argument(
+        "--cleanup",
+        action="store_true",
+        help="Supprimer les CSV après collecte réussie (libère de la place)",
+    )
     args = parser.parse_args()
 
     if args.fallback_indicator:
@@ -311,6 +373,15 @@ def main() -> None:
 
     if args.coverage_report and not args.dry_run:
         print_coverage_report(args.year_to)
+
+    if args.cleanup and not args.dry_run:
+        project_dir = os.path.dirname(COLLECTORS_DIR)
+        log.info("Nettoyage des fichiers CSV temporaires...")
+        cleanup_csv_files(project_dir, dry_run=False)
+    elif args.cleanup and args.dry_run:
+        project_dir = os.path.dirname(COLLECTORS_DIR)
+        log.info("[DRY-RUN] Simulation nettoyage CSV :")
+        cleanup_csv_files(project_dir, dry_run=True)
 
 
 if __name__ == "__main__":
