@@ -107,6 +107,29 @@ INDICATOR_FALLBACK: dict[str, dict] = {
         "note":     "WB mobile — proxy fintech/paiements mobiles",
     },
     # NUM_CYB, MIL_CYB, NUM_GOV, NUM_DIG : pas de fallback WB disponible
+
+    # IMF → WB
+    "ECO_GDP": {"provider": "WB", "wb_code": "NY.GDP.PCAP.CD",      "note": "WB PIB/hab — proxy IMF"},
+    "ECO_GRW": {"provider": "WB", "wb_code": "NY.GDP.MKTP.KD.ZG",   "note": "WB croissance PIB % — proxy IMF"},
+    "ECO_UNE": {"provider": "WB", "wb_code": "SL.UEM.TOTL.ZS",      "note": "WB chômage % — proxy IMF"},
+    "MON_INF": {"provider": "WB", "wb_code": "FP.CPI.TOTL.ZG",      "note": "WB inflation IPC % — proxy IMF"},
+    "MON_EXT": {"provider": "WB", "wb_code": "DT.DOD.DECT.GN.ZS",   "note": "WB dette extérieure % RNB — proxy IMF"},
+    "MON_DET": {"provider": "WB", "wb_code": "DT.TDS.DECT.GN.ZS",   "note": "WB service dette % RNB — proxy IMF"},
+    "ECO_INF": {"provider": "WB", "wb_code": "FP.CPI.TOTL.ZG",      "note": "WB inflation IPC % — proxy IMF"},
+    # WHO → WB
+    "HUM_HEA": {"provider": "WB", "wb_code": "SP.DYN.LE00.IN",      "note": "WB espérance de vie — proxy WHO"},
+    "HUM_FOO": {"provider": "WB", "wb_code": "SN.ITK.DEFC.ZS",      "note": "WB sous-alimentation % — proxy WHO/FAO"},
+    # FAO → WB
+    "ENV_CO2": {"provider": "WB", "wb_code": "EN.ATM.CO2E.KT",      "note": "WB émissions CO2 kt — proxy FAO/IEA"},
+    "ENV_FOR": {"provider": "WB", "wb_code": "AG.LND.FRST.ZS",      "note": "WB superficie forestière % — proxy FAO"},
+    "ENV_WAT": {"provider": "WB", "wb_code": "ER.H2O.FWTL.ZS",      "note": "WB prélèvements eau % — proxy FAO"},
+    "ECO_AGR": {"provider": "WB", "wb_code": "NV.AGR.TOTL.ZS",      "note": "WB valeur ajoutée agri % PIB — proxy FAO"},
+    "HUM_POP": {"provider": "WB", "wb_code": "SP.POP.TOTL",         "note": "WB population totale — proxy FAO"},
+    # SIPRI → WB
+    "MIL_EXP": {"provider": "WB", "wb_code": "MS.MIL.XPND.CD",     "note": "WB dépenses militaires USD — proxy SIPRI"},
+    # UNDP → WB
+    "HUM_EDU": {"provider": "WB", "wb_code": "SE.SEC.ENRR",         "note": "WB scolarisation secondaire — proxy UNDP"},
+    "HUM_LIT": {"provider": "WB", "wb_code": "SE.ADT.LITR.ZS",      "note": "WB alphabétisation adultes — proxy UNDP"},
 }
 
 
