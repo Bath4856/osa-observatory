@@ -194,7 +194,7 @@ class SIPRICSVFetcher(BaseFetcher):
     ENDPOINT_CODE = "WB_COUNTRY_INDICATOR"   # Réutilise endpoint WB — pas d'endpoint SIPRI en base
     INDICATOR_MAP = SIPRI_INDICATOR_MAP
 
-    def __init__(self, data_dir: str, dry_run: bool = False) -> None:
+    def __init__(self, data_dir: str = "data/sipri", dry_run: bool = False) -> None:
         super().__init__(dry_run=dry_run)
         self.data_dir = Path(data_dir)
 

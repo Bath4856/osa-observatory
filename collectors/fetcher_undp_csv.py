@@ -117,7 +117,7 @@ class UNDPCSVFetcher(BaseFetcher):
     ENDPOINT_CODE = "WB_COUNTRY_INDICATOR"  # Réutilise endpoint WB
     INDICATOR_MAP = UNDP_INDICATOR_MAP
 
-    def __init__(self, csv_filepath: str, dry_run: bool = False) -> None:
+    def __init__(self, csv_filepath: str = "data/undp/HDR.csv", dry_run: bool = False) -> None:
         super().__init__(dry_run=dry_run)
         self.csv_filepath = Path(csv_filepath)
         self._rows_cache: list[dict] | None = None

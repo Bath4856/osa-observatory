@@ -175,7 +175,7 @@ class EITIFetcher(BaseFetcher):
 
     def __init__(
         self,
-        data_dir: str,
+        data_dir: str = "data/eiti",
         use_api:  bool = False,
         dry_run:  bool = False,
     ) -> None:

@@ -186,6 +186,8 @@ psql -h localhost -U osa_user -d osa_db \
 psql -h localhost -U osa_user -d osa_db \
     -f "$PROJET/db/patch_missing_core_providers.sql" -q && info "  patch_missing_core_providers OK"
 psql -h localhost -U osa_user -d osa_db \
+    -f "$PROJET/db/patch_providers_endpoints_v2.sql" -q && info "  patch_providers_endpoints_v2 OK" -q && info "  patch_missing_core_providers OK"
+psql -h localhost -U osa_user -d osa_db \
     -f "$PROJET/db/patch_comtrade_unctad_providers.sql" -q && info "  patch_comtrade_unctad_providers OK"
 psql -h localhost -U osa_user -d osa_db \
     -f "$PROJET/db/patch_unpk_milcyb_providers.sql" -q && info "  patch_unpk_milcyb_providers OK"

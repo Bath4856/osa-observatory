@@ -198,7 +198,7 @@ class FAOCSVFetcher(BaseFetcher):
     ENDPOINT_CODE = "FAO_INDICATOR"
     INDICATOR_MAP = FAO_INDICATOR_MAP
 
-    def __init__(self, data_dir: str, dry_run: bool = False) -> None:
+    def __init__(self, data_dir: str = "data/fao", dry_run: bool = False) -> None:
         super().__init__(dry_run=dry_run)
         self.data_dir = Path(data_dir)
 

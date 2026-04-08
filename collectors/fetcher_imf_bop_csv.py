@@ -83,7 +83,7 @@ class IMFBOPCSVFetcher(BaseFetcher):
     ENDPOINT_CODE = "IMF_WEO_INDICATOR"
     INDICATOR_MAP = BOP_INDICATOR_MAP
 
-    def __init__(self, csv_filepath: str, dry_run: bool = False) -> None:
+    def __init__(self, csv_filepath: str = "data/imf/BOP.csv", dry_run: bool = False) -> None:
         super().__init__(dry_run=dry_run)
         self.csv_filepath = Path(csv_filepath)
 
