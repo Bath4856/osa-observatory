@@ -132,6 +132,12 @@ class UNPKCSVFetcher(BaseFetcher):
             self._cache = self._load_csv()
 
         ipi_column = config.get("ipi_column", "Total Contributions")
+        if year_from < 2010:
+            self.log.warning(
+                "Partitions raw_data disponibles a partir de 2010 -- annees %d-2009 ignorees",
+                year_from,
+            )
+            year_from = 2010
         records: list[DataRecord] = []
 
         for (iso3, year), row in self._cache.items():
