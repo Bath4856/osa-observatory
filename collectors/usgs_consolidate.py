@@ -78,8 +78,8 @@ USD_PER_TONNE: dict[str, float] = {
     "Platinum":          30_000_000.0,
     "Palladium":         40_000_000.0,
     # Pierres précieuses (proxy valeur de réserve en USD/tonne)
-    "Diamond (industrial)": 50_000_000.0,  # par tonne métrique brut
-    "Gemstones":            80_000_000.0,
+    "Diamond (industrial)":  2_000_000.0,  # par tonne métrique brut
+    "Gemstones":               500_000.0,
     # Métaux de base
     "Copper":                8_500.0,
     "Cobalt":               33_000.0,
@@ -320,12 +320,12 @@ def write_consolidated(
                 "year":           year,
                 # reserves_mt : valeur brute non normalisable (unités mixtes)
                 # → on expose reserves_usd comme proxy MIN_RES
-                "reserves_mt":    round(d["reserves_usd"], 0),
-                "production_mt":  round(d["production_usd"], 0),
+                "reserves_mt":    round(d["reserves_usd"] / 1_000_000, 6),
+                "production_mt":  round(d["production_usd"] / 1_000_000, 6),
                 "exports_usd":    "",   # non disponible dans MCS
                 "commodity_count": d["commodity_count"],
-                "reserves_usd":   round(d["reserves_usd"], 0),
-                "production_usd": round(d["production_usd"], 0),
+                "reserves_usd":   round(d["reserves_usd"] / 1_000_000, 6),
+                "production_usd": round(d["production_usd"] / 1_000_000, 6),
                 "commodities":    "|".join(d["commodities"]),
             })
     log.info("Fichier consolidé écrit : %s (%d pays)", output_path.name, len(data))

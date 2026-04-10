@@ -140,11 +140,11 @@ USGS_INDICATOR_MAP: dict = {
 
     "MIN_RES": {
         "dataset":    "MCS",
-        "column":     "reserves_mt",
-        "name_fr":    "Réserves minières (millions de tonnes)",
-        "unit_code":  "TONNES",
+        "column":     "reserves_usd",
+        "name_fr":    "Valeur des réserves minières (millions USD)",
+        "unit_code":  "USD",
         "direction":  "+",
-        "multiplier": 1_000_000.0,   # Mt → tonnes
+        "multiplier": 1.0,   # déjà en millions USD
         "notes":      """USGS MCS — réserves minières prouvées en millions de tonnes.
                         Agrégat de tous les minerais principaux par pays.
                         Mis à jour annuellement dans Mineral Commodity Summaries.""",
@@ -284,10 +284,10 @@ class USGSCSVFetcher(BaseFetcher):
 
         Script de consolidation disponible : usgs_consolidate.py
         """
-        csv_path = self.data_dir / "MCS_2024.csv"
+        csv_path = self.data_dir / "MCS_2024_consolidated.csv"
         if not csv_path.exists():
             # Essayer nom générique
-            candidates = list(self.data_dir.glob("MCS_*.csv"))
+            candidates = list(self.data_dir.glob("MCS_*_consolidated.csv"))
             if candidates:
                 csv_path = sorted(candidates)[-1]
                 self.log.info("MCS trouvé : %s", csv_path.name)
@@ -361,8 +361,8 @@ class USGSCSVFetcher(BaseFetcher):
 
                 # Détecter le format
                 is_wide = any(str(y) in fieldnames for y in range(year_from, year_to + 1))
-                is_long = "year" in [f.lower() for f in fieldnames] and \
-                          "value" in [f.lower() for f in fieldnames]
+                is_long = "year" in [f.lower() for f in fieldnames]
+
 
                 for row in reader:
                     # Filtrer sur la colonne indicateur si format multi-colonnes
@@ -371,13 +371,13 @@ class USGSCSVFetcher(BaseFetcher):
                         if ind and ind.lower() != column.lower():
                             continue
 
-                    # Résolution pays
                     country_raw = (
                         row.get("country") or row.get("Country") or
                         row.get("area")    or row.get("Area") or
                         list(row.values())[0]
                     ).strip()
-                    iso3 = USGS_COUNTRY_TO_ISO3.get(country_raw)
+                    iso3 = USGS_COUNTRY_TO_ISO3.get(country_raw, country_raw if len(country_raw) == 3 else None)
+#                    iso3 = USGS_COUNTRY_TO_ISO3.get(country_raw)
                     if not iso3 or iso3 not in AFRICAN_ISO3:
                         continue
 
