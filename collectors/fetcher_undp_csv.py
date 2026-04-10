@@ -99,7 +99,7 @@ UNDP_INDICATOR_MAP: dict = {
                         Direction négative : valeur haute = mauvais pour la souveraineté humaine.""",
     },
     "HUM_SOC": {
-        "hdr_code":   "gni_pc",
+        "hdr_code":   "gnipc",
         "name_fr":    "RNB par habitant (USD PPA 2017)",
         "unit_code":  "USD_CONST",
         "direction":  "+",
