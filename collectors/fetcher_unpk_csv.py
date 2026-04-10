@@ -1,33 +1,38 @@
 """
 ============================================================
-OSA / ISA OBSERVATORY 20260407
-fetcher_unpk_csv.py — Fetcher ONU Peacekeeping (IPI CSV)
+OSA / ISA OBSERVATORY
+fetcher_unpk_csv.py -- Fetcher ONU Peacekeeping (IPI CSV)
 ============================================================
 Indicateurs couverts :
-  - MIL_MIS : Missions internationales — total personnel
-              uniformisé par pays (troupes + police + experts)
-  - GEO_PEA : Participation opérations de paix — moyenne
-              annuelle du personnel déployé
+  - MIL_MIS : Missions internationales -- total personnel
+              uniformise par pays (troupes + police + experts)
+  - GEO_PEA : Participation operations de paix -- moyenne
+              annuelle du personnel deploye
 
 Source : IPI Peacekeeping Database (International Peace Institute)
          via Humanitarian Data Exchange
 URL    : https://data.humdata.org/dataset/ipi-peacekeeping-database
-CSV    : https://data.humdata.org/dataset/6fc8e7be-63da-4660-8557-
-         b1c5d3501805/resource/0b5f1dd5-4d6d-45ab-928a-322cb0e4ad28/
-         download/Country_Level_data.csv
+CSV    : Country_Level_data.csv
+
+Format CSV reel (IPI) :
+  Date | Contributor | Contributor ISO-3 | ... |
+  Troop Contributions | Police Contributions | EOM Contributions |
+  Total Contributions | Average Total Contribution | ...
 
 Couverture : 1990-2018 (limite IPI)
-             Pour 2019+ : télécharger les PDF ONU et compléter manuellement
+             Pour 2019+ : telecharger les PDF ONU et completer manuellement
 
-Téléchargement :
+Telechargement :
   1. Aller sur https://data.humdata.org/dataset/ipi-peacekeeping-database
-  2. Télécharger "Country_Level_data.csv"
-  3. Placer dans data/unpk/Country_Level_data.csv
+  2. Telecharger "Country_Level_data.csv"
+  3. Placer dans data/unpk/country_level_data.csv
 
 Usage :
-  python fetcher_unpk_csv.py --file data/unpk/Country_Level_data.csv
-  python fetcher_unpk_csv.py --file data/unpk/Country_Level_data.csv --dry-run
-  python fetcher_unpk_csv.py --file data/unpk/Country_Level_data.csv --detect
+  python fetcher_unpk_csv.py --file data/unpk/country_level_data.csv
+  python fetcher_unpk_csv.py --file data/unpk/country_level_data.csv --dry-run
+  python fetcher_unpk_csv.py --file data/unpk/country_level_data.csv --detect
+  python fetcher_unpk_csv.py --file data/unpk/country_level_data.csv --from 2000 --to 2018
+  python fetcher_unpk_csv.py --file data/unpk/country_level_data.csv --indicator MIL_MIS
 ============================================================
 """
 
@@ -53,50 +58,49 @@ logging.basicConfig(
 
 log = logging.getLogger("fetcher_unpk_csv")
 
-# ── Mapping noms de pays IPI → ISO-3 ──────────────────────────────────────
+# ── Mapping noms de pays IPI -> ISO-3 ─────────────────────────────────────
 # IPI utilise les noms anglais officiels ONU
 
 IPI_NAME_TO_ISO3: dict[str, str] = {
-    "Algeria":"DZA","Egypt":"EGY","Libya":"LBY","Morocco":"MAR",
-    "Mauritania":"MRT","Sudan":"SDN","Tunisia":"TUN",
-    "Benin":"BEN","Burkina Faso":"BFA","Côte d'Ivoire":"CIV",
-    "Cote d'Ivoire":"CIV","Cabo Verde":"CPV","Cape Verde":"CPV",
-    "Gambia":"GMB","Ghana":"GHA","Guinea":"GIN","Guinea-Bissau":"GNB",
-    "Liberia":"LBR","Mali":"MLI","Niger":"NER","Nigeria":"NGA",
-    "Sierra Leone":"SLE","Senegal":"SEN","Togo":"TGO",
-    "Burundi":"BDI","Comoros":"COM","Djibouti":"DJI","Eritrea":"ERI",
-    "Ethiopia":"ETH","Kenya":"KEN","Madagascar":"MDG","Malawi":"MWI",
-    "Mauritius":"MUS","Mozambique":"MOZ","Rwanda":"RWA",
-    "Seychelles":"SYC","Somalia":"SOM","South Sudan":"SSD",
-    "Tanzania":"TZA","Uganda":"UGA","Zambia":"ZMB","Zimbabwe":"ZWE",
-    "Angola":"AGO","Cameroon":"CMR","Central African Republic":"CAF",
-    "Chad":"TCD","Congo":"COG","Democratic Republic of the Congo":"COD",
-    "DR Congo":"COD","Equatorial Guinea":"GNQ","Gabon":"GAB",
-    "Sao Tome and Principe":"STP","São Tomé and Príncipe":"STP",
-    "Botswana":"BWA","Eswatini":"SWZ","Swaziland":"SWZ",
-    "Lesotho":"LSO","Namibia":"NAM","South Africa":"ZAF",
+    "Algeria": "DZA", "Egypt": "EGY", "Libya": "LBY", "Morocco": "MAR",
+    "Mauritania": "MRT", "Sudan": "SDN", "Tunisia": "TUN",
+    "Benin": "BEN", "Burkina Faso": "BFA", "Cote d'Ivoire": "CIV",
+    "Côte d'Ivoire": "CIV", "Cabo Verde": "CPV", "Cape Verde": "CPV",
+    "Gambia": "GMB", "Ghana": "GHA", "Guinea": "GIN", "Guinea-Bissau": "GNB",
+    "Liberia": "LBR", "Mali": "MLI", "Niger": "NER", "Nigeria": "NGA",
+    "Sierra Leone": "SLE", "Senegal": "SEN", "Togo": "TGO",
+    "Burundi": "BDI", "Comoros": "COM", "Djibouti": "DJI", "Eritrea": "ERI",
+    "Ethiopia": "ETH", "Kenya": "KEN", "Madagascar": "MDG", "Malawi": "MWI",
+    "Mauritius": "MUS", "Mozambique": "MOZ", "Rwanda": "RWA",
+    "Seychelles": "SYC", "Somalia": "SOM", "South Sudan": "SSD",
+    "Tanzania": "TZA", "Uganda": "UGA", "Zambia": "ZMB", "Zimbabwe": "ZWE",
+    "Angola": "AGO", "Cameroon": "CMR", "Central African Republic": "CAF",
+    "Chad": "TCD", "Congo": "COG", "Democratic Republic of the Congo": "COD",
+    "DR Congo": "COD", "Equatorial Guinea": "GNQ", "Gabon": "GAB",
+    "Sao Tome and Principe": "STP", "Sao Tome and Principe": "STP",
+    "Botswana": "BWA", "Eswatini": "SWZ", "Swaziland": "SWZ",
+    "Lesotho": "LSO", "Namibia": "NAM", "South Africa": "ZAF",
 }
 
 # ── Mapping indicateurs OSA ────────────────────────────────────────────────
 
 UNPK_INDICATOR_MAP: dict = {
     "MIL_MIS": {
-        "name_fr":    "Missions internationales — personnel total",
+        "name_fr":    "Missions internationales -- personnel total",
         "unit_code":  "PERSONS",
         "direction":  "+",
         "multiplier": 1.0,
-        "ipi_column": "total_troops",   # colonne IPI pour le total
-        "notes":      "IPI — total personnel uniformisé (troupes+police+experts) "
-                      "déployé en opérations ONU. Moyenne annuelle.",
+        "ipi_column": "Troop Contributions",
+        "notes":      "IPI -- total troupes deployees en operations ONU. Moyenne annuelle.",
     },
     "GEO_PEA": {
-        "name_fr":    "Participation opérations de paix ONU",
+        "name_fr":    "Participation operations de paix ONU",
         "unit_code":  "PERSONS",
         "direction":  "+",
         "multiplier": 1.0,
-        "ipi_column": "total_personnel",  # colonne IPI pour tout le personnel
-        "notes":      "IPI — total uniformed personnel (troops + police + experts) "
-                      "en opérations de maintien de la paix. Moyenne annuelle.",
+        "ipi_column": "Total Contributions",
+        "notes":      "IPI -- total uniformed personnel (troupes + police + experts) "
+                      "en operations de maintien de la paix. Moyenne annuelle.",
     },
 }
 
@@ -109,12 +113,12 @@ class UNPKCSVFetcher(BaseFetcher):
 
     def __init__(
         self,
-        csv_filepath: str = "data/unpk/Country_Level_data.csv",
+        csv_filepath: str = "data/unpk/country_level_data.csv",
         dry_run: bool = False,
     ) -> None:
         super().__init__(dry_run=dry_run)
         self.csv_filepath = Path(csv_filepath)
-        self._cache: dict | None = None   # cache du CSV parsé
+        self._cache: dict | None = None
 
     def fetch_indicator(
         self,
@@ -123,11 +127,11 @@ class UNPKCSVFetcher(BaseFetcher):
         year_from: int,
         year_to:   int,
     ) -> list[DataRecord]:
-        """Parse le CSV IPI — aucun appel réseau."""
+        """Parse le CSV IPI -- aucun appel reseau."""
         if self._cache is None:
             self._cache = self._load_csv()
 
-        ipi_column = config.get("ipi_column", "total_personnel")
+        ipi_column = config.get("ipi_column", "Total Contributions")
         records: list[DataRecord] = []
 
         for (iso3, year), row in self._cache.items():
@@ -135,13 +139,11 @@ class UNPKCSVFetcher(BaseFetcher):
                 continue
             if iso3 not in AFRICAN_ISO3:
                 continue
-
-            # Essayer la colonne configurée, puis les alternatives
             value = self._get_value(row, ipi_column)
             records.append({"iso3": iso3, "year": year, "value": value})
 
         self.log.info(
-            "UNPK %s → %d enregistrements (%d pays)",
+            "UNPK %s -> %d enregistrements (%d pays avec valeur)",
             osa_code, len(records),
             len({r["iso3"] for r in records if r.get("value") is not None}),
         )
@@ -149,9 +151,11 @@ class UNPKCSVFetcher(BaseFetcher):
 
     def _load_csv(self) -> dict:
         """
-        Charge le CSV IPI en mémoire.
-        Format IPI Country_Level_data.csv :
-          iso | country | year | troops | police | experts | total | ...
+        Charge le CSV IPI en memoire.
+
+        Format IPI reel :
+          Date | Contributor | Contributor ISO-3 | ... |
+          Troop Contributions | Total Contributions | ...
 
         Retourne un dict {(iso3, year): row}
         """
@@ -186,19 +190,19 @@ class UNPKCSVFetcher(BaseFetcher):
             self.log.error("Erreur parsing IPI %s : %s",
                            self.csv_filepath.name, exc)
 
-        self.log.info("IPI chargé — %d entrées (pays × année)", len(cache))
+        self.log.info("IPI charge -- %d entrees (pays x annee)", len(cache))
         return cache
 
     def _resolve_iso3(self, row: dict) -> str | None:
-        """Résout ISO-3 depuis une ligne IPI."""
-        # Essai 1 — colonne ISO directe
-        for col in ("iso", "ISO", "iso3", "ISO3", "country_iso"):
+        """Resout ISO-3 depuis une ligne IPI."""
+        # Essai 1 -- colonne ISO directe (inclut le format reel IPI)
+        for col in ("Contributor ISO-3", "iso", "ISO", "iso3", "ISO3", "country_iso"):
             val = row.get(col, "").strip().upper()
             if len(val) == 3 and val in AFRICAN_ISO3:
                 return val
 
-        # Essai 2 — nom du pays
-        for col in ("country", "Country", "country_name", "name"):
+        # Essai 2 -- nom du pays
+        for col in ("Contributor", "country", "Country", "country_name", "name"):
             name = row.get(col, "").strip()
             iso3 = IPI_NAME_TO_ISO3.get(name)
             if iso3:
@@ -212,29 +216,46 @@ class UNPKCSVFetcher(BaseFetcher):
 
     @staticmethod
     def _resolve_year(row: dict) -> int | None:
-        """Résout l'année depuis une ligne IPI."""
-        for col in ("year", "Year", "YEAR", "date", "period"):
+        """Resout l'annee depuis une ligne IPI."""
+        for col in ("Date", "year", "Year", "YEAR", "date", "period"):
             val = row.get(col, "").strip()
-            if val and val.isdigit():
-                return int(val)
+            if not val:
+                continue
+            # Format MM/DD/YYYY (format reel IPI ex: 11/30/1990)
+            if len(val) >= 10 and val[2] == "/" and val[5] == "/":
+                return int(val[6:10])
             # Format YYYY-MM ou YYYY/MM
-            if val and len(val) >= 4 and val[:4].isdigit():
+            if len(val) >= 4 and val[:4].isdigit():
                 return int(val[:4])
+            # Format YYYY pur
+            if val.isdigit():
+                return int(val)
         return None
 
     @staticmethod
     def _get_value(row: dict, preferred_col: str) -> float | None:
         """
-        Extrait la valeur numérique depuis une ligne.
-        Essaie la colonne préférée, puis les colonnes standard IPI.
+        Extrait la valeur numerique depuis une ligne.
+        Essaie la colonne preferee, puis les colonnes standard IPI.
         """
         candidates = [
             preferred_col,
+            "Total Contributions",
+            "Average Total Contribution",
+            "Troop Contributions",
             "total_personnel", "total_troops", "total",
             "troops", "Troops", "personnel", "Personnel",
             "uniformed_personnel",
         ]
-        for col in candidates:
+        # Deduplique en preservant l'ordre
+        seen = set()
+        ordered = []
+        for c in candidates:
+            if c not in seen:
+                seen.add(c)
+                ordered.append(c)
+
+        for col in ordered:
             raw = row.get(col, "").strip()
             if raw and raw not in ("", "NA", "N/A", ".", ".."):
                 try:
@@ -245,7 +266,7 @@ class UNPKCSVFetcher(BaseFetcher):
 
     @staticmethod
     def detect_columns(filepath: str | Path, max_rows: int = 3) -> None:
-        """Utilitaire debug — affiche la structure du CSV."""
+        """Utilitaire debug - affiche la structure du CSV."""
         filepath = Path(filepath)
         with open(filepath, encoding="utf-8-sig", errors="replace") as f:
             sample = f.read(2048)
@@ -254,38 +275,40 @@ class UNPKCSVFetcher(BaseFetcher):
             reader = csv.DictReader(f, delimiter=delimiter)
             print(f"\nColonnes de {filepath.name} :")
             print("  " + ", ".join(reader.fieldnames or []))
-            print(f"\nPremières {max_rows} lignes :")
+            print(f"\nPremieres {max_rows} lignes :")
             for i, row in enumerate(reader):
                 if i >= max_rows:
                     break
                 print(f"  {dict(list(row.items())[:8])}")
 
 
-# ── CLI ────────────────────────────────────────────────────────────────────
+# ── CLI ───────────────────────────────────────────────────────────────────
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="OSA Fetcher — ONU Peacekeeping (IPI CSV)",
+        description="OSA Fetcher - ONU Peacekeeping (IPI CSV)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Indicateurs :
-  MIL_MIS — missions internationales (troupes déployées)
-  GEO_PEA — participation opérations de paix (total personnel)
+  MIL_MIS - missions internationales (troupes deployees)
+  GEO_PEA - participation operations de paix (total personnel)
 
-Téléchargement IPI :
+Telechargement IPI :
   https://data.humdata.org/dataset/ipi-peacekeeping-database
-  → Country_Level_data.csv → placer dans data/unpk/
+  -> Country_Level_data.csv -> placer dans data/unpk/
 
 Exemples :
-  python fetcher_unpk_csv.py --file data/unpk/Country_Level_data.csv --detect
-  python fetcher_unpk_csv.py --file data/unpk/Country_Level_data.csv --dry-run
-  python fetcher_unpk_csv.py --file data/unpk/Country_Level_data.csv --from 2000 --to 2018
-  python fetcher_unpk_csv.py --file data/unpk/Country_Level_data.csv --indicator MIL_MIS
+  python fetcher_unpk_csv.py --file data/unpk/country_level_data.csv --detect
+  python fetcher_unpk_csv.py --file data/unpk/country_level_data.csv --dry-run
+  python fetcher_unpk_csv.py --file data/unpk/country_level_data.csv --from 2000 --to 2018
+  python fetcher_unpk_csv.py --file data/unpk/country_level_data.csv --indicator MIL_MIS
         """,
     )
-    parser.add_argument("--file",      type=str,
-                        default="data/unpk/Country_Level_data.csv",
-                        help="Chemin vers Country_Level_data.csv")
+    parser.add_argument(
+        "--file", type=str,
+        default="data/unpk/country_level_data.csv",
+        help="Chemin vers Country_Level_data.csv"
+    )
     parser.add_argument("--from",      type=int, dest="year_from", default=2000)
     parser.add_argument("--to",        type=int, dest="year_to",   default=2018)
     parser.add_argument("--indicator", type=str, default=None,
