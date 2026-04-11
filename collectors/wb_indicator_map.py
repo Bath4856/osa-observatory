@@ -387,6 +387,32 @@ WB_INDICATOR_MAP: dict = {
         "multiplier": 1.0,
         "notes":      "Migration FAO 2024.",
     },
+
+    # ── PILIER MINIER (PMIN) -- indicateurs supplementaires ──
+    "MIN_TAX": {
+        "wb_code":    "GC.TAX.TOTL.GD.ZS",
+        "name_fr":    "Recettes fiscales % PIB (proxy MIN_TAX)",
+        "unit_code":  "PERCENT",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "WB -- meme code que ECO_TAX. Proxy recettes minieres dans recettes totales.",
+    },
+    "MIN_DEP": {
+        "wb_code":    "TX.VAL.MMTL.ZS.UN",
+        "name_fr":    "Minerais et metaux % exports totaux",
+        "unit_code":  "PERCENT",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "WB UN Comtrade -- part minerais et metaux dans exportations totales.",
+    },
+    "MIN_EMP": {
+        "wb_code":    "SL.IND.EMPL.ZS",
+        "name_fr":    "Emploi industrie % emploi total",
+        "unit_code":  "PERCENT",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "WB OIT -- proxy emploi minier. Inclut toute l'industrie.",
+    },
 }
 
 # ── 54 pays africains (codes ISO-3) ───────────────────────
