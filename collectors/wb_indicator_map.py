@@ -405,6 +405,41 @@ WB_INDICATOR_MAP: dict = {
         "multiplier": 1.0,
         "notes":      "WB UN Comtrade -- part minerais et metaux dans exportations totales.",
     },
+
+    # ── PILIER MILITAIRE (PMIL) -- indicateurs supplementaires ──
+    "MIL_STR": {
+        "wb_code":    "MS.MIL.XPND.GD.ZS",
+        "name_fr":    "Depenses militaires % PIB",
+        "unit_code":  "PERCENT",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "WB SIPRI -- proxy capacite projection de force. Complement MIL_EXP SIPRI.",
+    },
+    "MIL_LOG": {
+        "wb_code":    "MS.MIL.XPND.ZS",
+        "name_fr":    "Depenses militaires % depenses gouvernementales",
+        "unit_code":  "PERCENT",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "WB SIPRI -- part budget militaire dans budget total. Proxy capacite logistique.",
+    },
+
+    "MIL_STB": {
+        "wb_code":    "VC.IHR.PSRC.FE.P5",
+        "name_fr":    "Homicides feminins /100k hab. (proxy securite)",
+        "unit_code":  "SCORE_0_100",
+        "direction":  "-",
+        "multiplier": 1.0,
+        "notes":      "WB -- proxy stabilite securitaire. Direction negative (moins = mieux). Refonte Sprint 5.",
+    },
+    "MIL_RES": {
+        "wb_code":    "MS.MIL.TOTL.TF.ZS",
+        "name_fr":    "Forces armees % main d'oeuvre totale",
+        "unit_code":  "PERCENT",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "WB IISS -- forces armees actives en % de la main d'oeuvre totale.",
+    },
     "MIN_EMP": {
         "wb_code":    "SL.IND.EMPL.ZS",
         "name_fr":    "Emploi industrie % emploi total",
