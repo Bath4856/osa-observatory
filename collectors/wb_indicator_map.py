@@ -297,6 +297,32 @@ WB_INDICATOR_MAP: dict = {
         "multiplier": 1.0,
         "notes":      "Proxy GCI ITU inaccessible. Sprint 5.",
     },
+
+    # ── PILIER NUMERIQUE (PNUM) -- indicateurs supplementaires ──
+    "NUM_DIG": {
+        "wb_code":    "BX.GSR.CCIS.ZS",
+        "name_fr":    "Exports services ICT % exports totaux",
+        "unit_code":  "PERCENT",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "WB -- part economie numerique dans exports. Proxy NUM_DIG.",
+    },
+    "NUM_AI": {
+        "wb_code":    "IP.PAT.RESD",
+        "name_fr":    "Brevets deposes residents (total)",
+        "unit_code":  "NB",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "WB OMPI -- proxy capacite innovation et IA nationale.",
+    },
+    "NUM_RES": {
+        "wb_code":    "GB.XPD.RSDV.GD.ZS",
+        "name_fr":    "Depenses R&D % PIB",
+        "unit_code":  "PERCENT",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "WB -- proxy resilience et capacite cyber. Refonte Sprint 5.",
+    },
     "NUM_STU": {
         "wb_code":    "SP.POP.SCIE.RD.P6",
         "name_fr":    "Formation numerique -- chercheurs R&D /1M hab.",
@@ -322,6 +348,57 @@ WB_INDICATOR_MAP: dict = {
         "direction":  "-",
         "multiplier": -1.0,
         "notes":      "WGI Rule of Law -- inverse pour representer le risque. ECHEC API -- CSV manuel requis.",
+    },
+
+    # ── PILIER GEOPOLITIQUE (PGEO) -- proxies WB ──────────
+    "GEO_TRD": {
+        "wb_code":    "TM.TAX.MRCH.SM.AR.ZS",
+        "name_fr":    "Droits de douane moyens (%)",
+        "unit_code":  "PERCENT",
+        "direction":  "-",
+        "multiplier": 1.0,
+        "notes":      "WB -- proxy ouverture commerciale. Moins de droits = plus d'accords.",
+    },
+    "GEO_DIP": {
+        "wb_code":    "BX.TRF.PWKR.CD.DT",
+        "name_fr":    "Remittances recues (USD)",
+        "unit_code":  "USD",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "WB -- proxy influence diaspora et reseaux diplomatiques.",
+    },
+    "GEO_ALL": {
+        "wb_code":    "NE.TRD.GNFS.ZS",
+        "name_fr":    "Commerce biens et services % PIB",
+        "unit_code":  "PERCENT",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "WB -- proxy ouverture et partenariats strategiques.",
+    },
+    "GEO_POW": {
+        "wb_code":    "NY.GDP.MKTP.CD",
+        "name_fr":    "PIB total USD courants",
+        "unit_code":  "USD",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "WB -- proxy puissance economique et influence regionale.",
+    },
+
+    "GEO_RES": {
+        "wb_code":    "ER.PTD.TOTL.ZS",
+        "name_fr":    "Aires protegees % territoire total",
+        "unit_code":  "PERCENT",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "WB -- proxy resilience geopolitique via stabilite territoriale et environnementale.",
+    },
+    "GEO_SAN": {
+        "wb_code":    "DT.ODA.ALLD.CD",
+        "name_fr":    "Aide publique au developpement recue (USD)",
+        "unit_code":  "USD",
+        "direction":  "-",
+        "multiplier": 1.0,
+        "notes":      "WB -- proxy dependance externe. Direction negative : plus d'aide = moins de souverainete.",
     },
     "GEO_MIG": {
         "wb_code":    "SM.POP.NETM",
@@ -439,6 +516,23 @@ WB_INDICATOR_MAP: dict = {
         "direction":  "+",
         "multiplier": 1.0,
         "notes":      "WB IISS -- forces armees actives en % de la main d'oeuvre totale.",
+    },
+
+    "MIN_INV": {
+        "wb_code":    "NY.GDP.TOTL.RT.ZS",
+        "name_fr":    "Rente totale ressources naturelles % PIB",
+        "unit_code":  "PERCENT",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "WB -- proxy investissement secteur minier. Inclut petrole, gaz, mineraux.",
+    },
+    "MIN_ENV": {
+        "wb_code":    "NY.GDP.NGAS.RT.ZS",
+        "name_fr":    "Rente gaz naturel % PIB",
+        "unit_code":  "PERCENT",
+        "direction":  "-",
+        "multiplier": 1.0,
+        "notes":      "WB -- proxy impact environnemental extraction. Direction negative.",
     },
     "MIN_EMP": {
         "wb_code":    "SL.IND.EMPL.ZS",
