@@ -1,22 +1,32 @@
 """
 ============================================================
 OSA / ISA OBSERVATORY
-imf_csv_parser.py — Parseur CSV commun aux datasets IMF
+imf_csv_parser.py -- Parseur CSV commun aux datasets IMF
 ============================================================
-Gère les 3 formats CSV IMF :
-  - WEO  (World Economic Outlook)
-  - DOTS (Direction of Trade Statistics)
-  - BOP  (Balance of Payments)
+Gere les 3 formats CSV IMF (nouveau format 2024+) :
+  - WEO  (World Economic Outlook)        -- 26 Mo
+  - DOTS (Direction of Trade Statistics) -- 2.1 Go
+  - BOP  (Balance of Payments)           -- 1.3 Go
 
-Tous les CSV IMF ont une structure similaire mais avec
-des variantes mineures — ce parseur les normalise en un
-format unique : List[{"iso3", "year", "value"}]
+Nouveau format unifie IMF (depuis ~2024) :
+  SERIES_CODE = {ISO3}.{INDICATOR_CODE}.{FREQ}
+    ex: DZA.PCPIPCH.A    (WEO : Algerie, inflation, annuel)
+    ex: DZA.BCA_NGDPD.A  (WEO : Algerie, balance courante, annuel)
+    ex: DZA.BCA.A        (BOP : Algerie, balance courante, annuel)
+  COUNTRY    = nom complet du pays
+  FREQUENCY  = "Annual" | "Quarterly" | "Monthly"
+  Colonnes annees : "2010", "2011"... (sans suffixe = annuel)
+                    "2010-Q1"...      (trimestriel)
+                    "2010-M01"...     (mensuel)
+
+Tous les CSV IMF sont normalises en :
+  List[{"iso3": str, "year": int, "value": float | None}]
 
 Usage :
   from imf_csv_parser import IMFCSVParser
-  records = IMFCSVParser.parse_weo("data/imf/WEO_2026.csv", "PCPIPCH")
-  records = IMFCSVParser.parse_dots("data/imf/DOTS_2024.csv", "TXG_FOB_USD")
-  records = IMFCSVParser.parse_bop("data/imf/BOP_2024.csv", "BCA_USD")
+  records = IMFCSVParser.parse_weo("data/imf/WEO.csv", "PCPIPCH")
+  records = IMFCSVParser.parse_dots("data/imf/DOTS.csv", "TXG_FOB_USD")
+  records = IMFCSVParser.parse_bop("data/imf/BOP.csv", "BCA")
 ============================================================
 """
 
@@ -30,8 +40,18 @@ from typing import Optional
 
 log = logging.getLogger("imf_csv_parser")
 
-# ── Mapping ISO-2 → ISO-3 (pour convertir les codes IMF) ──
+# ── Mapping ISO-3 africains (utilise pour filtrer) ────────
+AFRICAN_ISO3: set[str] = {
+    "DZA","EGY","LBY","MAR","MRT","SDN","TUN",  # Afrique du Nord
+    "BEN","BFA","CIV","CPV","GMB","GHA","GIN","GNB",
+    "LBR","MLI","NER","NGA","SLE","SEN","TGO",  # Afrique de l'Ouest
+    "BDI","COM","DJI","ERI","ETH","KEN","MDG","MWI",
+    "MUS","MOZ","RWA","SYC","SOM","SSD","TZA","UGA","ZMB","ZWE",  # Afrique de l'Est
+    "AGO","CMR","CAF","TCD","COG","COD","GNQ","GAB","STP",  # Afrique centrale
+    "BWA","SWZ","LSO","NAM","ZAF",  # Afrique australe
+}
 
+# ── Mapping ISO-2 -> ISO-3 (fallback ancien format) ───────
 ISO2_TO_ISO3: dict[str, str] = {
     "DZ":"DZA","EG":"EGY","LY":"LBY","MA":"MAR","MR":"MRT",
     "SD":"SDN","TN":"TUN","BJ":"BEN","BF":"BFA","CI":"CIV",
@@ -46,8 +66,7 @@ ISO2_TO_ISO3: dict[str, str] = {
     "SZ":"SWZ","LS":"LSO","NA":"NAM","ZA":"ZAF",
 }
 
-# Codes numériques IMF (ISO M49) → ISO-3
-# Utilisés dans certains exports WEO et DOTS
+# Codes numeriques IMF M49 -> ISO-3 (fallback ancien format WEO)
 IMF_NUMERIC_TO_ISO3: dict[str, str] = {
     "612":"DZA","469":"EGY","672":"LBY","686":"MAR","682":"MRT",
     "732":"SDN","744":"TUN","638":"BEN","748":"BFA","662":"CIV",
@@ -62,76 +81,115 @@ IMF_NUMERIC_TO_ISO3: dict[str, str] = {
     "734":"SWZ","666":"LSO","728":"NAM","199":"ZAF",
 }
 
-AFRICAN_ISO3: set[str] = set(ISO2_TO_ISO3.values())
+
+def _parse_value(raw: str) -> Optional[float]:
+    """Convertit une cellule CSV IMF en float."""
+    if not raw:
+        return None
+    cleaned = raw.replace(",", "").replace(" ", "").strip()
+    if cleaned.lower() in ("n/a", "na", "--", "...", "..", "", "nan"):
+        return None
+    try:
+        return float(cleaned)
+    except ValueError:
+        return None
+
+
+def _resolve_iso3(series_code: str) -> Optional[str]:
+    """
+    Extrait le code ISO-3 depuis SERIES_CODE.
+    Nouveau format : ISO3 est toujours le premier segment avant le premier point.
+    ex: DZA.PCPIPCH.A -> DZA
+    ex: DZA.BCA_T.R_F11A.USD.A -> DZA
+    """
+    if not series_code:
+        return None
+    iso3 = series_code.split(".")[0].strip().upper()
+    if len(iso3) == 3 and iso3 in AFRICAN_ISO3:
+        return iso3
+    return None
+
+
+def _resolve_indicator(series_code: str) -> str:
+    """
+    Extrait le code indicateur depuis SERIES_CODE.
+    Pour WEO : format court -> DZA.PCPIPCH.A -> PCPIPCH
+    Pour BOP/DOTS : format long -> DZA.BCA_T.R_F11A.USD.A -> BCA_T.R_F11A.USD
+    On retourne tout ce qui est entre le premier et dernier segment.
+    """
+    parts = series_code.split(".")
+    if len(parts) < 3:
+        return parts[1] if len(parts) >= 2 else ""
+    # Le dernier segment est la frequence (A, Q, M...)
+    # Le premier est ISO3
+    # Tout le milieu est le code indicateur
+    return ".".join(parts[1:-1]).upper()
 
 
 class IMFCSVParser:
-    """Parseur statique pour les 3 formats CSV IMF."""
-
-    # ── WEO ──────────────────────────────────────────────────
+    """Parseur statique pour les 3 formats CSV IMF (nouveau format 2024+)."""
 
     @staticmethod
-    def parse_weo(
-        filepath: str | Path,
+    def _parse_generic(
+        filepath:  str | Path,
         imf_code:  str,
-        year_from: int = 2010,
-        year_to:   int = 2024,
+        year_from: int,
+        year_to:   int,
+        dataset:   str,
     ) -> list[dict]:
         """
-        Parse un fichier CSV WEO (World Economic Outlook).
+        Parseur generique pour WEO, DOTS et BOP.
+        Tous les fichiers IMF utilisent desormais le meme format SERIES_CODE.
 
-        Format WEO typique :
-        WEO Country Code | ISO | Country | Subject Code | ... | 2010 | 2011 | ... | 2024
-
-        Téléchargement : https://www.imf.org/en/Publications/WEO/weo-database/
-        Choisir : "By Countries" → "All Countries" → format CSV
+        Strategie de matching :
+        - Exact  : le code extrait == imf_code
+        - Prefixe : le code extrait commence par imf_code + "."
+          (utile pour BOP/DOTS ou le code peut etre BCA_T.TOTAL)
         """
         records: list[dict] = []
         filepath = Path(filepath)
 
         if not filepath.exists():
-            log.error("Fichier WEO introuvable : %s", filepath)
+            log.error("Fichier %s introuvable : %s", dataset, filepath)
             return []
+
+        imf_code_upper = imf_code.upper()
+        # Colonnes annees annuelles (sans suffixe -Qx ou -Mx ou -xx-xx)
+        year_cols = {year: str(year) for year in range(year_from, year_to + 1)}
 
         try:
             with open(filepath, encoding="utf-8-sig", errors="replace") as f:
-                # Détection du séparateur (tab ou virgule selon version)
-                sample = f.read(2048)
+                sample = f.read(4096)
                 f.seek(0)
                 delimiter = "\t" if "\t" in sample else ","
                 reader = csv.DictReader(f, delimiter=delimiter)
 
                 for row in reader:
-                    # Identifier la colonne du code indicateur
-                    subject = (
-                        row.get("WEO Subject Code", "") or
-                        row.get("Subject Code", "") or
-                        row.get("CONCEPT", "")
-                    ).strip().upper()
-
-                    if subject != imf_code.upper():
+                    # Filtrer sur frequence annuelle
+                    freq = row.get("FREQUENCY", "").strip()
+                    if freq and freq.lower() not in ("annual", "a", "yearly"):
                         continue
 
-                    # Identifier le pays
-                    iso2 = (
-                        row.get("ISO", "") or
-                        row.get("ISO2", "") or
-                        row.get("Country Code", "")
-                    ).strip().upper()
-
-                    iso3 = ISO2_TO_ISO3.get(iso2)
-                    if not iso3:
-                        # Essayer code numérique IMF
-                        weo_num = row.get("WEO Country Code", "").strip()
-                        iso3 = IMF_NUMERIC_TO_ISO3.get(weo_num)
+                    series_code = row.get("SERIES_CODE", "").strip()
+                    if not series_code:
+                        # Fallback ancien format
+                        iso3 = IMFCSVParser._fallback_iso3(row)
+                        ind  = IMFCSVParser._fallback_indicator(row)
+                    else:
+                        iso3 = _resolve_iso3(series_code)
+                        ind  = _resolve_indicator(series_code)
 
                     if not iso3 or iso3 not in AFRICAN_ISO3:
                         continue
 
-                    # Extraire les valeurs par année
-                    for year in range(year_from, year_to + 1):
-                        raw = row.get(str(year), "").strip()
-                        value = IMFCSVParser._parse_value(raw)
+                    # Matching indicateur : exact ou prefixe
+                    if ind != imf_code_upper and not ind.startswith(imf_code_upper + "."):
+                        continue
+
+                    # Extraire valeurs annuelles
+                    for year, col in year_cols.items():
+                        raw = row.get(col, "").strip()
+                        value = _parse_value(raw)
                         records.append({
                             "iso3":  iso3,
                             "year":  year,
@@ -139,14 +197,58 @@ class IMFCSVParser:
                         })
 
         except Exception as exc:
-            log.error("Erreur parsing WEO %s : %s", filepath.name, exc)
+            log.error("Erreur parsing %s %s : %s", dataset, filepath.name, exc)
 
-        log.info("WEO %s → %d enregistrements (%d pays)",
-                 imf_code, len(records),
-                 len({r["iso3"] for r in records if r["value"] is not None}))
+        n_pays = len({r["iso3"] for r in records if r.get("value") is not None})
+        log.info("%s %s -> %d enregistrements (%d pays)", dataset, imf_code, len(records), n_pays)
         return records
 
-    # ── DOTS ─────────────────────────────────────────────────
+    @staticmethod
+    def _fallback_iso3(row: dict) -> Optional[str]:
+        """Fallback resolution ISO-3 pour l'ancien format WEO (sans SERIES_CODE)."""
+        iso2 = (
+            row.get("ISO", "") or
+            row.get("ISO2", "") or
+            row.get("Country Code", "")
+        ).strip().upper()
+        iso3 = ISO2_TO_ISO3.get(iso2)
+        if not iso3:
+            weo_num = row.get("WEO Country Code", "").strip()
+            iso3 = IMF_NUMERIC_TO_ISO3.get(weo_num)
+        return iso3
+
+    @staticmethod
+    def _fallback_indicator(row: dict) -> str:
+        """Fallback code indicateur pour l'ancien format WEO."""
+        return (
+            row.get("WEO Subject Code", "") or
+            row.get("Subject Code", "") or
+            row.get("Indicator Code", "") or
+            row.get("INDICATOR", "") or
+            row.get("CONCEPT", "")
+        ).strip().upper()
+
+    # ── API publique ──────────────────────────────────────
+
+    @staticmethod
+    def parse_weo(
+        filepath:  str | Path,
+        imf_code:  str,
+        year_from: int = 2010,
+        year_to:   int = 2024,
+    ) -> list[dict]:
+        """
+        Parse un fichier CSV WEO (World Economic Outlook).
+
+        Format nouveau (2024+) :
+          SERIES_CODE = {ISO3}.{WEO_CODE}.A
+          ex: DZA.PCPIPCH.A, NGA.NGDP_RPCH.A
+
+        Telecharger depuis :
+          https://www.imf.org/en/Publications/WEO/weo-database/2026/April
+          -> Download by Indicators -> CSV
+        """
+        return IMFCSVParser._parse_generic(filepath, imf_code, year_from, year_to, "WEO")
 
     @staticmethod
     def parse_dots(
@@ -158,67 +260,16 @@ class IMFCSVParser:
         """
         Parse un fichier CSV DOTS (Direction of Trade Statistics).
 
-        Format DOTS typique :
-        Country Code | Indicator Code | Country Name | ... | 2010 | ... | 2024
+        Format nouveau (2024+) :
+          SERIES_CODE = {ISO3}.{DOTS_CODE}.{PARTNER}.A
+          ex: DZA.TXG_FOB_USD.W00.A  (exportations Algerie vers monde)
+          Note : le code DOTS inclut souvent un code partenaire.
+          Utiliser le code de base sans partenaire (matching prefixe).
 
-        Téléchargement : https://data.imf.org/?sk=9d6028d4-f14a-464c-a2f2-59b2cd424b85
-        Sélectionner : Annual Data → All Countries → CSV
+        Telecharger depuis :
+          https://data.imf.org/?sk=9d6028d4-f14a-464c-a2f2-59b2cd424b85
         """
-        records: list[dict] = []
-        filepath = Path(filepath)
-
-        if not filepath.exists():
-            log.error("Fichier DOTS introuvable : %s", filepath)
-            return []
-
-        try:
-            with open(filepath, encoding="utf-8-sig", errors="replace") as f:
-                sample = f.read(2048)
-                f.seek(0)
-                delimiter = "\t" if "\t" in sample else ","
-                reader = csv.DictReader(f, delimiter=delimiter)
-
-                for row in reader:
-                    indicator = (
-                        row.get("Indicator Code", "") or
-                        row.get("INDICATOR", "") or
-                        row.get("Series Code", "")
-                    ).strip().upper()
-
-                    if indicator != imf_code.upper():
-                        continue
-
-                    country = (
-                        row.get("Country Code", "") or
-                        row.get("ISO", "") or
-                        row.get("REF_AREA", "")
-                    ).strip().upper()
-
-                    # DOTS utilise souvent ISO-2
-                    iso3 = ISO2_TO_ISO3.get(country) or \
-                           (country if len(country) == 3 and country in AFRICAN_ISO3 else None)
-
-                    if not iso3 or iso3 not in AFRICAN_ISO3:
-                        continue
-
-                    for year in range(year_from, year_to + 1):
-                        raw = row.get(str(year), "").strip()
-                        value = IMFCSVParser._parse_value(raw)
-                        records.append({
-                            "iso3":  iso3,
-                            "year":  year,
-                            "value": value,
-                        })
-
-        except Exception as exc:
-            log.error("Erreur parsing DOTS %s : %s", filepath.name, exc)
-
-        log.info("DOTS %s → %d enregistrements (%d pays)",
-                 imf_code, len(records),
-                 len({r["iso3"] for r in records if r["value"] is not None}))
-        return records
-
-    # ── BOP ──────────────────────────────────────────────────
+        return IMFCSVParser._parse_generic(filepath, imf_code, year_from, year_to, "DOTS")
 
     @staticmethod
     def parse_bop(
@@ -230,108 +281,86 @@ class IMFCSVParser:
         """
         Parse un fichier CSV BOP (Balance of Payments).
 
-        Format BOP typique :
-        Country | Indicator | Unit | Scale | 2010 | ... | 2024
+        Format nouveau (2024+) :
+          SERIES_CODE = {ISO3}.{BOP_CODE}.{UNIT}.A
+          ex: DZA.BCA_T.USD.A  (balance courante Algerie en USD)
 
-        Téléchargement : https://data.imf.org/?sk=7a51304b-6426-40c0-83dd-ca473ca1fd52
-        Sélectionner : Annual → All Countries → CSV
+        Telecharger depuis :
+          https://data.imf.org/?sk=7a51304b-6426-40c0-83dd-ca473ca1fd52
         """
-        records: list[dict] = []
-        filepath = Path(filepath)
-
-        if not filepath.exists():
-            log.error("Fichier BOP introuvable : %s", filepath)
-            return []
-
-        try:
-            with open(filepath, encoding="utf-8-sig", errors="replace") as f:
-                sample = f.read(2048)
-                f.seek(0)
-                delimiter = "\t" if "\t" in sample else ","
-                reader = csv.DictReader(f, delimiter=delimiter)
-
-                for row in reader:
-                    indicator = (
-                        row.get("Indicator Code", "") or
-                        row.get("BOP_CODE", "") or
-                        row.get("INDICATOR", "")
-                    ).strip().upper()
-
-                    if indicator != imf_code.upper():
-                        continue
-
-                    country = (
-                        row.get("Country Code", "") or
-                        row.get("ISO", "") or
-                        row.get("REF_AREA", "")
-                    ).strip().upper()
-
-                    iso3 = ISO2_TO_ISO3.get(country) or \
-                           (country if len(country) == 3 and country in AFRICAN_ISO3 else None)
-
-                    if not iso3 or iso3 not in AFRICAN_ISO3:
-                        continue
-
-                    # BOP a parfois un facteur d'échelle (millions)
-                    scale_raw = row.get("Scale", row.get("SCALE", "1")).strip()
-                    try:
-                        scale = float(scale_raw) if scale_raw else 1.0
-                    except ValueError:
-                        scale = 1.0
-
-                    for year in range(year_from, year_to + 1):
-                        raw = row.get(str(year), "").strip()
-                        value = IMFCSVParser._parse_value(raw)
-                        if value is not None:
-                            value = value * scale
-                        records.append({
-                            "iso3":  iso3,
-                            "year":  year,
-                            "value": value,
-                        })
-
-        except Exception as exc:
-            log.error("Erreur parsing BOP %s : %s", filepath.name, exc)
-
-        log.info("BOP %s → %d enregistrements (%d pays)",
-                 imf_code, len(records),
-                 len({r["iso3"] for r in records if r["value"] is not None}))
-        return records
-
-    # ── Utilitaire ────────────────────────────────────────────
-
-    @staticmethod
-    def _parse_value(raw: str) -> Optional[float]:
-        """
-        Convertit une cellule CSV IMF en float.
-        Gère : virgules de milliers, "n/a", "--", vide, "NA", espaces.
-        """
-        if not raw:
-            return None
-        cleaned = raw.replace(",", "").replace(" ", "").strip()
-        if cleaned.lower() in ("n/a", "na", "--", "...", ""):
-            return None
-        try:
-            return float(cleaned)
-        except ValueError:
-            return None
+        return IMFCSVParser._parse_generic(filepath, imf_code, year_from, year_to, "BOP")
 
     @staticmethod
     def detect_columns(filepath: str | Path, max_rows: int = 3) -> None:
         """
-        Utilitaire de debug — affiche les colonnes d'un fichier CSV IMF.
-        Usage : IMFCSVParser.detect_columns("data/imf/WEO_2026.csv")
+        Utilitaire debug -- affiche la structure d'un fichier CSV IMF.
+        Usage : python fetcher_imf_weo_csv.py --file data/imf/WEO.csv --detect
         """
         filepath = Path(filepath)
         with open(filepath, encoding="utf-8-sig", errors="replace") as f:
-            sample = f.read(2048)
+            sample = f.read(4096)
             f.seek(0)
             delimiter = "\t" if "\t" in sample else ","
             reader = csv.DictReader(f, delimiter=delimiter)
+            fields = reader.fieldnames or []
+
+            # Detecter colonnes annees
+            year_cols   = [c for c in fields if c.isdigit() and 1948 <= int(c) <= 2030]
+            q_cols      = [c for c in fields if c[:4].isdigit() and "-Q" in c]
+            m_cols      = [c for c in fields if c[:4].isdigit() and "-M" in c]
+            meta_cols   = [c for c in fields if c not in year_cols + q_cols + m_cols]
+
             print(f"\nColonnes de {filepath.name} :")
-            print("  " + ", ".join(reader.fieldnames or []))
-            print(f"\nPremières {max_rows} lignes :")
+            print("  " + ", ".join(meta_cols))
+            if year_cols:
+                print(f"  Annuelles : {year_cols[0]} -> {year_cols[-1]} ({len(year_cols)} annees)")
+            if q_cols:
+                print(f"  Trimestr. : {q_cols[0]} -> {q_cols[-1]} ({len(q_cols)})")
+            if m_cols:
+                print(f"  Mensuels  : {m_cols[0]} -> {m_cols[-1]} ({len(m_cols)})")
+
+            print(f"\nPremieres {max_rows} lignes :")
             for i, row in enumerate(reader):
                 if i >= max_rows:
                     break
-                print(f"  {dict(list(row.items())[:8])}")
+                # Afficher seulement les colonnes metadata
+                meta = {k: v for k, v in row.items() if k in meta_cols[:8]}
+                print(f"  {meta}")
+
+    @staticmethod
+    def scan_codes(
+        filepath:  str | Path,
+        iso3:      str = "DZA",
+        max_codes: int = 30,
+    ) -> None:
+        """
+        Utilitaire -- liste les codes indicateurs disponibles pour un pays.
+        Usage : IMFCSVParser.scan_codes("data/imf/WEO.csv", "DZA")
+        """
+        filepath = Path(filepath)
+        codes: set[str] = set()
+        iso3_upper = iso3.upper()
+
+        with open(filepath, encoding="utf-8-sig", errors="replace") as f:
+            sample = f.read(4096)
+            f.seek(0)
+            delimiter = "\t" if "\t" in sample else ","
+            reader = csv.DictReader(f, delimiter=delimiter)
+            for row in reader:
+                sc = row.get("SERIES_CODE", "").strip()
+                if not sc:
+                    continue
+                parts = sc.split(".")
+                if parts[0].upper() != iso3_upper:
+                    continue
+                freq = row.get("FREQUENCY", "").strip().lower()
+                if freq not in ("annual", "a", "yearly", ""):
+                    continue
+                ind = _resolve_indicator(sc)
+                codes.add(ind)
+                if len(codes) >= max_codes:
+                    break
+
+        print(f"\nCodes indicateurs disponibles pour {iso3} ({filepath.name}) :")
+        for c in sorted(codes)[:max_codes]:
+            print(f"  {c}")

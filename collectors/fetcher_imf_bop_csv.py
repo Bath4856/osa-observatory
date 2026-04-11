@@ -49,7 +49,7 @@ logging.basicConfig(
 BOP_INDICATOR_MAP: dict = {
 
     "MON_DEP": {
-        "bop_code":   "BIP_USD",
+        "bop_code":   "NETCD_T.IN1.USD",
         "name_fr":    "Revenus primaires nets (USD)",
         "unit_code":  "USD",
         "direction":  "-",
@@ -59,7 +59,7 @@ BOP_INDICATOR_MAP: dict = {
                         Critique pour pays pétroliers : AGO, GAB, COG, GNQ, NGA.""",
     },
     "MON_PAY": {
-        "bop_code":   "BCA_USD",
+        "bop_code":   "NETCD_T.CAB.USD",
         "name_fr":    "Solde compte courant (USD)",
         "unit_code":  "USD",
         "direction":  "+",
@@ -67,7 +67,7 @@ BOP_INDICATOR_MAP: dict = {
         "notes":      "BOP — solde compte courant en USD. Complément WEO pour pays non couverts.",
     },
     "ECO_FDI": {
-        "bop_code":   "BFA_FDI_USD",
+        "bop_code":   "A_NFA_T.D_F.USD",
         "name_fr":    "IDE nets (USD)",
         "unit_code":  "USD",
         "direction":  "+",
