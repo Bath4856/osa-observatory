@@ -149,7 +149,7 @@ FAO_INDICATOR_MAP: dict = {
     "ENV_WAT": {
         "dataset":      "RL",
         "element_code": "5110",
-        "item_code":    "6616",    # Irrigated land
+        "item_code":    "6690",    # Irrigated land
         "name_fr":      "Terres irriguees (1000 ha)",
         "unit_code":    "INDEX",
         "direction":    "+",
@@ -170,6 +170,7 @@ FAO_INDICATOR_MAP: dict = {
     },
     "HUM_FOO": {
         "dataset":      "FS",
+        "year_format":  "3yr",
         "element_code": "6121",
         "item_code":    "21010",   # Prevalence of undernourishment
         "name_fr":      "Prevalence sous-alimentation (%)",
@@ -251,11 +252,15 @@ class FAOCSVFetcher(BaseFetcher):
         if not rows:
             return []
 
-        # Detecter le format : large (Y2010) ou long (Year/Value)
+        # Detecter le format : large (Y2010), triannuel (Y20102012) ou long (Year/Value)
         fields     = list(rows[0].keys()) if rows else []
-        is_wide    = any(f"Y{year_from}" in fields for f in fields if True)
-        year_cols  = {year: f"Y{year}" for year in range(year_from, year_to + 1)
-                     if f"Y{year}" in fields}
+        year_fmt   = config.get("year_format", "annual")
+        if year_fmt == "3yr":
+            year_cols = {year: f"Y{year}{year+2}" for year in range(year_from, year_to + 1)
+                        if f"Y{year}{year+2}" in fields}
+        else:
+            year_cols = {year: f"Y{year}" for year in range(year_from, year_to + 1)
+                        if f"Y{year}" in fields}
         has_year_col = "Year" in fields or "year" in fields
 
         raw_records: dict[tuple, list[float]] = {}
