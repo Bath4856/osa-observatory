@@ -1,20 +1,27 @@
 """
 ============================================================
-OSA / ISA OBSERVATORY 2060427
-fetcher_unctad_csv.py — Fetcher UNCTADstat (CSV)
+OSA / ISA OBSERVATORY
+fetcher_unctad_csv.py -- Fetcher UNCTADstat (CSV)
 ============================================================
 Indicateurs couverts :
-  - ECO_FDI : Flux d'IDE nets entrants (USD)
+  - ECO_FDI : Flux d'IDE nets entrants (millions USD)
 
-Source : UNCTADstat — téléchargement CSV sans clé API
+Source : UNCTADstat -- telechargement CSV sans cle API
 URL    : https://unctadstat.unctad.org/datacentre/
 
-Téléchargement manuel :
+Format reel du CSV UNCTAD (FDI_flows.csv) :
+  Separateur     : virgule
+  Colonne pays   : Economy_Label (noms en FRANCAIS)
+  Colonnes data  : {annee}_EU_aux_prix_courants_en_millions_Value
+  Valeurs        : millions USD, negatifs possibles
+  Lignes a ignorer : agregats regionaux (Monde, Afrique, etc.)
+
+Telechargement manuel :
   1. Aller sur https://unctadstat.unctad.org/datacentre/dataviewer/US.FdiFlows
-  2. Sélectionner : Economy = All African countries
+  2. Selectionner : Economy = All African countries
                     Variable = Inward FDI flows
                     Year = 1990-2024
-  3. Télécharger en CSV
+  3. Telecharger en CSV
   4. Placer dans data/unctad/FDI_flows.csv
 
 Usage :
@@ -31,6 +38,7 @@ import argparse
 import csv
 import logging
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -45,58 +53,89 @@ logging.basicConfig(
     format="%(asctime)s | %(levelname)-8s | %(message)s",
 )
 
-log = logging.getLogger("fetcher_unctad_csv")
-
-# ── Mapping ISO-2 → ISO-3 (UNCTAD utilise les noms de pays ou ISO-2) ──────
-
-ISO2_TO_ISO3: dict[str, str] = {
-    "DZ":"DZA","EG":"EGY","LY":"LBY","MA":"MAR","MR":"MRT",
-    "SD":"SDN","TN":"TUN","BJ":"BEN","BF":"BFA","CI":"CIV",
-    "CV":"CPV","GM":"GMB","GH":"GHA","GN":"GIN","GW":"GNB",
-    "LR":"LBR","ML":"MLI","NE":"NER","NG":"NGA","SL":"SLE",
-    "SN":"SEN","TG":"TGO","BI":"BDI","KM":"COM","DJ":"DJI",
-    "ER":"ERI","ET":"ETH","KE":"KEN","MG":"MDG","MW":"MWI",
-    "MU":"MUS","MZ":"MOZ","RW":"RWA","SC":"SYC","SO":"SOM",
-    "SS":"SSD","TZ":"TZA","UG":"UGA","ZM":"ZMB","ZW":"ZWE",
-    "AO":"AGO","CM":"CMR","CF":"CAF","TD":"TCD","CG":"COG",
-    "CD":"COD","GQ":"GNQ","GA":"GAB","ST":"STP","BW":"BWA",
-    "SZ":"SWZ","LS":"LSO","NA":"NAM","ZA":"ZAF",
+# ── Agregats regionaux UNCTAD a ignorer ───────────────────
+UNCTAD_AGGREGATES = {
+    "monde", "afrique", "afrique septentrionale", "afrique subsaharienne",
+    "afrique orientale", "afrique centrale", "afrique australe",
+    "afrique occidentale", "amerique latine et caraibes", "asie",
+    "europe", "oceanie", "pays developpes", "pays en developpement",
+    "pays les moins avances",
 }
 
-# Mapping noms UNCTAD → ISO-3 (UNCTAD utilise souvent les noms en anglais)
-UNCTAD_NAME_TO_ISO3: dict[str, str] = {
-    "Algeria":"DZA","Egypt":"EGY","Libya":"LBY","Morocco":"MAR",
-    "Mauritania":"MRT","Sudan":"SDN","Tunisia":"TUN",
-    "Benin":"BEN","Burkina Faso":"BFA","Côte d'Ivoire":"CIV",
-    "Cote d'Ivoire":"CIV","Cabo Verde":"CPV","Cape Verde":"CPV",
-    "Gambia":"GMB","Ghana":"GHA","Guinea":"GIN","Guinea-Bissau":"GNB",
-    "Liberia":"LBR","Mali":"MLI","Niger":"NER","Nigeria":"NGA",
-    "Sierra Leone":"SLE","Senegal":"SEN","Togo":"TGO",
-    "Burundi":"BDI","Comoros":"COM","Djibouti":"DJI","Eritrea":"ERI",
-    "Ethiopia":"ETH","Kenya":"KEN","Madagascar":"MDG","Malawi":"MWI",
-    "Mauritius":"MUS","Mozambique":"MOZ","Rwanda":"RWA",
-    "Seychelles":"SYC","Somalia":"SOM","South Sudan":"SSD",
-    "Tanzania":"TZA","Uganda":"UGA","Zambia":"ZMB","Zimbabwe":"ZWE",
-    "Angola":"AGO","Cameroon":"CMR","Central African Republic":"CAF",
-    "Chad":"TCD","Congo":"COG","Democratic Republic of the Congo":"COD",
-    "DR Congo":"COD","Equatorial Guinea":"GNQ","Gabon":"GAB",
-    "Sao Tome and Principe":"STP","São Tomé and Príncipe":"STP",
-    "Botswana":"BWA","Eswatini":"SWZ","Lesotho":"LSO",
-    "Namibia":"NAM","South Africa":"ZAF",
+# ── Mapping noms UNCTAD (francais) -> ISO-3 ───────────────
+UNCTAD_FR_TO_ISO3: dict[str, str] = {
+    # Afrique du Nord
+    "Algerie":                      "DZA",
+    "Egypte":                       "EGY",
+    "Libye":                        "LBY",
+    "Maroc":                        "MAR",
+    "Mauritanie":                   "MRT",
+    "Soudan":                       "SDN",
+    "Soudan (...2011)":             "SDN",
+    "Tunisie":                      "TUN",
+    # Afrique de l'Ouest
+    "Benin":                        "BEN",
+    "Burkina Faso":                 "BFA",
+    "Cote d'Ivoire":                "CIV",
+    "Cabo Verde":                   "CPV",
+    "Gambie":                       "GMB",
+    "Ghana":                        "GHA",
+    "Guinee":                       "GIN",
+    "Guinee-Bissau":                "GNB",
+    "Liberia":                      "LBR",
+    "Mali":                         "MLI",
+    "Niger":                        "NER",
+    "Nigeria":                      "NGA",
+    "Sierra Leone":                 "SLE",
+    "Senegal":                      "SEN",
+    "Togo":                         "TGO",
+    # Afrique de l'Est
+    "Burundi":                      "BDI",
+    "Comores":                      "COM",
+    "Djibouti":                     "DJI",
+    "Erythree":                     "ERI",
+    "Ethiopie":                     "ETH",
+    "Ethiopie (...1991)":           "ETH",
+    "Kenya":                        "KEN",
+    "Madagascar":                   "MDG",
+    "Malawi":                       "MWI",
+    "Maurice":                      "MUS",
+    "Mozambique":                   "MOZ",
+    "Rwanda":                       "RWA",
+    "Seychelles":                   "SYC",
+    "Somalie":                      "SOM",
+    "Soudan du Sud":                "SSD",
+    "Tanzanie":                     "TZA",
+    "Ouganda":                      "UGA",
+    "Zambie":                       "ZMB",
+    "Zimbabwe":                     "ZWE",
+    # Afrique Centrale
+    "Angola":                       "AGO",
+    "Cameroun":                     "CMR",
+    "Rep. centrafricaine":          "CAF",
+    "Tchad":                        "TCD",
+    "Congo":                        "COG",
+    "Rep. dem. du Congo":           "COD",
+    "Guinee equatoriale":           "GNQ",
+    "Gabon":                        "GAB",
+    "Sao Tome-et-Principe":         "STP",
+    # Afrique Australe
+    "Botswana":                     "BWA",
+    "Eswatini":                     "SWZ",
+    "Lesotho":                      "LSO",
+    "Namibie":                      "NAM",
+    "Afrique du Sud":               "ZAF",
 }
 
-
-# ── Mapping indicateurs OSA → codes UNCTAD ────────────────────────────────
-
+# ── Mapping indicateurs OSA ───────────────────────────────
 UNCTAD_INDICATOR_MAP: dict = {
     "ECO_FDI": {
-        "unctad_variable": "Inward FDI flows",
-        "unctad_variable_alt": ["FDI inflows", "Inflows", "FDI_INW"],
-        "name_fr":    "Flux d'IDE nets entrants (USD)",
-        "unit_code":  "USD",
-        "direction":  "+",
-        "multiplier": 1_000_000.0,   # UNCTAD publie en millions USD
-        "notes":      "UNCTADstat — investissements directs étrangers entrants nets",
+        "col_pattern": r"^\d{4}_EU_aux_prix_courants_en_millions_Value$",
+        "name_fr":     "Flux d'IDE nets entrants (millions USD)",
+        "unit_code":   "USD",
+        "direction":   "+",
+        "multiplier":  1_000_000.0,   # millions USD -> USD
+        "notes":       "UNCTADstat -- investissements directs etrangers entrants nets.",
     },
 }
 
@@ -122,7 +161,7 @@ class UNCTADCSVFetcher(BaseFetcher):
         year_from: int,
         year_to:   int,
     ) -> list[DataRecord]:
-        """Parse le CSV UNCTAD — aucun appel réseau."""
+        """Parse le CSV UNCTAD -- aucun appel reseau."""
         return self._parse_unctad_csv(config, year_from, year_to)
 
     def _parse_unctad_csv(
@@ -132,17 +171,13 @@ class UNCTADCSVFetcher(BaseFetcher):
         year_to:   int,
     ) -> list[DataRecord]:
         """
-        Parse un fichier CSV UNCTADstat.
+        Parse FDI_flows.csv au format reel UNCTAD.
 
-        UNCTAD propose deux formats selon le mode d'export :
+        Format reel :
+          Economy_Label | {year}_EU_aux_prix_courants_en_millions_Value | ...
 
-        Format A (pivot par année) :
-          Economy | Economy ISO | Variable | 2010 | 2011 | ... | 2024
-
-        Format B (long) :
-          Economy | Year | Variable | Value
-
-        Ce parseur détecte automatiquement les deux formats.
+        Une ligne par pays, colonnes = annees.
+        Noms de pays en francais.
         """
         records: list[DataRecord] = []
 
@@ -150,29 +185,67 @@ class UNCTADCSVFetcher(BaseFetcher):
             self.log.error("Fichier UNCTAD introuvable : %s", self.csv_filepath)
             return []
 
-        target_variable = config["unctad_variable"]
-        alt_variables   = config.get("unctad_variable_alt", [])
-        all_variables   = [target_variable] + alt_variables
+        col_pattern = re.compile(config["col_pattern"])
 
         try:
             with open(self.csv_filepath, encoding="utf-8-sig", errors="replace") as f:
-                sample = f.read(4096)
+                sample    = f.read(2048)
                 f.seek(0)
                 delimiter = "\t" if "\t" in sample else ","
                 reader    = csv.DictReader(f, delimiter=delimiter)
                 headers   = reader.fieldnames or []
 
-                # Détection du format
-                year_cols = [h for h in headers if h.strip().isdigit()
-                             and year_from <= int(h.strip()) <= year_to]
+                # Identifier les colonnes annees correspondant au pattern
+                year_col_map: dict[int, str] = {}
+                for col in headers:
+                    m = re.match(r"^(\d{4})_", col.strip())
+                    if m and col_pattern.match(col.strip()):
+                        year = int(m.group(1))
+                        if year_from <= year <= year_to:
+                            year_col_map[year] = col
 
-                if year_cols:
-                    records = self._parse_wide(
-                        reader, all_variables, year_cols, year_from, year_to
+                if not year_col_map:
+                    self.log.warning(
+                        "Aucune colonne annee trouvee dans %s "
+                        "(pattern: %s, annees: %d-%d)",
+                        self.csv_filepath.name, config["col_pattern"],
+                        year_from, year_to,
                     )
-                else:
-                    records = self._parse_long(
-                        reader, all_variables, year_from, year_to
+                    return []
+
+                self.log.info(
+                    "Colonnes annees trouvees : %d-%d (%d colonnes)",
+                    min(year_col_map), max(year_col_map), len(year_col_map),
+                )
+
+                skipped_aggregates = 0
+                skipped_unknown    = 0
+
+                for row in reader:
+                    name = row.get("Economy_Label", "").strip()
+                    if not name:
+                        continue
+
+                    # Ignorer les agregats regionaux
+                    if name.lower() in UNCTAD_AGGREGATES:
+                        skipped_aggregates += 1
+                        continue
+
+                    iso3 = self._resolve_iso3(name)
+                    if not iso3:
+                        skipped_unknown += 1
+                        self.log.debug("Pays non resolu : %r", name)
+                        continue
+
+                    for year, col in year_col_map.items():
+                        raw   = row.get(col, "").strip()
+                        value = self._parse_value(raw)
+                        records.append({"iso3": iso3, "year": year, "value": value})
+
+                if skipped_unknown > 0:
+                    self.log.warning(
+                        "%d pays non resolus (agregats ignores : %d)",
+                        skipped_unknown, skipped_aggregates,
                     )
 
         except Exception as exc:
@@ -180,116 +253,46 @@ class UNCTADCSVFetcher(BaseFetcher):
                            self.csv_filepath.name, exc)
 
         self.log.info(
-            "UNCTAD %s → %d enregistrements (%d pays)",
-            target_variable, len(records),
+            "UNCTAD ECO_FDI -> %d enregistrements (%d pays avec valeur)",
+            len(records),
             len({r["iso3"] for r in records if r.get("value") is not None}),
         )
         return records
 
-    def _resolve_iso3(self, row: dict) -> str | None:
-        """Résout le code ISO-3 depuis une ligne CSV UNCTAD."""
-        # Essai 1 — colonne ISO directe
-        for col in ("Economy ISO", "ISO", "iso3", "Country Code", "ISO3"):
-            val = row.get(col, "").strip().upper()
-            if len(val) == 3 and val in AFRICAN_ISO3:
-                return val
-            if len(val) == 2:
-                iso3 = ISO2_TO_ISO3.get(val)
-                if iso3:
-                    return iso3
+    @staticmethod
+    def _resolve_iso3(name: str) -> str | None:
+        """Resout le code ISO-3 depuis un nom de pays UNCTAD (francais)."""
+        # Lookup direct
+        iso3 = UNCTAD_FR_TO_ISO3.get(name)
+        if iso3:
+            return iso3
 
-        # Essai 2 — nom du pays
-        for col in ("Economy", "Country", "Country Name", "Reporter"):
-            name = row.get(col, "").strip()
-            iso3 = UNCTAD_NAME_TO_ISO3.get(name)
-            if iso3:
-                return iso3
-            # Correspondance partielle (ex: "Tanzania, United Republic of")
-            for unctad_name, code in UNCTAD_NAME_TO_ISO3.items():
-                if unctad_name.lower() in name.lower():
-                    return code
+        # Lookup insensible a la casse
+        name_lower = name.lower()
+        for fr_name, code in UNCTAD_FR_TO_ISO3.items():
+            if fr_name.lower() == name_lower:
+                return code
+
+        # Lookup partiel
+        for fr_name, code in UNCTAD_FR_TO_ISO3.items():
+            if fr_name.lower() in name_lower or name_lower in fr_name.lower():
+                return code
 
         return None
 
-    def _parse_wide(
-        self,
-        reader,
-        all_variables: list[str],
-        year_cols:     list[str],
-        year_from:     int,
-        year_to:       int,
-    ) -> list[DataRecord]:
-        """Format A : colonnes = années."""
-        records = []
-        for row in reader:
-            variable = (
-                row.get("Variable", "") or
-                row.get("Indicator", "") or
-                row.get("Series", "")
-            ).strip()
-
-            if not any(v.lower() in variable.lower() for v in all_variables):
-                continue
-
-            iso3 = self._resolve_iso3(row)
-            if not iso3:
-                continue
-
-            for col in year_cols:
-                year = int(col.strip())
-                raw  = row.get(col, "").strip()
-                value = self._parse_value(raw)
-                records.append({"iso3": iso3, "year": year, "value": value})
-
-        return records
-
-    def _parse_long(
-        self,
-        reader,
-        all_variables: list[str],
-        year_from:     int,
-        year_to:       int,
-    ) -> list[DataRecord]:
-        """Format B : une ligne par (pays, année)."""
-        records = []
-        for row in reader:
-            variable = (
-                row.get("Variable", "") or
-                row.get("Indicator", "") or
-                row.get("Series", "")
-            ).strip()
-
-            if not any(v.lower() in variable.lower() for v in all_variables):
-                continue
-
-            year_str = (row.get("Year", "") or row.get("Period", "")).strip()
-            if not year_str.isdigit():
-                continue
-            year = int(year_str)
-            if not (year_from <= year <= year_to):
-                continue
-
-            iso3 = self._resolve_iso3(row)
-            if not iso3:
-                continue
-
-            raw   = (row.get("Value", "") or row.get("Amount", "")).strip()
-            value = self._parse_value(raw)
-            records.append({"iso3": iso3, "year": year, "value": value})
-
-        return records
-
     @staticmethod
     def _parse_value(raw: str) -> float | None:
-        """Convertit une cellule CSV UNCTAD en float."""
+        """Convertit une cellule CSV UNCTAD en float. Gere les negatifs."""
         if not raw:
             return None
-        cleaned = raw.replace(",", "").replace(" ", "").strip()
+        cleaned = raw.replace(" ", "").strip()
         if cleaned.lower() in ("n/a", "na", "..", "...", "--", "", "-"):
             return None
-        # Gérer les valeurs négatives entre parenthèses : (123.4) → -123.4
+        # Valeurs negatives entre parentheses : (123.4) -> -123.4
         if cleaned.startswith("(") and cleaned.endswith(")"):
             cleaned = "-" + cleaned[1:-1]
+        # Supprimer separateurs de milliers
+        cleaned = cleaned.replace(",", "")
         try:
             return float(cleaned)
         except ValueError:
@@ -297,39 +300,53 @@ class UNCTADCSVFetcher(BaseFetcher):
 
     @staticmethod
     def detect_columns(filepath: str | Path, max_rows: int = 3) -> None:
-        """Utilitaire debug — affiche la structure du CSV."""
+        """Utilitaire debug - affiche la structure du CSV."""
         filepath = Path(filepath)
         with open(filepath, encoding="utf-8-sig", errors="replace") as f:
-            sample = f.read(2048)
+            sample    = f.read(2048)
             f.seek(0)
             delimiter = "\t" if "\t" in sample else ","
-            reader = csv.DictReader(f, delimiter=delimiter)
-            print(f"\nColonnes de {filepath.name} :")
-            print("  " + ", ".join(reader.fieldnames or []))
-            print(f"\nPremières {max_rows} lignes :")
+            reader    = csv.DictReader(f, delimiter=delimiter)
+            headers   = reader.fieldnames or []
+            print(f"\nColonnes de {filepath.name} ({len(headers)} colonnes) :")
+            # Afficher les 5 premieres et les 3 dernieres
+            preview = headers[:5] + ["..."] + headers[-3:] if len(headers) > 8 else headers
+            print("  " + " | ".join(preview))
+            # Identifier les colonnes annees
+            year_cols = [h for h in headers if re.match(r"^\d{4}_", h.strip())]
+            if year_cols:
+                years = sorted({int(re.match(r"^(\d{4})_", h).group(1)) for h in year_cols})
+                print(f"\nAnnees disponibles : {years[0]}-{years[-1]} ({len(years)} annees)")
+            print(f"\nPremieres {max_rows} lignes :")
             for i, row in enumerate(reader):
                 if i >= max_rows:
                     break
-                print(f"  {dict(list(row.items())[:8])}")
+                name = row.get("Economy_Label", "?")
+                val_2023 = ""
+                for col in headers:
+                    if col.startswith("2023_") and "Value" in col:
+                        val_2023 = row.get(col, "")
+                        break
+                print(f"  {name:40} | 2023={val_2023}")
 
 
-# ── CLI ────────────────────────────────────────────────────────────────────
+# ── CLI ───────────────────────────────────────────────────
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="OSA Fetcher — UNCTADstat CSV",
+        description="OSA Fetcher - UNCTADstat CSV",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Exemples :
-  python fetcher_unctad_csv.py --file data/unctad/FDI_flows.csv
-  python fetcher_unctad_csv.py --file data/unctad/FDI_flows.csv --dry-run
-  python fetcher_unctad_csv.py --file data/unctad/FDI_flows.csv --from 2010 --to 2024
   python fetcher_unctad_csv.py --file data/unctad/FDI_flows.csv --detect
+  python fetcher_unctad_csv.py --file data/unctad/FDI_flows.csv --dry-run
+  python fetcher_unctad_csv.py --file data/unctad/FDI_flows.csv
+  python fetcher_unctad_csv.py --file data/unctad/FDI_flows.csv --from 2010 --to 2024
 
-Téléchargement UNCTAD FDI :
+Telechargement UNCTAD FDI :
   https://unctadstat.unctad.org/datacentre/dataviewer/US.FdiFlows
-  → Sélectionner All African countries + Inward FDI flows + 1990-2024
-  → Télécharger CSV → placer dans data/unctad/FDI_flows.csv
+  -> Selectionner All African countries + Inward FDI flows + 1990-2024
+  -> Telecharger CSV -> placer dans data/unctad/FDI_flows.csv
         """,
     )
     parser.add_argument("--file",      type=str, required=True,
