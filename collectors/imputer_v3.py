@@ -3,65 +3,27 @@
 OSA / ISA OBSERVATORY
 collectors/imputer_v3.py -- Imputation avancée L2 v3
 DuckDB + MICE par pilier + KNN géopolitique enrichi
-+ Score de confiance dynamique + execute_batch
++ Score de confiance cross_val_predict + execute_batch
 + Garde-fou sur-imputation + Traçabilité method_chain
 ============================================================
 
-Corrections v2 → v3 :
+Corrections v2 -> v3 :
+  [3.1] MICE par pilier -- pas de corrélations inter-piliers
+  [3.2] Distance géo enrichie (PIB + commerce + stabilité)
+  [3.3] Score confiance via cross_val_predict (pas OOB biaisé)
+  [3.4] execute_batch -- x10-50 plus rapide
+  [4.1] Garde-fou sur-imputation > 50%
+  [4.2] Traçabilité method_chain (DUCKDB_LINEAR/MICE/KNN_GEO)
 
-  [3.1] MICE par pilier (pas global)
-        Evite les corrélations absurdes inter-piliers
-        (ex: indicateurs climat → militaire)
-        Chaque pilier a sa propre matrice MICE.
-
-  [3.2] Distance géopolitique enrichie
-        Ajoute commerce (GEO_ALL/NE.TRD.GNFS.ZS) et
-        stabilité politique (GEO_STAB si disponible)
-        en plus de PIB/région/monnaie.
-
-  [3.3] Score de confiance dynamique
-        Confidence = 1 - (σ_résiduel / σ_données)
-        Calculé depuis les résidus OOB du RandomForest.
-        Plus précis que les valeurs statiques 0.70/0.55.
-
-  [3.4] Insertion par batch (execute_batch)
-        x10-50 plus rapide que ligne par ligne.
-        page_size=500 lignes par batch.
-
-  [4.1] Garde-fou sur-imputation
-        Bloque l'imputation si > MAX_IMPUTATION_RATE (50%)
-        des valeurs d'un indicateur seraient imputées.
-        Signale les indicateurs à risque.
-
-  [4.2] Traçabilité method_chain
-        Stocke la chaîne de méthodes utilisées :
-        "DUCKDB", "MICE", "KNN", "DUCKDB→KNN", etc.
-        dans la colonne quality_flag ou value_status.
-
-Pipeline :
-  1. DuckDB     -- interpolation linéaire temporelle (LAG/LEAD)
-  2. MICE       -- par pilier, RandomForest, résidus OOB
-  3. KNN Géo    -- distance enrichie (PIB + région + commerce)
-  4. Confiance  -- dynamique par valeur depuis résidus RF
-  5. Insertion  -- execute_batch, garde-fou 50%, traçabilité
-
-Scores de confiance :
-  1.00  Valeur originale L1
-  0.85  DuckDB interpolation (entre deux valeurs connues)
-  0.80  DuckDB forward/backward fill
-  RF    MICE : 1 - (std_résiduel / std_données) [0.40-0.95]
-  0.40  KNN géopolitique (fallback)
-  --    Couverture < MIN_COVERAGE ou sur-imputation > 50%
+value_status mapping :
+  DUCKDB_LINEAR / DUCKDB_FILL -> INTERPOLATED
+  MICE / KNN_GEO              -> IMPUTED
 
 Usage :
   python collectors/imputer_v3.py --dry-run
-  python collectors/imputer_v3.py --pillar PGEO --dry-run
+  python collectors/imputer_v3.py --pillar PECO --dry-run
   python collectors/imputer_v3.py --indicator ECO_LOG --dry-run
-  python collectors/imputer_v3.py --min-coverage 0.25
   python collectors/imputer_v3.py
-
-Prerequis :
-  pip install duckdb pandas scikit-learn numpy psycopg2-binary python-dotenv
 ============================================================
 """
 
@@ -82,10 +44,12 @@ from psycopg2.extras import execute_batch
 from dotenv import load_dotenv
 
 warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 from sklearn.experimental import enable_iterative_imputer  # noqa: F401
 from sklearn.impute import IterativeImputer
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import cross_val_predict
 
 load_dotenv()
 
@@ -96,32 +60,46 @@ logging.basicConfig(
 log = logging.getLogger("imputer_v3")
 
 # ── Constantes ────────────────────────────────────────────────
-LAYER_RAW             = 1
-LAYER_IMPUTED         = 2
-MIN_COVERAGE          = 0.20    # < 20% -> pas d'imputation
-MAX_IMPUTATION_RATE   = 0.50    # > 50% imputé -> garde-fou
-KNN_NEIGHBORS         = 5
-MICE_MAX_ITER         = 10
-MICE_N_ESTIMATORS     = 50
-MICE_RANDOM_STATE     = 42
-BATCH_SIZE            = 500     # execute_batch page_size
+LAYER_RAW           = 1
+LAYER_IMPUTED       = 2
+MIN_COVERAGE        = 0.20
+MAX_IMPUTATION_RATE = 0.50
+KNN_NEIGHBORS       = 5
+MICE_MAX_ITER       = 10
+MICE_N_ESTIMATORS   = 50
+MICE_RANDOM_STATE   = 42
+BATCH_SIZE          = 500
 
-# Scores confiance statiques (fallback si dynamique impossible)
-CONF_ORIGINAL         = 1.00
-CONF_INTERP_LINEAR    = 0.85
-CONF_INTERP_FILL      = 0.80
-CONF_KNN_GEO          = 0.40
+# Scores de confiance statiques (fallback)
+CONF_ORIGINAL       = 1.00
+CONF_INTERP_LINEAR  = 0.85
+CONF_INTERP_FILL    = 0.80
+CONF_KNN_GEO        = 0.40
 
-# Quality flags (contrainte DB)
-FLAG_OK               = "OK"
-FLAG_INTERPOLATED     = "INTERPOLATED"
-FLAG_ESTIMATED        = "ESTIMATED"
+# Quality flags DB
+FLAG_OK             = "OK"
+FLAG_INTERPOLATED   = "INTERPOLATED"
+FLAG_ESTIMATED      = "ESTIMATED"
 
-# Method chain labels
-METHOD_DUCKDB_LINEAR  = "DUCKDB_LINEAR"
-METHOD_DUCKDB_FILL    = "DUCKDB_FILL"
-METHOD_MICE           = "MICE"
-METHOD_KNN_GEO        = "KNN_GEO"
+# Value status DB (contrainte chk_value_status)
+VS_OBSERVED         = "OBSERVED"
+VS_INTERPOLATED     = "INTERPOLATED"
+VS_IMPUTED          = "IMPUTED"
+
+# Method chain labels (internes, pas en DB)
+METHOD_DUCKDB_LINEAR = "DUCKDB_LINEAR"
+METHOD_DUCKDB_FILL   = "DUCKDB_FILL"
+METHOD_MICE          = "MICE"
+METHOD_KNN_GEO       = "KNN_GEO"
+
+
+def method_to_value_status(method: str) -> str:
+    """Convertit method_chain en value_status accepté par la DB."""
+    if method in (METHOD_DUCKDB_LINEAR, METHOD_DUCKDB_FILL):
+        return VS_INTERPOLATED
+    if method in (METHOD_MICE, METHOD_KNN_GEO):
+        return VS_IMPUTED
+    return VS_OBSERVED
 
 
 # ── Connexion PostgreSQL ──────────────────────────────────────
@@ -137,10 +115,9 @@ def get_pg_conn():
 
 # ── Chargement des données ────────────────────────────────────
 def load_data(conn, indicator_filter=None, pillar_filter=None):
-    # Paramètres SQL sécurisés -- pas de f-string avec input utilisateur
-    params = []
+    """Charge L1 + métadonnées pays + couverture. Paramètres SQL sécurisés."""
+    params = [LAYER_RAW]
     where  = ["iv.layer_id = %s"]
-    params.append(LAYER_RAW)
 
     if indicator_filter:
         where.append("iv.indicator_code = %s")
@@ -163,9 +140,9 @@ def load_data(conn, indicator_filter=None, pillar_filter=None):
     df_countries = pd.read_sql("""
         SELECT c.iso3, c.region_code,
                c.monetary_sovereignty_weight,
-               COALESCE(gdp.raw_value, 0)    AS gdp_per_capita,
-               COALESCE(trade.raw_value, 0)  AS trade_pct_gdp,
-               COALESCE(stab.raw_value, 0)   AS geo_stab
+               COALESCE(gdp.raw_value,   0) AS gdp_per_capita,
+               COALESCE(trade.raw_value, 0) AS trade_pct_gdp,
+               COALESCE(stab.raw_value,  0) AS geo_stab
         FROM rf.countries c
         LEFT JOIN (
             SELECT country_iso3, AVG(raw_value) AS raw_value
@@ -212,11 +189,7 @@ def load_data(conn, indicator_filter=None, pillar_filter=None):
 
 # ── Etape 1 : DuckDB interpolation ───────────────────────────
 def step1_duckdb(df_raw: pd.DataFrame) -> pd.DataFrame:
-    """
-    Interpolation linéaire temporelle via DuckDB LAG/LEAD.
-    Distingue interpolation (entre deux valeurs) de fill (extrémités).
-    Stocke la méthode dans method_chain.
-    """
+    """Interpolation linéaire temporelle via DuckDB LAG/LEAD."""
     log.info("Etape 1 -- DuckDB interpolation...")
 
     con = duckdb.connect()
@@ -247,10 +220,10 @@ def step1_duckdb(df_raw: pd.DataFrame) -> pd.DataFrame:
     """).df()
     con.close()
 
-    imputed_vals    = []
-    quality_flags   = []
-    confidences     = []
-    method_chains   = []
+    imputed_vals  = []
+    quality_flags = []
+    confidences   = []
+    method_chains = []
 
     for _, row in result.iterrows():
         if pd.notnull(row["raw_value"]):
@@ -260,12 +233,14 @@ def step1_duckdb(df_raw: pd.DataFrame) -> pd.DataFrame:
             method_chains.append("ORIGINAL")
             continue
 
-        pv, ny_v = row["prev_value"], row["next_value"]
-        py, ny   = row["prev_year"],  row["next_year"]
+        pv   = row["prev_value"]
+        nv   = row["next_value"]
+        py   = row["prev_year"]
+        ny   = row["next_year"]
 
-        if pd.notnull(pv) and pd.notnull(ny_v):
+        if pd.notnull(pv) and pd.notnull(nv):
             alpha = (row["year"] - py) / (ny - py)
-            val   = float(pv) + alpha * (float(ny_v) - float(pv))
+            val   = float(pv) + alpha * (float(nv) - float(pv))
             imputed_vals.append(round(val, 6))
             quality_flags.append(FLAG_INTERPOLATED)
             confidences.append(CONF_INTERP_LINEAR)
@@ -275,8 +250,8 @@ def step1_duckdb(df_raw: pd.DataFrame) -> pd.DataFrame:
             quality_flags.append(FLAG_INTERPOLATED)
             confidences.append(CONF_INTERP_FILL)
             method_chains.append(METHOD_DUCKDB_FILL)
-        elif pd.notnull(ny_v):
-            imputed_vals.append(float(ny_v))
+        elif pd.notnull(nv):
+            imputed_vals.append(float(nv))
             quality_flags.append(FLAG_INTERPOLATED)
             confidences.append(CONF_INTERP_FILL)
             method_chains.append(METHOD_DUCKDB_FILL)
@@ -300,17 +275,11 @@ def step1_duckdb(df_raw: pd.DataFrame) -> pd.DataFrame:
 
 
 # ── Etape 2 : MICE par pilier ─────────────────────────────────
-def step2_mice_by_pillar(
-    df_interp: pd.DataFrame,
-    df_coverage: pd.DataFrame,
-) -> pd.DataFrame:
+def step2_mice_by_pillar(df_interp: pd.DataFrame, df_coverage: pd.DataFrame) -> pd.DataFrame:
     """
-    MICE par pilier -- évite les corrélations inter-piliers.
-    Le score de confiance est calculé dynamiquement depuis
-    les résidus OOB (Out-Of-Bag) du RandomForest.
-
-    Confidence = 1 - (std_résiduel_OOB / std_données)
-    Clampé entre 0.40 et 0.95.
+    MICE par pilier avec score de confiance via cross_val_predict.
+    cross_val_predict donne une estimation réaliste hors échantillon
+    contrairement à OOB qui est biaisé dans IterativeImputer.
     """
     log.info("Etape 2 -- MICE par pilier...")
 
@@ -320,31 +289,26 @@ def step2_mice_by_pillar(
     for pillar in sorted(pillars):
         log.info("  Pilier %s...", pillar)
 
-        # Indicateurs éligibles dans ce pilier
         eligible = df_coverage[
-            (df_coverage["pillar_code"]   == pillar) &
-            (df_coverage["coverage_pct"]  >= MIN_COVERAGE * 100)
+            (df_coverage["pillar_code"]  == pillar) &
+            (df_coverage["coverage_pct"] >= MIN_COVERAGE * 100)
         ]["indicator_code"].tolist()
 
         if not eligible:
-            log.info("    Aucun indicateur éligible")
             continue
 
         # Garde-fou sur-imputation par indicateur
         eligible_filtered = []
         for ind in eligible:
-            cov_row = df_coverage[df_coverage["indicator_code"] == ind]
-            if cov_row.empty:
+            row = df_coverage[df_coverage["indicator_code"] == ind]
+            if row.empty:
                 continue
-            coverage = float(cov_row["coverage_pct"].values[0]) / 100
-            imputation_rate = 1 - coverage
-            if imputation_rate > MAX_IMPUTATION_RATE:
-                log.warning(
-                    "    [GARDE-FOU] %s -- taux imputation %.0f%% > %.0f%% -- skip",
-                    ind, imputation_rate * 100, MAX_IMPUTATION_RATE * 100
-                )
+            cov = float(row["coverage_pct"].values[0]) / 100
+            if (1 - cov) > MAX_IMPUTATION_RATE:
+                log.warning("    [GARDE-FOU] %s -- taux imputation %.0f%% > %.0f%% -- skip",
+                            ind, (1 - cov) * 100, MAX_IMPUTATION_RATE * 100)
                 continue
-            eligible_filtered.append((ind, coverage))
+            eligible_filtered.append((ind, cov))
 
         if not eligible_filtered:
             continue
@@ -352,11 +316,8 @@ def step2_mice_by_pillar(
         eligible_codes = [ind for ind, _ in eligible_filtered]
         eligible_covs  = {ind: cov for ind, cov in eligible_filtered}
 
-        # Matrice pilier : (pays x année) x indicateurs
         df_pillar = df_interp[df_interp["indicator_code"].isin(eligible_codes)].copy()
-        df_pillar["value_for_mice"] = df_pillar["imputed_value"].fillna(
-            df_pillar["raw_value"]
-        )
+        df_pillar["value_for_mice"] = df_pillar["imputed_value"].fillna(df_pillar["raw_value"])
 
         pivot = df_pillar.pivot_table(
             index=["country_iso3", "year"],
@@ -366,18 +327,17 @@ def step2_mice_by_pillar(
         )
 
         if pivot.empty or pivot.shape[1] < 2:
-            log.info("    Matrice trop petite (%d colonnes) -- skip MICE", pivot.shape[1])
+            log.info("    Matrice trop petite -- skip")
             continue
 
-        n_missing_before = pivot.isna().sum().sum()
-        if n_missing_before == 0:
-            log.info("    Pas de valeurs manquantes -- skip MICE")
+        n_missing = pivot.isna().sum().sum()
+        if n_missing == 0:
+            log.info("    Pas de valeurs manquantes -- skip")
             continue
 
-        log.info("    Matrice %dx%d | %d manquantes",
-                 pivot.shape[0], pivot.shape[1], n_missing_before)
+        log.info("    Matrice %dx%d | %d manquantes", pivot.shape[0], pivot.shape[1], n_missing)
 
-        # MICE avec RandomForest (sans oob_score -- incompatible IterativeImputer)
+        # MICE
         rf = RandomForestRegressor(
             n_estimators=MICE_N_ESTIMATORS,
             random_state=MICE_RANDOM_STATE,
@@ -393,43 +353,32 @@ def step2_mice_by_pillar(
         try:
             imputed_array = imputer.fit_transform(pivot.values)
         except Exception as e:
-            log.error("    Erreur MICE pilier %s : %s", pillar, e)
+            log.error("    Erreur MICE %s : %s", pillar, e)
             continue
 
-        pivot_imputed = pd.DataFrame(
-            imputed_array,
-            index=pivot.index,
-            columns=pivot.columns,
-        )
+        pivot_imputed = pd.DataFrame(imputed_array, index=pivot.index, columns=pivot.columns)
 
         # Score de confiance dynamique via cross_val_predict (cv=3)
-        # Prédit chaque indicateur hors échantillon -> estimation réaliste
-        # Confidence = 1 - (std_erreur_CV / std_données)
-        # Bien supérieur à OOB qui est biaisé dans IterativeImputer
-        from sklearn.model_selection import cross_val_predict
-
-        conf_by_indicator = {}
         rf_cv = RandomForestRegressor(
             n_estimators=MICE_N_ESTIMATORS,
             random_state=MICE_RANDOM_STATE,
             n_jobs=-1,
         )
+        conf_by_indicator = {}
 
         for col_idx, col in enumerate(pivot.columns):
-            y        = pivot.iloc[:, col_idx].values
-            mask_kn  = ~np.isnan(y)
+            y       = pivot.iloc[:, col_idx].values
+            mask_kn = ~np.isnan(y)
 
-            # Pas assez de données connues -> fallback
             if mask_kn.sum() < 5:
                 conf_by_indicator[col] = 0.55
                 continue
 
-            # Features = tous les autres indicateurs du pilier
-            X        = np.delete(pivot.values, col_idx, axis=1)
-            X_known  = X[mask_kn]
-            y_known  = y[mask_kn]
+            X       = np.delete(pivot.values, col_idx, axis=1)
+            X_known = X[mask_kn].copy()
+            y_known = y[mask_kn]
 
-            # Remplacer NaN dans X par la moyenne de la colonne
+            # Remplacer NaN dans X par la moyenne de chaque colonne
             col_means = np.nanmean(X_known, axis=0)
             for ci in range(X_known.shape[1]):
                 nan_mask = np.isnan(X_known[:, ci])
@@ -439,7 +388,6 @@ def step2_mice_by_pillar(
                 y_pred   = cross_val_predict(rf_cv, X_known, y_known, cv=3, n_jobs=-1)
                 std_data = np.std(y_known)
                 std_res  = np.std(y_known - y_pred)
-
                 if std_data == 0:
                     conf = 0.70
                 else:
@@ -447,7 +395,6 @@ def step2_mice_by_pillar(
             except Exception:
                 conf = 0.55
 
-            conf_by_indicator[col] = round(conf, 3)
             conf_by_indicator[col] = round(conf, 3)
 
         # Réintégrer dans df_result
@@ -464,7 +411,6 @@ def step2_mice_by_pillar(
                 )
                 if not mask.any():
                     continue
-
                 conf = conf_by_indicator.get(ind_code, 0.55)
                 df_result.loc[mask, "imputed_value"] = round(float(val), 6)
                 df_result.loc[mask, "quality_flag"]  = FLAG_ESTIMATED
@@ -472,38 +418,31 @@ def step2_mice_by_pillar(
                 df_result.loc[mask, "method_chain"]  = METHOD_MICE
                 n_mice_filled += 1
 
-        log.info("    -> %d valeurs imputées par MICE (conf moy=%.2f)",
-                 n_mice_filled,
-                 np.mean(list(conf_by_indicator.values())))
+        log.info("    -> %d valeurs imputées MICE (conf moy=%.2f)",
+                 n_mice_filled, np.mean(list(conf_by_indicator.values())) if conf_by_indicator else 0)
 
     return df_result
 
 
 # ── Etape 3 : KNN géopolitique enrichi ───────────────────────
-def step3_knn_geo(
-    df_mice: pd.DataFrame,
-    df_countries: pd.DataFrame,
-) -> pd.DataFrame:
+def step3_knn_geo(df_mice: pd.DataFrame, df_countries: pd.DataFrame) -> pd.DataFrame:
     """
-    KNN géopolitique avec distance enrichie :
-      d = w1 * |gdp_i - gdp_j| / max_gdp
-        + w2 * |trade_i - trade_j| / max_trade
-        + w3 * |stab_i - stab_j| / max_stab
-        x (0.5 si même région UA)
-        x (0.8 si même zone monétaire UEMOA/CEMAC)
-
-    Poids : gdp=0.5, trade=0.3, stab=0.2
+    KNN géopolitique avec distance composite :
+      d = 0.5 * |gdp_i - gdp_j| / max_gdp
+        + 0.3 * |trade_i - trade_j| / max_trade
+        + 0.2 * |stab_i - stab_j| / max_stab
+        x 0.5 si même région UA
+        x 0.8 si même zone monétaire UEMOA/CEMAC
     """
     log.info("Etape 3 -- KNN géopolitique enrichi...")
 
     countries = df_countries["iso3"].tolist()
 
-    # Normalisation
     max_gdp   = max(float(df_countries["gdp_per_capita"].max()), 1.0)
     max_trade = max(float(df_countries["trade_pct_gdp"].max()),  1.0)
-    max_stab  = max(float(df_countries["geo_stab"].abs().max()), 1.0)
+    max_stab  = max(float(df_countries["geo_stab"].abs().max()), 1e-6)
 
-    # Matrice de distance géopolitique enrichie
+    # Matrice de distance géopolitique
     dist_matrix = {}
     for iso3 in countries:
         r1 = df_countries[df_countries["iso3"] == iso3]
@@ -523,31 +462,25 @@ def step3_knn_geo(
                 continue
             r2 = r2.iloc[0]
 
-            # Distance composite pondérée
             d_gdp   = abs(float(r1["gdp_per_capita"]) - float(r2["gdp_per_capita"])) / max_gdp
             d_trade = abs(float(r1["trade_pct_gdp"])  - float(r2["trade_pct_gdp"]))  / max_trade
             d_stab  = abs(float(r1["geo_stab"])        - float(r2["geo_stab"]))        / max_stab
 
             d = 0.5 * d_gdp + 0.3 * d_trade + 0.2 * d_stab
 
-            # Bonus région UA
             if r1["region_code"] == r2["region_code"]:
                 d *= 0.5
-
-            # Bonus zone monétaire
             if (float(r1["monetary_sovereignty_weight"]) < 1.0 and
                     float(r2["monetary_sovereignty_weight"]) < 1.0):
                 d *= 0.8
 
             dist_matrix[iso3][iso3_j] = max(d, 1e-6)
 
-    # Imputation KNN
     df_result    = df_mice.copy()
     n_knn_filled = 0
 
     still_missing = df_result[
-        df_result["imputed_value"].isna() &
-        df_result["raw_value"].isna()
+        df_result["imputed_value"].isna() & df_result["raw_value"].isna()
     ]
 
     for _, miss_row in still_missing.iterrows():
@@ -558,17 +491,13 @@ def step3_knn_geo(
         if iso3 not in dist_matrix:
             continue
 
-        # k voisins les plus proches
-        neighbors = sorted(
-            dist_matrix[iso3].items(),
-            key=lambda x: x[1]
-        )[1:KNN_NEIGHBORS + 1]
+        neighbors = sorted(dist_matrix[iso3].items(), key=lambda x: x[1])[1:KNN_NEIGHBORS + 1]
 
         vals, weights = [], []
-        for neighbor_iso3, dist in neighbors:
+        for nb_iso3, dist in neighbors:
             nmask = (
                 (df_result["indicator_code"] == ind) &
-                (df_result["country_iso3"]   == neighbor_iso3) &
+                (df_result["country_iso3"]   == nb_iso3) &
                 (df_result["year"]           == year)
             )
             nrows = df_result[nmask]
@@ -583,6 +512,7 @@ def step3_knn_geo(
             weights.append(1.0 / dist)
 
         if vals and sum(weights) > 0:
+            wval = sum(v * w for v, w in zip(vals, weights)) / sum(weights)
             mask = (
                 (df_result["indicator_code"] == ind) &
                 (df_result["country_iso3"]   == iso3) &
@@ -600,9 +530,7 @@ def step3_knn_geo(
 
 # ── Etape 4 : Résumé confiance ────────────────────────────────
 def step4_summary(df_final: pd.DataFrame) -> pd.DataFrame:
-    imputed = df_final[
-        df_final["raw_value"].isna() & df_final["imputed_value"].notna()
-    ]
+    imputed = df_final[df_final["raw_value"].isna() & df_final["imputed_value"].notna()]
     if imputed.empty:
         return df_final
 
@@ -612,18 +540,17 @@ def step4_summary(df_final: pd.DataFrame) -> pd.DataFrame:
     )
     log.info("Scores de confiance par méthode :")
     for method, row in by_method.iterrows():
-        log.info("  %-20s : %5d valeurs  conf_moy=%.3f",
+        log.info("  %-22s : %5d valeurs  conf_moy=%.3f",
                  method, int(row["n"]), row["conf_moy"])
-
     return df_final
 
 
 # ── Insertion batch ───────────────────────────────────────────
 def insert_l2_batch(conn, df_final: pd.DataFrame, dry_run: bool = False) -> int:
     """
-    Insertion par batch avec execute_batch (x10-50 vs ligne par ligne).
-    Vérifie la présence de confidence_score dans le schéma.
-    Stocke method_chain dans value_status si la colonne existe.
+    Insertion par batch avec execute_batch.
+    Compte les insertions réelles via COUNT avant/après (ON CONFLICT safe).
+    value_status mappé depuis method_chain vers les valeurs DB autorisées.
     """
     to_insert = df_final[
         df_final["raw_value"].isna() &
@@ -652,16 +579,13 @@ def insert_l2_batch(conn, df_final: pd.DataFrame, dry_run: bool = False) -> int:
     has_confidence = "confidence_score" in cols
     has_status     = "value_status"     in cols
 
-    # Préparer les données batch
-    # On copie les métadonnées depuis n'importe quelle ligne L1 du même pays
-    # (method_version_id)
+    # Cache method_version_id depuis L1
     meta_cache = {}
     with conn.cursor() as cur:
         cur.execute("""
             SELECT DISTINCT ON (indicator_code, country_iso3)
                 indicator_code, country_iso3, method_version_id
-            FROM ma.indicator_values
-            WHERE layer_id = 1
+            FROM ma.indicator_values WHERE layer_id = 1
             ORDER BY indicator_code, country_iso3
         """)
         for ind, iso3, mvid in cur.fetchall():
@@ -670,24 +594,22 @@ def insert_l2_batch(conn, df_final: pd.DataFrame, dry_run: bool = False) -> int:
     # Construire les tuples batch
     batch_data = []
     for _, row in to_insert.iterrows():
-        ind     = row["indicator_code"]
-        iso3    = row["country_iso3"]
-        year    = int(row["year"])
-        val     = float(row["imputed_value"])
-        flag    = row["quality_flag"]
-        conf    = float(row["confidence"]) if pd.notnull(row["confidence"]) else 0.5
-        method  = str(row["method_chain"])  if pd.notnull(row["method_chain"])  else "UNKNOWN"
-        mvid    = meta_cache.get((ind, iso3), 1)
+        ind    = row["indicator_code"]
+        iso3   = row["country_iso3"]
+        year   = int(row["year"])
+        val    = float(row["imputed_value"])
+        flag   = row["quality_flag"]
+        conf   = float(row["confidence"])   if pd.notnull(row["confidence"])   else 0.5
+        method = str(row["method_chain"])   if pd.notnull(row["method_chain"]) else "ORIGINAL"
+        vs     = method_to_value_status(method)
+        mvid   = meta_cache.get((ind, iso3), 1)
 
         if has_confidence and has_status:
-            batch_data.append((ind, iso3, year, LAYER_IMPUTED,
-                               val, None, mvid, flag, conf, method))
+            batch_data.append((ind, iso3, year, LAYER_IMPUTED, val, None, mvid, flag, conf, vs))
         elif has_confidence:
-            batch_data.append((ind, iso3, year, LAYER_IMPUTED,
-                               val, None, mvid, flag, conf))
+            batch_data.append((ind, iso3, year, LAYER_IMPUTED, val, None, mvid, flag, conf))
         else:
-            batch_data.append((ind, iso3, year, LAYER_IMPUTED,
-                               val, None, mvid, flag))
+            batch_data.append((ind, iso3, year, LAYER_IMPUTED, val, None, mvid, flag))
 
     # SQL selon colonnes disponibles
     if has_confidence and has_status:
@@ -712,32 +634,41 @@ def insert_l2_batch(conn, df_final: pd.DataFrame, dry_run: bool = False) -> int:
         sql = """
             INSERT INTO ma.indicator_values
                 (indicator_code, country_iso3, year, layer_id,
-                 raw_value, processed_value, method_version_id,
-                 quality_flag)
+                 raw_value, processed_value, method_version_id, quality_flag)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT DO NOTHING
         """
 
-    inserted = 0
-    errors   = 0
-
     try:
+        # Compter avant pour mesurer l'impact réel (ON CONFLICT DO NOTHING)
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT COUNT(*) FROM ma.indicator_values WHERE layer_id = %s",
+                (LAYER_IMPUTED,)
+            )
+            count_before = cur.fetchone()[0]
+
         with conn.cursor() as cur:
             execute_batch(cur, sql, batch_data, page_size=BATCH_SIZE)
-            inserted = cur.rowcount
-            if inserted < 0:
-                # rowcount = -1 si le driver ne supporte pas le compte
-                # dans ce cas on utilise len(batch_data) comme fallback
-                inserted = len(batch_data)
+
         conn.commit()
-        log.info("  -> %d valeurs insérées en batch (page_size=%d, total_préparé=%d)",
-                 inserted, BATCH_SIZE, len(batch_data))
+
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT COUNT(*) FROM ma.indicator_values WHERE layer_id = %s",
+                (LAYER_IMPUTED,)
+            )
+            count_after = cur.fetchone()[0]
+
+        inserted = count_after - count_before
+        log.info("  -> %d insérés en batch (préparé=%d, page_size=%d)",
+                 inserted, len(batch_data), BATCH_SIZE)
+        return inserted
+
     except Exception as e:
         log.error("  Erreur batch : %s", e)
         conn.rollback()
-        errors = len(batch_data)
-
-    return inserted
+        return 0
 
 
 # ── Rapport ───────────────────────────────────────────────────
@@ -746,13 +677,9 @@ def print_report(df_final: pd.DataFrame, n_inserted: int) -> None:
     print("RAPPORT IMPUTATION L2 v3 -- DuckDB + MICE/pilier + KNN Géo")
     print("=" * 65)
 
-    orig      = df_final["raw_value"].notna().sum()
-    imputed   = df_final[
-        df_final["raw_value"].isna() & df_final["imputed_value"].notna()
-    ]
-    still_null = df_final[
-        df_final["raw_value"].isna() & df_final["imputed_value"].isna()
-    ]
+    orig       = df_final["raw_value"].notna().sum()
+    imputed    = df_final[df_final["raw_value"].isna() & df_final["imputed_value"].notna()]
+    still_null = df_final[df_final["raw_value"].isna() & df_final["imputed_value"].isna()]
 
     print(f"\nValeurs L1 originales : {orig:>8}")
     print(f"Valeurs imputées      : {len(imputed):>8}")
@@ -762,8 +689,8 @@ def print_report(df_final: pd.DataFrame, n_inserted: int) -> None:
     if not imputed.empty:
         print("\nPar méthode (method_chain) :")
         by_m = imputed.groupby("method_chain").agg(
-            n=("imputed_value","count"),
-            conf=("confidence","mean"),
+            n=("imputed_value", "count"),
+            conf=("confidence", "mean"),
         ).sort_values("n", ascending=False)
         for m, r in by_m.iterrows():
             print(f"  {m:<22} : {int(r['n']):>6}  conf={r['conf']:.3f}")
@@ -775,16 +702,16 @@ def print_report(df_final: pd.DataFrame, n_inserted: int) -> None:
 
         print("\nTop 10 indicateurs imputés :")
         by_i = imputed.groupby("indicator_code").agg(
-            n=("imputed_value","count"),
-            conf=("confidence","mean"),
+            n=("imputed_value", "count"),
+            conf=("confidence", "mean"),
         ).sort_values("n", ascending=False).head(10)
         for i, r in by_i.iterrows():
             print(f"  {i:<15} : {int(r['n']):>5}  conf={r['conf']:.3f}")
 
     if not still_null.empty:
         print("\nIndicateurs encore incomplets :")
-        by_i2 = still_null.groupby("indicator_code").size().sort_values(ascending=False)
-        for i, n in by_i2.head(10).items():
+        by_null = still_null.groupby("indicator_code").size().sort_values(ascending=False)
+        for i, n in by_null.head(10).items():
             print(f"  {i:<15} : {n} valeurs manquantes")
 
     print("=" * 65)
@@ -829,13 +756,13 @@ def main():
         description="OSA -- Imputation L2 v3 (DuckDB + MICE/pilier + KNN géo enrichi)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Corrections v2 → v3 :
-  [3.1] MICE par pilier (pas de corrélations inter-piliers)
+Corrections v2 -> v3 :
+  [3.1] MICE par pilier
   [3.2] Distance géo enrichie (PIB + commerce + stabilité)
-  [3.3] Score confiance dynamique (résidus OOB RandomForest)
-  [3.4] execute_batch (x10-50 plus rapide)
+  [3.3] Score confiance cross_val_predict (pas OOB biaisé)
+  [3.4] execute_batch + count avant/après (ON CONFLICT safe)
   [4.1] Garde-fou sur-imputation > 50%
-  [4.2] Traçabilité method_chain (DUCKDB_LINEAR/MICE/KNN_GEO)
+  [4.2] Traçabilité method_chain -> value_status DB
 
 Exemples :
   python imputer_v3.py --dry-run
@@ -851,10 +778,10 @@ Exemples :
     args = parser.parse_args()
 
     run(
-        indicator_filter = args.indicator,
-        pillar_filter    = args.pillar,
-        min_coverage     = args.min_coverage,
-        dry_run          = args.dry_run,
+        indicator_filter=args.indicator,
+        pillar_filter=args.pillar,
+        min_coverage=args.min_coverage,
+        dry_run=args.dry_run,
     )
     sys.exit(0)
 
