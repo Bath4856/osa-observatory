@@ -63,3 +63,13 @@ OSA_LOG_LEVEL=INFO
 fi
 
 info "Configuration terminee."
+
+# Installation et configuration cron pour backup automatique
+info "Configuration backup automatique PostgreSQL..."
+sudo apt-get install -y cron -q 2>/dev/null || true
+(crontab -l 2>/dev/null; grep -q "backup.sh" <(crontab -l 2>/dev/null) && echo "" || \
+  echo "0 2 * * * bash $PROJET/db/backup.sh >> $PROJET/db/backups/backup.log 2>&1") | \
+  grep -v "^$" | crontab - 2>/dev/null || true
+sudo service cron start 2>/dev/null || true
+mkdir -p "$PROJET/db/backups"
+info "Backup cron configure -- execution quotidienne a 2h"
