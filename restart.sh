@@ -210,7 +210,7 @@ check() {
     fi
 }
 
-check "rf.indicators"     "SELECT COUNT(*) FROM rf.indicators"       "121"
+check "rf.indicators"     "SELECT COUNT(*) FROM rf.indicators"       "122"
 check "rf.countries"      "SELECT COUNT(*) FROM rf.countries"        "54"
 check "rf.pillars"        "SELECT COUNT(*) FROM rf.pillars"          "8"
 check "rf.regional_blocs" "SELECT COUNT(*) FROM rf.regional_blocs"   "11"

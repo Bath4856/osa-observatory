@@ -155,7 +155,8 @@ VALUES
      'XOF', 'Franc CFA ouest-africain', 0.700,
      '2010-01-01', NULL,
      'Traité UEMOA 1994',
-     'Membre fondateur UEMOA.');
+     'Membre fondateur UEMOA.')
+ON CONFLICT (country_iso3, valid_from) DO NOTHING;
 
 -- Zone CEMAC — BEAC (6 pays)
 INSERT INTO rf.monetary_zone_history
@@ -192,7 +193,8 @@ VALUES
      'XAF', 'Franc CFA d''Afrique centrale', 0.700,
      '2010-01-01', NULL,
      'Traité CEMAC 1994',
-     'Membre fondateur CEMAC.');
+     'Membre fondateur CEMAC.')
+ON CONFLICT (country_iso3, valid_from) DO NOTHING;
 
 -- Pays à banque centrale nationale (40 pays)
 -- Insertion groupée avec les principales banques centrales
@@ -240,7 +242,8 @@ VALUES
     ('SWZ','NATIONAL','CBS',  'Central Bank of Eswatini',                   'SZL','Lilangeni swazi',        1.000,'2010-01-01',NULL),
     ('LSO','NATIONAL','CBL',  'Central Bank of Lesotho',                    'LSL','Loti lesothan',          1.000,'2010-01-01',NULL),
     ('NAM','NATIONAL','BON',  'Bank of Namibia',                            'NAD','Dollar namibien',        1.000,'2010-01-01',NULL),
-    ('ZAF','NATIONAL','SARB', 'South African Reserve Bank',                 'ZAR','Rand sud-africain',      1.000,'2010-01-01',NULL);
+    ('ZAF','NATIONAL','SARB', 'South African Reserve Bank',                 'ZAR','Rand sud-africain',      1.000,'2010-01-01',NULL)
+ON CONFLICT (country_iso3, valid_from) DO NOTHING;
 
 -- ============================================================
 -- 4. VUE rf.monetary_zone_at(date)

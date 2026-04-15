@@ -103,6 +103,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_bounds_updated_at ON collect.indicator_bounds;
 CREATE TRIGGER trg_bounds_updated_at
     BEFORE UPDATE ON collect.indicator_bounds
     FOR EACH ROW EXECUTE FUNCTION collect.update_bounds_timestamp();
@@ -139,15 +140,22 @@ COMMENT ON COLUMN ma.indicator_values.confidence_score IS
      0.000 — MISSING (valeur absente)';
 
 -- Contrainte de validation
-ALTER TABLE ma.indicator_values
-    ADD CONSTRAINT chk_value_status
-    CHECK (value_status IN (
-        'OBSERVED', 'INTERPOLATED', 'EXTRAPOLATED', 'IMPUTED', 'MISSING'
-    ));
+ALTER TABLE ma.indicator_values DROP CONSTRAINT IF EXISTS chk_value_status;
+ALTER TABLE ma.indicator_values ADD CONSTRAINT chk_value_status CHECK (value_status IN ('OBSERVED', 'INTERPOLATED', 'EXTRAPOLATED', 'IMPUTED', 'MISSING')); 
+ALTER TABLE ma.indicator_values DROP CONSTRAINT IF EXISTS chk_confidence_score;
+ALTER TABLE ma.indicator_values ADD CONSTRAINT chk_confidence_score CHECK (confidence_score BETWEEN 0.0 AND 1.0);
 
-ALTER TABLE ma.indicator_values
-    ADD CONSTRAINT chk_confidence_score
-    CHECK (confidence_score BETWEEN 0.0 AND 1.0);
+
+
+
+
+
+
+
+
+
+
+
 
 -- Index pour filtrer par qualité
 CREATE INDEX IF NOT EXISTS idx_iv_value_status
