@@ -195,6 +195,8 @@ psql -h localhost -U osa_user -d osa_db \
     -f "$PROJET/db/patch_unpk_milcyb_providers.sql" -q && info "  patch_unpk_milcyb_providers OK"
 psql -h localhost -U osa_user -d osa_db \
     -f "$PROJET/db/patch_indicator_source_v2.sql" -q && info "  patch_indicator_source_v2 OK" -q && info "  patch_unpk_milcyb_providers OK"
+psql -h localhost -U osa_user -d osa_db \
+    -f "$PROJET/db/patch_pres_pilier.sql" -q && info "  patch_pres_pilier OK"
 
 # ── 4. Vérifications finales ──────────────────────────────
 info "Vérifications..."
@@ -210,9 +212,9 @@ check() {
     fi
 }
 
-check "rf.indicators"     "SELECT COUNT(*) FROM rf.indicators"       "122"
+check "rf.indicators"     "SELECT COUNT(*) FROM rf.indicators"       "137"
 check "rf.countries"      "SELECT COUNT(*) FROM rf.countries"        "54"
-check "rf.pillars"        "SELECT COUNT(*) FROM rf.pillars"          "8"
+check "rf.pillars"        "SELECT COUNT(*) FROM rf.pillars"          "9"
 check "rf.regional_blocs" "SELECT COUNT(*) FROM rf.regional_blocs"   "11"
 check "rf.country_blocs"  "SELECT COUNT(*) FROM rf.country_blocs"    "167"
 check "MON_AUT désactivé" \
