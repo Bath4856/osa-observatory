@@ -542,6 +542,13 @@ WB_INDICATOR_MAP: dict = {
         "multiplier": 1.0,
         "notes":      "WB OIT -- proxy emploi minier. Inclut toute l'industrie.",
     },
+    # ── PILIER RESSOURCES STRATEGIQUES (PRES) — WB indicators ─
+    "PRES_EN_ELEC_PROD":   {"wb_code": "EG.USE.ELEC.KH.PC", "name_fr": "Consommation electricite/hab",   "unit_code": "KWH_PC",  "direction": "+", "multiplier": 1.0,          "notes": "WB WDI EG.ELC.PROD.KH archive — proxy consommation kWh/hab"},
+    "PRES_EN_CAP_PC":      {"wb_code": "EG.USE.ELEC.KH.PC", "name_fr": "Consommation electricite/hab",   "unit_code": "KWH_PC",  "direction": "+", "multiplier": 1.0,          "notes": "WB WDI proxy capacite — EG.ELC.PROD.KH archive"},
+    "PRES_EN_RENEW_SHARE": {"wb_code": "EG.ELC.RNEW.ZS",  "name_fr": "Part energies renouvelables",    "unit_code": "PERCENT", "direction": "+", "multiplier": 1.0,          "notes": "WB WDI electricite renouvelable pct production"},
+    "PRES_WA_RES_TOTAL":   {"wb_code": "ER.H2O.INTR.K3",  "name_fr": "Ressources eau renouvelables",   "unit_code": "M3",      "direction": "+", "multiplier": 1000000000.0, "notes": "WB WDI milliards m3 convertis en m3"},
+    "PRES_WA_RES_PC":      {"wb_code": "ER.H2O.INTR.PC",  "name_fr": "Eau par habitant",               "unit_code": "M3_PC",   "direction": "+", "multiplier": 1.0,          "notes": "WB WDI ressources eau renouvelables par habitant"},
+    "PRES_WA_INTERNAL":    {"wb_code": "ER.H2O.INTR.K3",  "name_fr": "Ressources eau internes totales", "unit_code": "M3",      "direction": "+", "multiplier": 1000000000.0, "notes": "PROXY — ER.H2O.INTR.ZS invalide — FAO AQUASTAT requis Sprint 5"},
 }
 
 # ── 54 pays africains (codes ISO-3) ───────────────────────
