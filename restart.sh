@@ -197,6 +197,10 @@ psql -h localhost -U osa_user -d osa_db \
     -f "$PROJET/db/patch_indicator_source_v2.sql" -q && info "  patch_indicator_source_v2 OK" -q && info "  patch_unpk_milcyb_providers OK"
 psql -h localhost -U osa_user -d osa_db \
     -f "$PROJET/db/patch_pres_pilier.sql" -q && info "  patch_pres_pilier OK"
+psql -h localhost -U osa_user -d osa_db \
+    -f "$PROJET/db/patch_pres_meta.sql" -q && info "  patch_pres_meta OK"
+psql -h localhost -U osa_user -d osa_db \
+    -f "$PROJET/db/patch_isa_seuil_7_9.sql" -q && info "  patch_isa_seuil_7_9 OK"
 
 # ── 4. Vérifications finales ──────────────────────────────
 info "Vérifications..."
