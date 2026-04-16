@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# OSA / ISA OBSERVATORY - 20260407
+# OSA / ISA OBSERVATORY - 20260416
 # restart.sh — Redémarrage complet après recréation Codespace
 # ============================================================
 # Usage : bash restart.sh
@@ -82,7 +82,7 @@ if [ "$ALREADY" = "1" ]; then
         -c "SELECT COUNT(*) FROM rf.country_blocs" 2>/dev/null || echo "0")
     PROV_COUNT=$(psql -h localhost -U osa_user -d osa_db -tAq \
         -c "SELECT COUNT(*) FROM collect.data_providers WHERE code IN ('UNESCO','UNDP')" 2>/dev/null || echo "0")
-    # 17 providers attendus (16 précédents + UNPK)
+    # 18 entrées attendues dans source_registry (17 providers + OECD)
     REGISTRY_COUNT=$(psql -h localhost -U osa_user -d osa_db -tAq \
         -c "SELECT COUNT(*) FROM collect.source_registry
             WHERE source_id IN (
@@ -112,15 +112,20 @@ if [ "$ALREADY" = "1" ]; then
     MIL_CYB_OK=$(psql -h localhost -U osa_user -d osa_db -tAq \
         -c "SELECT COUNT(*) FROM collect.source_registry_indicators
             WHERE source_id = 'ITU' AND osa_code = 'MIL_CYB'" 2>/dev/null || echo "0")
+    PRES_OK=$(psql -h localhost -U osa_user -d osa_db -tAq \
+        -c "SELECT COUNT(*) FROM rf.indicators
+            WHERE pillar_code = 'PRES'" 2>/dev/null || echo "0")
 
-    if [ "$IND_COUNT" = "121" ] && [ "$BLOCS_COUNT" = "167" ] \
+    # Base complète = 138 indicateurs (9 piliers dont PRES avec 16 indicateurs)
+    if [ "$IND_COUNT" = "138" ] && [ "$BLOCS_COUNT" = "167" ] \
        && [ "$PROV_COUNT" = "2" ] && [ "$REGISTRY_COUNT" = "18" ] \
        && [ "$MATRIX_OK" = "1" ] && [ "$QUALITY_OK" = "1" ] \
        && [ "$OECD_NOGO" = "1" ] && [ "$UNCTAD_GO" = "1" ] \
-       && [ "$MIL_CYB_OK" = "1" ]; then
+       && [ "$MIL_CYB_OK" = "1" ] && [ "$PRES_OK" = "16" ]; then
         info "========================================================"
         info "Base déjà déployée et à jour !"
-        info "  Indicateurs       : $IND_COUNT (attendu 121)"
+        info "  Indicateurs       : $IND_COUNT (attendu 138)"
+        info "  Dont PRES         : $PRES_OK (attendu 16)"
         info "  Blocs pays        : $BLOCS_COUNT (attendu 167)"
         info "  Source registry   : $REGISTRY_COUNT (attendu 18)"
         info "  Fonction matrice  : OK (5 paramètres)"
@@ -133,7 +138,9 @@ if [ "$ALREADY" = "1" ]; then
         exit 0
     else
         warning "Base présente mais incomplète — application des patches..."
-        warning "  source_registry   : $REGISTRY_COUNT / 17"
+        warning "  rf.indicators     : $IND_COUNT (attendu 138)"
+        warning "  PRES indicateurs  : $PRES_OK (attendu 16)"
+        warning "  source_registry   : $REGISTRY_COUNT (attendu 18)"
         warning "  fonction matrice  : $MATRIX_OK (attendu 1)"
         warning "  qualité score     : $QUALITY_OK (attendu 1)"
         warning "  OECD NO_GO        : $OECD_NOGO (attendu 1)"
@@ -188,13 +195,13 @@ psql -h localhost -U osa_user -d osa_db \
 psql -h localhost -U osa_user -d osa_db \
     -f "$PROJET/db/patch_providers_endpoints_v2.sql" -q && info "  patch_providers_endpoints_v2 OK"
 psql -h localhost -U osa_user -d osa_db \
-    -f "$PROJET/db/patch_source_origins_v2.sql" -q && info "  patch_source_origins_v2 OK" -q && info "  patch_providers_endpoints_v2 OK" -q && info "  patch_missing_core_providers OK"
+    -f "$PROJET/db/patch_source_origins_v2.sql" -q && info "  patch_source_origins_v2 OK"
 psql -h localhost -U osa_user -d osa_db \
     -f "$PROJET/db/patch_comtrade_unctad_providers.sql" -q && info "  patch_comtrade_unctad_providers OK"
 psql -h localhost -U osa_user -d osa_db \
     -f "$PROJET/db/patch_unpk_milcyb_providers.sql" -q && info "  patch_unpk_milcyb_providers OK"
 psql -h localhost -U osa_user -d osa_db \
-    -f "$PROJET/db/patch_indicator_source_v2.sql" -q && info "  patch_indicator_source_v2 OK" -q && info "  patch_unpk_milcyb_providers OK"
+    -f "$PROJET/db/patch_indicator_source_v2.sql" -q && info "  patch_indicator_source_v2 OK"
 psql -h localhost -U osa_user -d osa_db \
     -f "$PROJET/db/patch_pres_pilier.sql" -q && info "  patch_pres_pilier OK"
 psql -h localhost -U osa_user -d osa_db \
@@ -216,25 +223,27 @@ check() {
     fi
 }
 
-check "rf.indicators"     "SELECT COUNT(*) FROM rf.indicators"       "137"
-check "rf.countries"      "SELECT COUNT(*) FROM rf.countries"        "54"
-check "rf.pillars"        "SELECT COUNT(*) FROM rf.pillars"          "9"
-check "rf.regional_blocs" "SELECT COUNT(*) FROM rf.regional_blocs"   "11"
-check "rf.country_blocs"  "SELECT COUNT(*) FROM rf.country_blocs"    "167"
+check "rf.indicators"     "SELECT COUNT(*) FROM rf.indicators"                    "138"
+check "rf.countries"      "SELECT COUNT(*) FROM rf.countries"                     "54"
+check "rf.pillars"        "SELECT COUNT(*) FROM rf.pillars"                       "9"
+check "rf.regional_blocs" "SELECT COUNT(*) FROM rf.regional_blocs"                "11"
+check "rf.country_blocs"  "SELECT COUNT(*) FROM rf.country_blocs"                 "167"
+check "PRES indicateurs"  "SELECT COUNT(*) FROM rf.indicators WHERE pillar_code = 'PRES'" "16"
 check "MON_AUT désactivé" \
     "SELECT is_active::text FROM rf.indicator_meta_link
      WHERE indicator_code='MON_AUT' LIMIT 1" "false"
 check "Poids PECO" \
     "SELECT SUM(weight)::text FROM rf.indicator_meta_link
      WHERE meta_code='SOV_PECO'" "1.00000000"
-check "source_registry 17 providers" \
+check "source_registry 18 providers" \
     "SELECT COUNT(*) FROM collect.source_registry
      WHERE source_id IN (
          'WB','IMF','IMF_WEO','IMF_DOTS','IMF_BOP',
          'WHO','ITU','FAO','UNDP','UNESCO',
          'EITI','SIPRI','USGS','ACLED',
-         'COMTRADE','UNCTAD','UNPK'
-     )" "17"
+         'COMTRADE','UNCTAD','UNPK',
+         'OECD'
+     )" "18"
 check "source_registry GO (13)" \
     "SELECT COUNT(*) FROM collect.source_registry
      WHERE status = 'GO' AND source_id IN (
