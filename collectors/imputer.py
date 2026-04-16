@@ -274,6 +274,56 @@ def step1_duckdb(df_raw: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
+
+# ── Patch PRES : imputation physique ─────────────────────────
+def is_pres_indicator(code: str) -> bool:
+    return str(code).startswith("PRES_")
+
+def step_pres_imputation(df_interp, df_countries):
+    log.info("Patch PRES -- imputation physique...")
+    df_result  = df_interp.copy()
+    pres_codes = [c for c in df_interp["indicator_code"].unique() if is_pres_indicator(c)]
+    if not pres_codes:
+        return df_result
+    region_map = dict(zip(df_countries["iso3"], df_countries["region_code"]))
+    n_filled   = 0
+    for ind_code in pres_codes:
+        mask_ind = df_result["indicator_code"] == ind_code
+        for iso3, grp in df_result[mask_ind].groupby("country_iso3"):
+            idx         = grp.index
+            vals        = df_result.loc[idx, "imputed_value"].copy()
+            vals_filled = vals.ffill().bfill()
+            newly       = vals.isna() & vals_filled.notna()
+            if newly.any():
+                df_result.loc[idx[newly], "imputed_value"] = vals_filled[newly]
+                df_result.loc[idx[newly], "confidence"]    = 0.70
+                df_result.loc[idx[newly], "method_chain"]  = "PRES_FILL"
+                df_result.loc[idx[newly], "quality_flag"]  = FLAG_INTERPOLATED
+                n_filled += newly.sum()
+        for year in df_result["year"].unique():
+            mask_year = mask_ind & (df_result["year"] == year)
+            mask_miss = mask_year & df_result["imputed_value"].isna()
+            if not mask_miss.any():
+                continue
+            for iso3 in df_result[mask_miss]["country_iso3"].unique():
+                region      = region_map.get(iso3)
+                if not region:
+                    continue
+                same_region = [k for k, v in region_map.items() if v == region and k != iso3]
+                mask_reg    = mask_year & df_result["country_iso3"].isin(same_region) & df_result["imputed_value"].notna()
+                reg_vals    = df_result[mask_reg]["imputed_value"].dropna()
+                if reg_vals.empty:
+                    continue
+                median_val  = max(float(reg_vals.median()), 0.0)
+                mask_target = mask_miss & (df_result["country_iso3"] == iso3)
+                df_result.loc[mask_target, "imputed_value"] = round(median_val, 6)
+                df_result.loc[mask_target, "confidence"]    = 0.55
+                df_result.loc[mask_target, "method_chain"]  = "PRES_KNN_REGIONAL"
+                df_result.loc[mask_target, "quality_flag"]  = FLAG_ESTIMATED
+                n_filled += mask_target.sum()
+    log.info("  -> %d valeurs imputees PRES (fill + mediane regionale)", n_filled)
+    return df_result
+
 # ── Etape 2 : MICE par pilier ─────────────────────────────────
 def step2_mice_by_pillar(df_interp: pd.DataFrame, df_coverage: pd.DataFrame) -> pd.DataFrame:
     """
@@ -739,8 +789,13 @@ def run(
             log.warning("Aucune donnée -- vérifier les filtres")
             return
 
-        df_interp = step1_duckdb(df_raw)
-        df_mice   = step2_mice_by_pillar(df_interp, df_coverage)
+        df_interp       = step1_duckdb(df_raw)
+        df_interp       = step_pres_imputation(df_interp, df_countries)
+        df_non_pres     = df_interp[~df_interp["indicator_code"].apply(is_pres_indicator)].copy()
+        df_pres         = df_interp[df_interp["indicator_code"].apply(is_pres_indicator)].copy()
+        df_cov_np       = df_coverage[~df_coverage["indicator_code"].apply(is_pres_indicator)]
+        df_mice_np      = step2_mice_by_pillar(df_non_pres, df_cov_np)
+        df_mice         = pd.concat([df_mice_np, df_pres], ignore_index=True)
         df_knn    = step3_knn_geo(df_mice, df_countries)
         df_final  = step4_summary(df_knn)
         n         = insert_l2_batch(conn, df_final, dry_run)

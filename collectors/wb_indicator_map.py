@@ -548,6 +548,9 @@ WB_INDICATOR_MAP: dict = {
     "PRES_EN_RENEW_SHARE": {"wb_code": "EG.ELC.RNEW.ZS",  "name_fr": "Part energies renouvelables",    "unit_code": "PERCENT", "direction": "+", "multiplier": 1.0,          "notes": "WB WDI electricite renouvelable pct production"},
     "PRES_WA_RES_TOTAL":   {"wb_code": "ER.H2O.INTR.K3",  "name_fr": "Ressources eau renouvelables",   "unit_code": "M3",      "direction": "+", "multiplier": 1000000000.0, "notes": "WB WDI milliards m3 convertis en m3"},
     "PRES_WA_RES_PC":      {"wb_code": "ER.H2O.INTR.PC",  "name_fr": "Eau par habitant",               "unit_code": "M3_PC",   "direction": "+", "multiplier": 1.0,          "notes": "WB WDI ressources eau renouvelables par habitant"},
+    "PRES_EN_LOSS":        {"wb_code": "EG.ELC.LOSS.ZS",     "name_fr": "Pertes reseau electrique",       "unit_code": "PERCENT",  "direction": "-", "multiplier": 1.0, "notes": "WB WDI pertes transmission distribution — efficacite systeme"},
+    "PRES_EN_USE_PC":      {"wb_code": "EG.USE.PCAP.KG.OE",  "name_fr": "Consommation energie par hab",   "unit_code": "KTOE",     "direction": "+", "multiplier": 0.001, "notes": "WB WDI kgoe/hab converti en ktoe — proxy capacite energetique"},
+    "PRES_WA_WITHDRAW":   {"wb_code": "ER.H2O.FWTL.K3",  "name_fr": "Prelevements eau totaux",         "unit_code": "M3",      "direction": "+", "multiplier": 1000000000.0, "notes": "WB WDI milliards m3 convertis en m3 — remplace PRES_WA_VARIABILITY"},
     "PRES_WA_INTERNAL":    {"wb_code": "ER.H2O.INTR.K3",  "name_fr": "Ressources eau internes totales", "unit_code": "M3",      "direction": "+", "multiplier": 1000000000.0, "notes": "PROXY — ER.H2O.INTR.ZS invalide — FAO AQUASTAT requis Sprint 5"},
 }
 
