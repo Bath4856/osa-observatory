@@ -1,4 +1,4 @@
-BEGIN;
+content = """BEGIN;
 
 -- UNCTAD : mettre à jour base_url dans data_providers
 UPDATE collect.data_providers
@@ -33,3 +33,7 @@ BEGIN
 END;
 $$;
 COMMIT;
+"""
+with open('G:/osa-observatory/db/patch_comtrade_unctad_providers.sql', 'w', encoding='utf-8') as f:
+    f.write(content)
+print('OK')

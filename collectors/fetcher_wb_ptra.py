@@ -283,7 +283,7 @@ def fetch_wb_indicator(wb_code: str, year_min: int, year_max: int) -> pd.DataFra
         for row in rows:
             if row.get("value") is None:
                 continue
-            iso3 = row.get("countryiso3code", "")
+            iso3 = row.get("countryiso3code", "") or row.get("country", {}).get("id", "")
             year = int(row.get("date", 0))
             if not iso3 or not year:
                 continue
@@ -304,9 +304,29 @@ def fetch_wb_indicator(wb_code: str, year_min: int, year_max: int) -> pd.DataFra
         page += 1
         time.sleep(REQUEST_DELAY)
 
-    return pd.DataFrame(records) if records else pd.DataFrame(
+    df = pd.DataFrame(records) if records else pd.DataFrame(
         columns=["country_iso3", "year", "raw_value"]
     )
+    # Filtrer sur les pays dans rf.countries via la DB
+    # Exclure les agrégats régionaux WB (non ISO3 pays)
+    WB_AGGREGATES = {
+        "AFE","AFW","ARB","CEB","CSS","EAP","EAR","EAS","ECA","ECS",
+        "EMU","EUU","FCS","HIC","HPC","IBD","IBT","IDA","IDB","IDX",
+        "LAC","LCN","LDC","LIC","LMC","LMY","LTE","MEA","MIC","MNA",
+        "NAC","NOC","OEC","OSS","PRE","PSS","PST","SAR","SAS","SSA",
+        "SSF","SST","TEA","TEC","TLA","TMN","TSA","TSS","UMC","WLD",
+        "XZN","ZAF","ZAR",
+    }
+    df = df[~df["country_iso3"].isin(WB_AGGREGATES)]
+    # Filtrer sur les ISO3 valides de rf.countries
+    try:
+        conn_filter = get_pg_conn()
+        valid_iso3 = pd.read_sql("SELECT iso3 FROM rf.countries", conn_filter)["iso3"].tolist()
+        conn_filter.close()
+        df = df[df["country_iso3"].isin(valid_iso3)]
+    except Exception:
+        pass
+    return df
 
 
 # ── Validation par indicateur ─────────────────────────────
@@ -448,17 +468,7 @@ def export_csv(
 
 # ── Récupération method_version_id ────────────────────────
 def get_method_version_id(conn, osa_code: str) -> int:
-    try:
-        with conn.cursor() as cur:
-            cur.execute("""
-                SELECT id FROM rf.method_versions
-                WHERE indicator_code = %s
-                ORDER BY created_at DESC LIMIT 1
-            """, (osa_code,))
-            row = cur.fetchone()
-            return int(row[0]) if row else 1
-    except Exception:
-        return 1
+    return 1
 
 
 # ── Insertion batch ───────────────────────────────────────
@@ -519,33 +529,33 @@ def insert_indicator(
         if has_confidence and has_status:
             batch_data.append((
                 osa_code, iso3, year, LAYER_RAW,
-                scaled, None, mvid, quality_flag, confidence, value_status
+                scaled, None, quality_flag, confidence, value_status
             ))
         elif has_confidence:
             batch_data.append((
                 osa_code, iso3, year, LAYER_RAW,
-                scaled, None, mvid, quality_flag, confidence
+                scaled, None, quality_flag, confidence
             ))
         else:
             batch_data.append((
                 osa_code, iso3, year, LAYER_RAW,
-                scaled, None, mvid, quality_flag
+                scaled, quality_flag
             ))
 
     if has_confidence and has_status:
         sql = """
             INSERT INTO ma.indicator_values
                 (indicator_code, country_iso3, year, layer_id,
-                 raw_value, processed_value, method_version_id,
+                 raw_value, processed_value,
                  quality_flag, confidence_score, value_status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT DO NOTHING
         """
     elif has_confidence:
         sql = """
             INSERT INTO ma.indicator_values
                 (indicator_code, country_iso3, year, layer_id,
-                 raw_value, processed_value, method_version_id,
+                 raw_value, processed_value,
                  quality_flag, confidence_score)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT DO NOTHING
@@ -554,7 +564,7 @@ def insert_indicator(
         sql = """
             INSERT INTO ma.indicator_values
                 (indicator_code, country_iso3, year, layer_id,
-                 raw_value, processed_value, method_version_id, quality_flag)
+                 raw_value, processed_value, quality_flag)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT DO NOTHING
         """

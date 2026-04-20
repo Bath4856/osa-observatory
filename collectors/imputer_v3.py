@@ -183,9 +183,54 @@ def load_data(conn, indicator_filter=None, pillar_filter=None):
              len(df_raw),
              df_raw["indicator_code"].nunique(),
              df_raw["country_iso3"].nunique())
+    log.info("Etape 0 -- Grille complète pays × années × indicateurs...")
+    df_raw = step0_full_grid(df_raw, df_countries)
 
     return df_raw, df_countries, df_coverage
 
+
+
+def step0_full_grid(df_raw: pd.DataFrame, df_countries: pd.DataFrame, year_min: int = 2010, year_max: int = 2024) -> pd.DataFrame:
+    """
+    Crée une grille complète (pays africains × indicateurs × années).
+    Les cellules sans données sont NaN — nécessaire pour que MICE
+    puisse imputer les pays/années entièrement absents.
+    """
+    countries = df_countries["iso3"].unique()
+    years     = list(range(year_min, year_max + 1))
+    indicators = df_raw[["indicator_code", "pillar_code", "direction"]].drop_duplicates()
+
+    rows = []
+    for _, ind_row in indicators.iterrows():
+        for iso3 in countries:
+            for year in years:
+                rows.append({
+                    "indicator_code": ind_row["indicator_code"],
+                    "pillar_code":    ind_row["pillar_code"],
+                    "direction":      ind_row["direction"],
+                    "country_iso3":   iso3,
+                    "year":           year,
+                    "raw_value":      None,
+                })
+
+    df_grid = pd.DataFrame(rows)
+
+    # Fusionner avec les données réelles
+    df_merged = df_grid.merge(
+        df_raw[["indicator_code", "country_iso3", "year", "raw_value"]],
+        on=["indicator_code", "country_iso3", "year"],
+        how="left",
+        suffixes=("_grid", "_real"),
+    )
+    df_merged["raw_value"] = df_merged["raw_value_real"].combine_first(df_merged["raw_value_grid"])
+    df_merged = df_merged.drop(columns=["raw_value_grid", "raw_value_real"])
+
+    log.info("Grille complète : %d lignes (%d pays × %d années × %d indicateurs)",
+             len(df_merged),
+             len(countries),
+             len(years),
+             len(indicators))
+    return df_merged
 
 # ── Etape 1 : DuckDB interpolation ───────────────────────────
 def step1_duckdb(df_raw: pd.DataFrame) -> pd.DataFrame:

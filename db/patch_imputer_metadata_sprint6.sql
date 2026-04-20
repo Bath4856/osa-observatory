@@ -38,19 +38,19 @@ WHERE code = 'PRES';
 -- ── 3. Nouveaux indicateurs PRES (si déjà insérés) ───────
 
 INSERT INTO rf.indicators
-    (code, pillar_code, name_fr, unit, direction,
+    (code, pillar_code, name_fr, name_en, unit_code, direction,
      imputation_regime, is_composite_score, has_structural_zeros)
 VALUES
-    ('PRES_ENRG_USE_CAP',     'PRES', 'Conso. énergie par hab. (kg éq. pétrole)', 'KG_OE_CAP', '+', 'PHYSICAL', false, false),
-    ('PRES_ENRG_PROD_IEA',    'PRES', 'Production électricité (kWh)', 'KWH', '+', 'PHYSICAL', false, false),
-    ('PRES_RENEW_CAP_IRENA',  'PRES', 'Capacité élec. renouvelable (% total)', 'PCT_ELEC', '+', 'PHYSICAL', false, false),
-    ('PRES_RENEW_SHARE_FEC',  'PRES', 'Renouvelables % consommation finale', 'PCT_FEC', '+', 'PHYSICAL', false, false),
-    ('PRES_FOSSIL_RENTS_EIA', 'PRES', 'Rentes ressources naturelles (% PIB)', 'PCT_GDP', '+', 'PHYSICAL', false, false),
-    ('PRES_OIL_RENTS',        'PRES', 'Rentes pétrolières (% PIB)', 'PCT_GDP', '+', 'PHYSICAL', false, true),
-    ('PRES_GAS_RENTS',        'PRES', 'Rentes gaz naturel (% PIB)', 'PCT_GDP', '+', 'PHYSICAL', false, true),
-    ('PRES_WATER_FRESH',      'PRES', 'Eau douce renouvelable par hab. (m³)', 'M3_CAP', '+', 'PHYSICAL', false, false),
-    ('PRES_WATER_WITHDRAWAL', 'PRES', 'Prélèvements eau douce (% ressources)', 'PCT_H2O', '-', 'PHYSICAL', false, false),
-    ('PRES_WATER_AGRI',       'PRES', 'Terres irriguées (% terres cultivées)', 'PCT_AGRI', '+', 'PHYSICAL', false, false)
+    ('PRES_ENRG_USE_CAP',     'PRES', 'Conso. énergie par hab. (kg éq. pétrole)', 'Conso. énergie par hab. (kg éq. pétrole)', 'KG_OE_CAP', '+', 'PHYSICAL', false, false),
+    ('PRES_ENRG_PROD_IEA',    'PRES', 'Production électricité (kWh)', 'Production électricité (kWh)', 'KWH', '+', 'PHYSICAL', false, false),
+    ('PRES_RENEW_CAP_IRENA',  'PRES', 'Capacité élec. renouvelable (% total)', 'Capacité élec. renouvelable (% total)', 'PCT_ELEC', '+', 'PHYSICAL', false, false),
+    ('PRES_RENEW_SHARE_FEC',  'PRES', 'Renouvelables % consommation finale', 'Renouvelables % consommation finale', 'PCT_FEC', '+', 'PHYSICAL', false, false),
+    ('PRES_FOSSIL_RENTS_EIA', 'PRES', 'Rentes ressources naturelles (% PIB)', 'Rentes ressources naturelles (% PIB)', 'PCT_GDP', '+', 'PHYSICAL', false, false),
+    ('PRES_OIL_RENTS',        'PRES', 'Rentes pétrolières (% PIB)', 'Rentes pétrolières (% PIB)', 'PCT_GDP', '+', 'PHYSICAL', false, true),
+    ('PRES_GAS_RENTS',        'PRES', 'Rentes gaz naturel (% PIB)', 'Rentes gaz naturel (% PIB)', 'PCT_GDP', '+', 'PHYSICAL', false, true),
+    ('PRES_WATER_FRESH',      'PRES', 'Eau douce renouvelable par hab. (m³)', 'Eau douce renouvelable par hab. (m³)', 'M3_CAP', '+', 'PHYSICAL', false, false),
+    ('PRES_WATER_WITHDRAWAL', 'PRES', 'Prélèvements eau douce (% ressources)', 'Prélèvements eau douce (% ressources)', 'PCT_H2O', '-', 'PHYSICAL', false, false),
+    ('PRES_WATER_AGRI',       'PRES', 'Terres irriguées (% terres cultivées)', 'Terres irriguées (% terres cultivées)', 'PCT_AGRI', '+', 'PHYSICAL', false, false)
 ON CONFLICT (code) DO UPDATE
     SET imputation_regime    = EXCLUDED.imputation_regime,
         is_composite_score   = EXCLUDED.is_composite_score,
@@ -59,21 +59,21 @@ ON CONFLICT (code) DO UPDATE
 -- ── 4. Nouveaux indicateurs PMIL ─────────────────────────
 
 INSERT INTO rf.indicators
-    (code, pillar_code, name_fr, unit, direction,
+    (code, pillar_code, name_fr, name_en, unit_code, direction,
      imputation_regime, is_composite_score, has_structural_zeros)
 VALUES
     -- WB / STANDARD
-    ('PMIL_DEF_BUDGET_GDP', 'PMIL', 'Dépenses militaires (% PIB)',            'PCT_GDP',  '+', 'STANDARD', false, false),
-    ('PMIL_DEF_BUDGET_GOV', 'PMIL', 'Dépenses militaires (% dépenses gov.)',  'PCT_GOV',  '+', 'STANDARD', false, false),
-    ('PMIL_ARMED_FORCES',   'PMIL', 'Personnel forces armées',                'COUNT_N',  '+', 'STANDARD', false, false),
-    ('PMIL_HOMICIDE_RATE',  'PMIL', 'Taux homicides (pour 100 000 hab.)',     'RATE_100K','-', 'STANDARD', false, false),
+    ('PMIL_DEF_BUDGET_GDP', 'PMIL', 'Dépenses militaires (% PIB)', 'Dépenses militaires (% PIB)',            'PCT_GDP',  '+', 'STANDARD', false, false),
+    ('PMIL_DEF_BUDGET_GOV', 'PMIL', 'Dépenses militaires (% dépenses gov.)', 'Dépenses militaires (% dépenses gov.)',  'PCT_GOV',  '+', 'STANDARD', false, false),
+    ('PMIL_ARMED_FORCES',   'PMIL', 'Personnel forces armées', 'Personnel forces armées',                'COUNT_N',  '+', 'STANDARD', false, false),
+    ('PMIL_HOMICIDE_RATE',  'PMIL', 'Taux homicides (pour 100 000 hab.)', 'Taux homicides (pour 100 000 hab.)',     'RATE_100K','-', 'STANDARD', false, false),
     -- Scores composites / PHYSICAL
-    ('PMIL_STABILITY_WGI',  'PMIL', 'Stabilité politique (WGI)',              'SCORE_NORM','+','PHYSICAL', true,  false),
+    ('PMIL_STABILITY_WGI',  'PMIL', 'Stabilité politique (WGI)', 'Stabilité politique (WGI)',              'SCORE_NORM','+','PHYSICAL', true,  false),
     -- CSV natifs
-    ('PMIL_ARMS_IMPORT',    'PMIL', 'Importations armements (TIV SIPRI)',     'USD_M_CONST','+','PHYSICAL', true,  false),
-    ('PMIL_ARMS_EXPORT',    'PMIL', 'Exportations armements (TIV SIPRI)',     'USD_M_CONST','+','PHYSICAL', true,  true),
-    ('PMIL_GTI_TERROR',     'PMIL', 'Indice terrorisme GTI',                  'SCORE_0_10','-','PHYSICAL', true,  false),
-    ('PMIL_GCI_CYBER',      'PMIL', 'Cybersécurité défense (ITU GCI)',        'SCORE_0_100','+','PHYSICAL',true,  false)
+    ('PMIL_ARMS_IMPORT',    'PMIL', 'Importations armements (TIV SIPRI)', 'Importations armements (TIV SIPRI)',     'USD_M_CONST','+','PHYSICAL', true,  false),
+    ('PMIL_ARMS_EXPORT',    'PMIL', 'Exportations armements (TIV SIPRI)', 'Exportations armements (TIV SIPRI)',     'USD_M_CONST','+','PHYSICAL', true,  true),
+    ('PMIL_GTI_TERROR',     'PMIL', 'Indice terrorisme GTI', 'Indice terrorisme GTI',                  'SCORE_0_10','-','PHYSICAL', true,  false),
+    ('PMIL_GCI_CYBER',      'PMIL', 'Cybersécurité défense (ITU GCI)', 'Cybersécurité défense (ITU GCI)',        'SCORE_0_100','+','PHYSICAL',true,  false)
 ON CONFLICT (code) DO UPDATE
     SET imputation_regime    = EXCLUDED.imputation_regime,
         is_composite_score   = EXCLUDED.is_composite_score,
@@ -82,23 +82,23 @@ ON CONFLICT (code) DO UPDATE
 -- ── 5. Nouveaux indicateurs PNUM ─────────────────────────
 
 INSERT INTO rf.indicators
-    (code, pillar_code, name_fr, unit, direction,
+    (code, pillar_code, name_fr, name_en, unit_code, direction,
      imputation_regime, is_composite_score, has_structural_zeros)
 VALUES
     -- WB / STANDARD
-    ('PNUM_INTERNET_USERS',   'PNUM', 'Utilisateurs internet (% pop.)',           'PCT_POP',  '+', 'STANDARD', false, false),
-    ('PNUM_BROADBAND_FIXED',  'PNUM', 'Haut débit fixe (pour 100 hab.)',          'PER_100',  '+', 'STANDARD', false, false),
-    ('PNUM_BROADBAND_MOBILE', 'PNUM', 'Haut débit mobile (pour 100 hab.)',        'PER_100',  '+', 'STANDARD', false, false),
-    ('PNUM_MOBILE_SUBSCRIPTIONS','PNUM','Abonnements mobile (pour 100 hab.)',      'PER_100',  '+', 'STANDARD', false, false),
-    ('PNUM_SECURE_SERVERS',   'PNUM', 'Serveurs sécurisés (pour 1M hab.)',        'PER_1M',   '+', 'STANDARD', false, false),
-    ('PNUM_TERTIARY_ENROLL',  'PNUM', 'Scolarisation supérieur (%)',              'PCT_POP',  '+', 'STANDARD', false, false),
+    ('PNUM_INTERNET_USERS',   'PNUM', 'Utilisateurs internet (% pop.)', 'Utilisateurs internet (% pop.)',           'PCT_POP',  '+', 'STANDARD', false, false),
+    ('PNUM_BROADBAND_FIXED',  'PNUM', 'Haut débit fixe (pour 100 hab.)', 'Haut débit fixe (pour 100 hab.)',          'PER_100',  '+', 'STANDARD', false, false),
+    ('PNUM_BROADBAND_MOBILE', 'PNUM', 'Haut débit mobile (pour 100 hab.)', 'Haut débit mobile (pour 100 hab.)',        'PER_100',  '+', 'STANDARD', false, false),
+    ('PNUM_MOBILE_SUBSCRIPTIONS','PNUM','Abonnements mobile (pour 100 hab.)', 'Abonnements mobile (pour 100 hab.)',      'PER_100',  '+', 'STANDARD', false, false),
+    ('PNUM_SECURE_SERVERS',   'PNUM', 'Serveurs sécurisés (pour 1M hab.)', 'Serveurs sécurisés (pour 1M hab.)',        'PER_1M',   '+', 'STANDARD', false, false),
+    ('PNUM_TERTIARY_ENROLL',  'PNUM', 'Scolarisation supérieur (%)', 'Scolarisation supérieur (%)',              'PCT_POP',  '+', 'STANDARD', false, false),
     -- Scores composites / PHYSICAL
-    ('PNUM_GOV_EFFECTIVENESS','PNUM', 'Efficacité gouvernementale (WGI)',         'SCORE_NORM','+','PHYSICAL', true,  false),
-    ('PNUM_ITU_REG_ENV',      'PNUM', 'Environnement réglementaire TIC (ITU)',    'SCORE_0_5', '+', 'PHYSICAL', true,  false),
-    ('PNUM_GCI_DIGITAL',      'PNUM', 'Cybersécurité numérique (ITU GCI)',        'SCORE_0_100','+','PHYSICAL',true,  false),
-    ('PNUM_EGDI_EGOV',        'PNUM', 'Développement e-gouvernement (EGDI)',      'SCORE_0_1', '+', 'PHYSICAL', true,  false),
-    ('PNUM_EGDI_ONLINE_SVC',  'PNUM', 'Services en ligne (EGDI-OSI)',             'SCORE_0_1', '+', 'PHYSICAL', true,  false),
-    ('PNUM_EGDI_HUMAN_CAP',   'PNUM', 'Capital humain numérique (EGDI-HCI)',      'SCORE_0_1', '+', 'PHYSICAL', true,  false)
+    ('PNUM_GOV_EFFECTIVENESS','PNUM', 'Efficacité gouvernementale (WGI)', 'Efficacité gouvernementale (WGI)',         'SCORE_NORM','+','PHYSICAL', true,  false),
+    ('PNUM_ITU_REG_ENV',      'PNUM', 'Environnement réglementaire TIC (ITU)', 'Environnement réglementaire TIC (ITU)',    'SCORE_0_5', '+', 'PHYSICAL', true,  false),
+    ('PNUM_GCI_DIGITAL',      'PNUM', 'Cybersécurité numérique (ITU GCI)', 'Cybersécurité numérique (ITU GCI)',        'SCORE_0_100','+','PHYSICAL',true,  false),
+    ('PNUM_EGDI_EGOV',        'PNUM', 'Développement e-gouvernement (EGDI)', 'Développement e-gouvernement (EGDI)',      'SCORE_0_1', '+', 'PHYSICAL', true,  false),
+    ('PNUM_EGDI_ONLINE_SVC',  'PNUM', 'Services en ligne (EGDI-OSI)', 'Services en ligne (EGDI-OSI)',             'SCORE_0_1', '+', 'PHYSICAL', true,  false),
+    ('PNUM_EGDI_HUMAN_CAP',   'PNUM', 'Capital humain numérique (EGDI-HCI)', 'Capital humain numérique (EGDI-HCI)',      'SCORE_0_1', '+', 'PHYSICAL', true,  false)
 ON CONFLICT (code) DO UPDATE
     SET imputation_regime    = EXCLUDED.imputation_regime,
         is_composite_score   = EXCLUDED.is_composite_score,

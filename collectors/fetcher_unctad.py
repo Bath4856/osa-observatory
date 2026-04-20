@@ -253,7 +253,7 @@ def fetch_lsci_from_wb(year_min: int, year_max: int) -> pd.DataFrame:
         for row in rows:
             if row.get("value") is None:
                 continue
-            iso3 = row.get("countryiso3code", "")
+            iso3 = row.get("countryiso3code", "") or row.get("country", {}).get("id", "")
             year = int(row.get("date", 0))
             if not iso3 or not year:
                 continue
@@ -533,6 +533,28 @@ def insert_to_db(
         log.info("Aucune valeur à insérer pour la fenêtre %d–%d", YEAR_MIN, YEAR_MAX)
         return 0
 
+    # Filtrer sur les pays africains valides
+    try:
+        conn_tmp = get_pg_conn()
+        import pandas as pd
+        valid_iso3 = pd.read_sql("SELECT iso3 FROM rf.countries", conn_tmp)["iso3"].tolist()
+        conn_tmp.close()
+        before = len(df_insert)
+        df_insert = df_insert[df_insert["country_iso3"].isin(valid_iso3)]
+        log.info("  Filtre rf.countries : %d → %d lignes", before, len(df_insert))
+    except Exception as e:
+        log.warning("  Filtre rf.countries échoué : %s", e)
+    # Filtrer sur les pays africains valides
+    try:
+        conn_tmp = get_pg_conn()
+        import pandas as pd
+        valid_iso3 = pd.read_sql("SELECT iso3 FROM rf.countries", conn_tmp)["iso3"].tolist()
+        conn_tmp.close()
+        before = len(df_insert)
+        df_insert = df_insert[df_insert["country_iso3"].isin(valid_iso3)]
+        log.info("  Filtre rf.countries : %d → %d lignes", before, len(df_insert))
+    except Exception as e:
+        log.warning("  Filtre rf.countries échoué : %s", e)
     log.info("Préparation insertion : %d lignes...", len(df_insert))
 
     if dry_run:
@@ -547,7 +569,7 @@ def insert_to_db(
                  sorted(df_insert["year"].unique().tolist()))
         return len(df_insert)
 
-    mvid = get_method_version_id(conn)
+    mvid = 1  # rf.method_versions absent
 
     # Vérifier colonnes disponibles
     with conn.cursor() as cur:
@@ -583,43 +605,41 @@ def insert_to_db(
         if has_confidence and has_status:
             batch_data.append((
                 INDICATOR_CODE, iso3, year, LAYER_RAW,
-                value, None, mvid, quality_flag, confidence, value_status
+                value, None, quality_flag, confidence, value_status
             ))
         elif has_confidence:
             batch_data.append((
                 INDICATOR_CODE, iso3, year, LAYER_RAW,
-                value, None, mvid, quality_flag, confidence
+                value, None, quality_flag, confidence
             ))
         else:
             batch_data.append((
                 INDICATOR_CODE, iso3, year, LAYER_RAW,
-                value, None, mvid, quality_flag
+                value, None, quality_flag
             ))
 
     if has_confidence and has_status:
         sql = """
             INSERT INTO ma.indicator_values
                 (indicator_code, country_iso3, year, layer_id,
-                 raw_value, processed_value, method_version_id,
-                 quality_flag, confidence_score, value_status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                 raw_value, processed_value, quality_flag, confidence_score, value_status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT DO NOTHING
         """
     elif has_confidence:
         sql = """
             INSERT INTO ma.indicator_values
                 (indicator_code, country_iso3, year, layer_id,
-                 raw_value, processed_value, method_version_id,
-                 quality_flag, confidence_score)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                 raw_value, processed_value, quality_flag, confidence_score)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT DO NOTHING
         """
     else:
         sql = """
             INSERT INTO ma.indicator_values
                 (indicator_code, country_iso3, year, layer_id,
-                 raw_value, processed_value, method_version_id, quality_flag)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                 raw_value, processed_value, quality_flag)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT DO NOTHING
         """
 

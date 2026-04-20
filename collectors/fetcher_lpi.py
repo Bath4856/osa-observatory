@@ -161,7 +161,7 @@ def fetch_lpi_from_wb(editions: list[int]) -> pd.DataFrame:
             if row.get("value") is None:
                 continue
 
-            iso3 = row.get("countryiso3code", "")
+            iso3 = row.get("countryiso3code", "") or row.get("country", {}).get("id", "")
             year = int(row.get("date", 0))
 
             if not iso3 or not year:
@@ -279,6 +279,17 @@ def insert_to_db(
         log.info("Aucune valeur à insérer")
         return 0
 
+    # Filtrer sur les pays africains valides
+    try:
+        conn_tmp = get_pg_conn()
+        import pandas as pd
+        valid_iso3 = pd.read_sql("SELECT iso3 FROM rf.countries", conn_tmp)["iso3"].tolist()
+        conn_tmp.close()
+        before = len(df_insert)
+        df_insert = df_insert[df_insert["country_iso3"].isin(valid_iso3)]
+        log.info("  Filtre rf.countries : %d → %d lignes", before, len(df_insert))
+    except Exception as e:
+        log.warning("  Filtre rf.countries échoué : %s", e)
     log.info("Préparation insertion : %d lignes LPI...", len(df_insert))
 
     if dry_run:
@@ -292,18 +303,8 @@ def insert_to_db(
             log.info("    %d : %.3f → %.1f (×20)", yr, mean, mean * 20)
         return len(df_insert)
 
-    # Récupérer method_version_id
-    try:
-        with conn.cursor() as cur:
-            cur.execute("""
-                SELECT id FROM rf.method_versions
-                WHERE indicator_code = %s
-                ORDER BY created_at DESC LIMIT 1
-            """, (INDICATOR_CODE,))
-            row = cur.fetchone()
-            mvid = int(row[0]) if row else 1
-    except Exception:
-        mvid = 1
+    # method_version_id — table absente, valeur fixe
+    mvid = 1
 
     # Vérifier colonnes disponibles
     with conn.cursor() as cur:
@@ -325,43 +326,41 @@ def insert_to_db(
         if has_confidence and has_status:
             batch_data.append((
                 INDICATOR_CODE, iso3, year, LAYER_RAW,
-                value, None, mvid, "OK", CONFIDENCE_OBSERVED, "OBSERVED"
+                value, None, "OK", CONFIDENCE_OBSERVED, "OBSERVED"
             ))
         elif has_confidence:
             batch_data.append((
                 INDICATOR_CODE, iso3, year, LAYER_RAW,
-                value, None, mvid, "OK", CONFIDENCE_OBSERVED
+                value, None, "OK", CONFIDENCE_OBSERVED
             ))
         else:
             batch_data.append((
                 INDICATOR_CODE, iso3, year, LAYER_RAW,
-                value, None, mvid, "OK"
+                value, None, "OK"
             ))
 
     if has_confidence and has_status:
         sql = """
             INSERT INTO ma.indicator_values
                 (indicator_code, country_iso3, year, layer_id,
-                 raw_value, processed_value, method_version_id,
-                 quality_flag, confidence_score, value_status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                 raw_value, processed_value, quality_flag, confidence_score, value_status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT DO NOTHING
         """
     elif has_confidence:
         sql = """
             INSERT INTO ma.indicator_values
                 (indicator_code, country_iso3, year, layer_id,
-                 raw_value, processed_value, method_version_id,
-                 quality_flag, confidence_score)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                 raw_value, processed_value, quality_flag, confidence_score)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT DO NOTHING
         """
     else:
         sql = """
             INSERT INTO ma.indicator_values
                 (indicator_code, country_iso3, year, layer_id,
-                 raw_value, processed_value, method_version_id, quality_flag)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                 raw_value, processed_value, quality_flag)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT DO NOTHING
         """
 

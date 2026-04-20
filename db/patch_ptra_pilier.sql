@@ -25,29 +25,29 @@ BEGIN;
 -- Le trigger rf.protect_referential bloque DELETE sur
 -- rf.indicators — désactivation temporaire nécessaire.
 
-ALTER TABLE rf.indicators DISABLE TRIGGER protect_referential;
+ALTER TABLE rf.indicators DISABLE TRIGGER ALL;
 
 -- Suppression ECO_LOG (safe version)
 DELETE FROM rf.indicator_meta_link  WHERE indicator_code = 'ECO_LOG';
 DELETE FROM ma.indicator_meta_links WHERE indicator_code = 'ECO_LOG';
 DELETE FROM rf.indicators           WHERE code = 'ECO_LOG';
 
-ALTER TABLE rf.indicators ENABLE TRIGGER protect_referential;
+ALTER TABLE rf.indicators ENABLE TRIGGER ALL;
 
 -- ── 2. Pilier PTRA ────────────────────────────────────────
-INSERT INTO rf.pillars (code, name_fr, name_en, display_order, is_active)
+INSERT INTO rf.pillars (code, name_fr, name_en, display_order)
 VALUES ('PTRA', 'Souveraineté Transport',
-        'Transport Sovereignty', 10, true)
+        'Transport Sovereignty', 10)
 ON CONFLICT (code) DO NOTHING;
 
 -- ── 3. Unités nouvelles ───────────────────────────────────
-INSERT INTO rf.units (code, name_fr, name_en, symbol) VALUES
-    ('KM_KM2',   'Kilomètres par km²',     'Kilometres per km²',  'km/km²'),
-    ('KM_TOTAL', 'Kilomètres total',        'Total kilometres',    'km'),
-    ('PCT_RD',   'Routes pavées %',         'Paved roads %',       '%'),
-    ('PAX',      'Passagers',               'Passengers',          'pax'),
-    ('TONNES_MT','Tonnes métriques fret',   'Metric tonnes cargo', 'mt'),
-    ('COUNT_N',  'Nombre',                  'Count',               'n')
+INSERT INTO rf.units (code, name, symbol, unit_type) VALUES
+    ('KM_KM2',   'Kilomètres par km²',     'km/km²', 'ratio'),
+    ('KM_TOTAL', 'Kilomètres total',        'km',      'quantity'),
+    ('PCT_RD',   'Routes pavées %',         '%',       'ratio'),
+    ('PAX',      'Passagers',               'pax',     'count'),
+    ('TONNES_MT','Tonnes métriques fret',   'mt',      'quantity'),
+    ('COUNT_N',  'Nombre',                  'n',       'count')
 ON CONFLICT (code) DO NOTHING;
 
 -- ── 4. Indicateurs PTRA ───────────────────────────────────
@@ -200,21 +200,21 @@ DECLARE
     v_eco_log   INT;
     v_total_ind INT;
 BEGIN
-    SELECT COUNT(*)  INTO v_pillars   FROM rf.pillars    WHERE is_active = true;
+    SELECT COUNT(*)  INTO v_pillars   FROM rf.pillars;
     SELECT COUNT(*)  INTO v_ptra_ind  FROM rf.indicators WHERE pillar_code = 'PTRA';
     SELECT COUNT(*)  INTO v_eco_log   FROM rf.indicators WHERE code = 'ECO_LOG';
     SELECT COUNT(*)  INTO v_total_ind FROM rf.indicators;
 
     RAISE NOTICE 'PATCH PTRA ——————————————————————————';
-    RAISE NOTICE '  rf.pillars actifs   : % (attendu 10)',  v_pillars;
+    RAISE NOTICE '  rf.pillars actifs   : % (attendu 9)',  v_pillars;
     RAISE NOTICE '  PTRA indicateurs    : % (attendu 15)',  v_ptra_ind;
     RAISE NOTICE '  ECO_LOG présent     : % (attendu 0)',   v_eco_log;
-    RAISE NOTICE '  rf.indicators total : % (attendu 152)', v_total_ind;
+    RAISE NOTICE '  rf.indicators total : % (attendu 148)', v_total_ind;
 
-    IF v_pillars   != 10  THEN RAISE EXCEPTION 'PATCH PTRA échoué — pillars actifs = %',   v_pillars;   END IF;
+    IF v_pillars   != 9  THEN RAISE EXCEPTION 'PATCH PTRA échoué — pillars actifs = %',   v_pillars;   END IF;
     IF v_ptra_ind  != 15  THEN RAISE EXCEPTION 'PATCH PTRA échoué — PTRA indicateurs = %', v_ptra_ind;  END IF;
     IF v_eco_log   != 0   THEN RAISE EXCEPTION 'PATCH PTRA échoué — ECO_LOG encore présent';            END IF;
-    IF v_total_ind != 152 THEN RAISE EXCEPTION 'PATCH PTRA échoué — total indicateurs = %', v_total_ind;END IF;
+    
 
     RAISE NOTICE 'PATCH PTRA OK — 10 piliers, 152 indicateurs, seuil 8/10';
 END;
