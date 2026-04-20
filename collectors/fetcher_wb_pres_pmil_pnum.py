@@ -1,51 +1,43 @@
 """
 ============================================================
 OSA Observatory — collectors/fetcher_wb_pres_pmil_pnum.py
-Sprint 6 — Mai 2026
+Sprint 7 — Avril 2026
 ============================================================
-Fetcher WB — 21 indicateurs PRES / PMIL / PNUM
+Fetcher WB — 50 indicateurs pour les 10 piliers ISA
 via API World Bank (WDI)
 
-Priorités Sprint 6 :
-  PRES (10) — IEA/IRENA/EIA proxies + FAO AQUASTAT
-  PMIL  (5) — dépenses militaires + stabilité WGI
-  PNUM  (6) — connectivité internet + gouvernance WGI
+Piliers couverts :
+  PECO  (7) — Souveraineté économique
+  PENV  (4) — Souveraineté environnementale
+  PGEO  (2) — Souveraineté géopolitique (WGI)
+  PHUM  (7) — Souveraineté humaine
+  PMIL  (5) — Souveraineté militaire
+  PMIN  (1) — Souveraineté minière (proxy WB)
+  PMON  (8) — Souveraineté monétaire
+  PNUM  (6) — Souveraineté numérique
+  PRES (10) — Souveraineté ressources stratégiques
+  PTRA  (0) — Transport (fetchers dédiés)
+
+Non couverts ici :
+  PTRA               → fetcher_wb_ptra.py + fetcher_unctad.py + fetcher_lpi.py
+  PECO_EXP/IMP       → fetcher_comtrade_api.py
+  PECO_FDI (UNCTAD)  → fetcher_unctad.py
+  PGEO_PEA           → fetcher_unpk_csv.py
+  PMIN_GOV/TAX       → fetcher_eiti_csv.py
+  PMON_EXT/PAY (IMF) → fetcher_imf.py
+  PMIL_GCI           → fetcher_itu.py
+  PNUM_EGDI          → fetcher_egdi.py
 
 Modes de sortie (--output) :
   csv   → data/raw/{pilier}/{osa_code}_{year_min}_{year_max}.csv
   db    → insertion directe PostgreSQL (ma.indicator_values)
   both  → CSV + DB (défaut)
 
-Gestion erreurs réseau :
-  Toute erreur API WB → log warning + indicateur ignoré.
-  Les autres indicateurs continuent. Rapport final distingue
-  OK / KO / SKIP. Exit code 1 si tous les indicateurs échouent.
-
-Particularités :
-  - PRES_OIL_RENTS / PRES_GAS_RENTS : zéros réels pour
-    pays non-producteurs (has_structural_zeros = True)
-  - PMIL_STABILITY_WGI / PNUM_GOV_EFFECTIVENESS : WGI sur
-    [-2.5, +2.5] — normalisation documentée dans le scorer
-  - Régimes : PRES entier → PHYSICAL
-               PMIL WB quantitatifs → STANDARD
-               PNUM WB quantitatifs → STANDARD
-               Scores composites WGI → PHYSICAL (is_composite_score)
-
-Non couverts ici (fetchers dédiés) :
-  PMIL_ARMS_IMPORT/EXPORT → fetcher_sipri.py   (Sprint 7)
-  PMIL_GTI_TERROR         → fetcher_gti.py     (Sprint 7)
-  PMIL_GCI_CYBER          → fetcher_itu.py     (Sprint 6)
-  PNUM_ITU_REG_ENV        → fetcher_itu.py     (Sprint 6)
-  PNUM_GCI_DIGITAL        → fetcher_itu.py     (Sprint 6)
-  PNUM_EGDI_*             → fetcher_egdi.py    (Sprint 6)
-  PRES_IEA/IRENA/EIA      → fetchers dédiés    (Sprint 7)
-
 Usage :
   python collectors/fetcher_wb_pres_pmil_pnum.py --dry-run
-  python collectors/fetcher_wb_pres_pmil_pnum.py --pillar PRES
-  python collectors/fetcher_wb_pres_pmil_pnum.py --pillar PMIL --output csv
+  python collectors/fetcher_wb_pres_pmil_pnum.py --pillar PECO
   python collectors/fetcher_wb_pres_pmil_pnum.py --output both
-  python collectors/fetcher_wb_pres_pmil_pnum.py --indicator EG.ELC.PROD.KH
+  python collectors/fetcher_wb_pres_pmil_pnum.py --indicator NY.GDP.PCAP.KD
 ============================================================
 """
 
@@ -424,12 +416,441 @@ WB_MAP = {
         "unit":                 "SCORE_NORM",
         "direction":            "+",
         "multiplier":           1.0,
-        # WGI natif [-2.5, +2.5] — normalisation (val+2.5)/5×100 dans scorer
         "imputation_regime":    "PHYSICAL",
         "has_structural_zeros": False,
         "is_composite_score":   True,
         "min_valid":            -3.0,
         "max_valid":            3.0,
+    },
+
+    # ══════════════════════════════════════════════════════
+    # PECO — Souveraineté économique
+    # ══════════════════════════════════════════════════════
+
+    "NY.GDP.PCAP.KD": {
+        "osa_code":             "ECO_GDP",
+        "pillar":               "PECO",
+        "name_fr":              "PIB par habitant (USD constants 2015)",
+        "unit":                 "USD_CONST",
+        "direction":            "+",
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            0.0,
+        "max_valid":            200000.0,
+    },
+
+    "NY.GDP.MKTP.KD.ZG": {
+        "osa_code":             "ECO_GRW",
+        "pillar":               "PECO",
+        "name_fr":              "Croissance du PIB (%)",
+        "unit":                 "PCT_GDP",
+        "direction":            "+",
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            -50.0,
+        "max_valid":            100.0,
+    },
+
+    "NE.GDI.TOTL.ZS": {
+        "osa_code":             "ECO_INV",
+        "pillar":               "PECO",
+        "name_fr":              "Formation brute de capital (% PIB)",
+        "unit":                 "PCT_GDP",
+        "direction":            "+",
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            0.0,
+        "max_valid":            100.0,
+    },
+
+    "GC.TAX.TOTL.GD.ZS": {
+        "osa_code":             "ECO_TAX",
+        "pillar":               "PECO",
+        "name_fr":              "Recettes fiscales (% PIB)",
+        "unit":                 "PCT_GDP",
+        "direction":            "+",
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            0.0,
+        "max_valid":            60.0,
+    },
+
+    "NV.IND.TOTL.ZS": {
+        "osa_code":             "ECO_IND",
+        "pillar":               "PECO",
+        "name_fr":              "Valeur ajoutée industrie (% PIB)",
+        "unit":                 "PCT_GDP",
+        "direction":            "+",
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            0.0,
+        "max_valid":            100.0,
+    },
+
+    "SL.EMP.TOTL.SP.ZS": {
+        "osa_code":             "ECO_EMP",
+        "pillar":               "PECO",
+        "name_fr":              "Taux d'emploi (% population active)",
+        "unit":                 "PCT_POP",
+        "direction":            "+",
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            0.0,
+        "max_valid":            100.0,
+    },
+
+    "BX.KLT.DINV.CD.WD": {
+        "osa_code":             "ECO_FDI",
+        "pillar":               "PECO",
+        "name_fr":              "Investissements directs étrangers entrants (USD)",
+        "unit":                 "USD_M",
+        "direction":            "+",
+        "multiplier":           1e-6,   # → millions USD
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            -1e12,
+        "max_valid":            1e12,
+    },
+
+    # ══════════════════════════════════════════════════════
+    # PENV — Souveraineté environnementale
+    # ══════════════════════════════════════════════════════
+
+    "EN.ATM.CO2E.PC": {
+        "osa_code":             "ENV_CO2",
+        "pillar":               "PENV",
+        "name_fr":              "Émissions CO2 par habitant (tonnes)",
+        "unit":                 "T_CAP",
+        "direction":            "-",    # moins = mieux
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            0.0,
+        "max_valid":            50.0,
+    },
+
+    "EG.EGY.PRIM.PP.KD": {
+        "osa_code":             "ENV_ENE",
+        "pillar":               "PENV",
+        "name_fr":              "Intensité énergétique (MJ/$ PIB 2017 PPA)",
+        "unit":                 "MJ_USD",
+        "direction":            "-",    # moins = plus efficace
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            0.0,
+        "max_valid":            100.0,
+    },
+
+    "EG.ELC.RNEW.ZS": {
+        "osa_code":             "ENV_ENR",
+        "pillar":               "PENV",
+        "name_fr":              "Électricité renouvelable (% production totale)",
+        "unit":                 "PCT_ELEC",
+        "direction":            "+",
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            0.0,
+        "max_valid":            100.0,
+    },
+
+    "AG.LND.FRST.ZS": {
+        "osa_code":             "ENV_FOR",
+        "pillar":               "PENV",
+        "name_fr":              "Superficie forestière (% terres)",
+        "unit":                 "PCT_LAND",
+        "direction":            "+",
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            0.0,
+        "max_valid":            100.0,
+    },
+
+    # ══════════════════════════════════════════════════════
+    # PGEO — Souveraineté géopolitique
+    # ══════════════════════════════════════════════════════
+
+    "RL.EST": {
+        "osa_code":             "GEO_RSK",
+        "pillar":               "PGEO",
+        "name_fr":              "État de droit (WGI)",
+        "unit":                 "SCORE_NORM",
+        "direction":            "+",
+        "multiplier":           1.0,
+        "imputation_regime":    "PHYSICAL",
+        "has_structural_zeros": False,
+        "is_composite_score":   True,
+        "min_valid":            -3.0,
+        "max_valid":            3.0,
+    },
+
+    "PV.EST": {
+        "osa_code":             "GEO_STAB",
+        "pillar":               "PGEO",
+        "name_fr":              "Stabilité politique (WGI)",
+        "unit":                 "SCORE_NORM",
+        "direction":            "+",
+        "multiplier":           1.0,
+        "imputation_regime":    "PHYSICAL",
+        "has_structural_zeros": False,
+        "is_composite_score":   True,
+        "min_valid":            -3.0,
+        "max_valid":            3.0,
+    },
+
+    # ══════════════════════════════════════════════════════
+    # PHUM — Souveraineté humaine
+    # ══════════════════════════════════════════════════════
+
+    "SE.SEC.ENRR": {
+        "osa_code":             "HUM_EDU",
+        "pillar":               "PHUM",
+        "name_fr":              "Scolarisation secondaire (% brut)",
+        "unit":                 "PCT_POP",
+        "direction":            "+",
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            0.0,
+        "max_valid":            150.0,
+    },
+
+    "SG.GEN.PARL.ZS": {
+        "osa_code":             "HUM_GEN",
+        "pillar":               "PHUM",
+        "name_fr":              "Femmes au parlement (%)",
+        "unit":                 "PCT_PARL",
+        "direction":            "+",
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            0.0,
+        "max_valid":            100.0,
+    },
+
+    "SE.ADT.LITR.ZS": {
+        "osa_code":             "HUM_LIT",
+        "pillar":               "PHUM",
+        "name_fr":              "Taux d'alphabétisation adultes (%)",
+        "unit":                 "PCT_POP",
+        "direction":            "+",
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            0.0,
+        "max_valid":            100.0,
+    },
+
+    "SM.POP.NETM": {
+        "osa_code":             "HUM_MIG",
+        "pillar":               "PHUM",
+        "name_fr":              "Migration nette (solde)",
+        "unit":                 "COUNT_N",
+        "direction":            "+",
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            -5e6,
+        "max_valid":            5e6,
+    },
+
+    "SI.POV.DDAY": {
+        "osa_code":             "HUM_POV",
+        "pillar":               "PHUM",
+        "name_fr":              "Pauvreté extrême (% pop. < 2.15$/jour)",
+        "unit":                 "PCT_POP",
+        "direction":            "-",    # moins = mieux
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            0.0,
+        "max_valid":            100.0,
+    },
+
+    "SH.STA.BASS.ZS": {
+        "osa_code":             "HUM_SAN",
+        "pillar":               "PHUM",
+        "name_fr":              "Accès assainissement de base (%)",
+        "unit":                 "PCT_POP",
+        "direction":            "+",
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            0.0,
+        "max_valid":            100.0,
+    },
+
+    "SH.H2O.BASW.ZS": {
+        "osa_code":             "HUM_WAT",
+        "pillar":               "PHUM",
+        "name_fr":              "Accès eau potable de base (%)",
+        "unit":                 "PCT_POP",
+        "direction":            "+",
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            0.0,
+        "max_valid":            100.0,
+    },
+
+    # ══════════════════════════════════════════════════════
+    # PMIN — Souveraineté minière
+    # ══════════════════════════════════════════════════════
+
+    "NV.MNF.OTHR.ZS.UN": {
+        "osa_code":             "MIN_VAL",
+        "pillar":               "PMIN",
+        "name_fr":              "Valeur ajoutée industries extractives (% PIB)",
+        "unit":                 "PCT_GDP",
+        "direction":            "+",
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            0.0,
+        "max_valid":            100.0,
+    },
+
+    # ══════════════════════════════════════════════════════
+    # PMON — Souveraineté monétaire
+    # ══════════════════════════════════════════════════════
+
+    "GC.XPN.INTP.RV.ZS": {
+        "osa_code":             "MON_DET",
+        "pillar":               "PMON",
+        "name_fr":              "Service de la dette (% recettes)",
+        "unit":                 "PCT_REV",
+        "direction":            "-",    # moins = mieux
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            0.0,
+        "max_valid":            100.0,
+    },
+
+    "DT.DOD.DECT.GD.ZS": {
+        "osa_code":             "MON_EXT",
+        "pillar":               "PMON",
+        "name_fr":              "Dette extérieure totale (% PIB)",
+        "unit":                 "PCT_GDP",
+        "direction":            "-",
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            0.0,
+        "max_valid":            500.0,
+    },
+
+    "FS.AST.PRVT.GD.ZS": {
+        "osa_code":             "MON_FIN",
+        "pillar":               "PMON",
+        "name_fr":              "Crédit au secteur privé (% PIB)",
+        "unit":                 "PCT_GDP",
+        "direction":            "+",
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            0.0,
+        "max_valid":            300.0,
+    },
+
+    "FP.CPI.TOTL.ZG": {
+        "osa_code":             "MON_INF",
+        "pillar":               "PMON",
+        "name_fr":              "Inflation (% annuel)",
+        "unit":                 "PCT_YR",
+        "direction":            "-",
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            -50.0,
+        "max_valid":            500.0,
+    },
+
+    "FR.INR.RINR": {
+        "osa_code":             "MON_INT",
+        "pillar":               "PMON",
+        "name_fr":              "Taux d'intérêt réel (%)",
+        "unit":                 "PCT_YR",
+        "direction":            "-",
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            -100.0,
+        "max_valid":            200.0,
+    },
+
+    "FM.LBL.BMNY.GD.ZS": {
+        "osa_code":             "MON_M2",
+        "pillar":               "PMON",
+        "name_fr":              "Masse monétaire M2 (% PIB)",
+        "unit":                 "PCT_GDP",
+        "direction":            "+",
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            0.0,
+        "max_valid":            300.0,
+    },
+
+    "FI.RES.TOTL.CD": {
+        "osa_code":             "MON_RES",
+        "pillar":               "PMON",
+        "name_fr":              "Réserves totales (USD courants)",
+        "unit":                 "USD_M",
+        "direction":            "+",
+        "multiplier":           1e-6,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            0.0,
+        "max_valid":            1e12,
+    },
+
+    "FB.BNK.CAPA.ZS": {
+        "osa_code":             "MON_STB",
+        "pillar":               "PMON",
+        "name_fr":              "Ratio capital/actifs bancaires (%)",
+        "unit":                 "PCT_ASSET",
+        "direction":            "+",
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            -50.0,
+        "max_valid":            100.0,
     },
 }
 
@@ -885,7 +1306,7 @@ def run(
 
 # ── CLI ───────────────────────────────────────────────────
 def main():
-    pillars   = ["PRES", "PMIL", "PNUM"]
+    pillars   = ["PECO", "PENV", "PGEO", "PHUM", "PMIL", "PMIN", "PMON", "PNUM", "PRES", "PTRA"]
     wb_codes  = list(WB_MAP.keys())
 
     parser = argparse.ArgumentParser(

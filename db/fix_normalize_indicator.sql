@@ -100,7 +100,7 @@ BEGIN
                           AND p.is_active = true
         WHERE ps.year = p_year
         GROUP BY ps.country_iso3, ps.year
-        HAVING COUNT(DISTINCT ps.pillar_code) >= 2
+        HAVING COUNT(DISTINCT ps.pillar_code) >= 4
     )
     SELECT
         pa.country_iso3,
