@@ -1,0 +1,1 @@
+SELECT i.pillar_code, COUNT(DISTINCT iv.indicator_code) AS ind_l1, COUNT(iv.id) AS lignes FROM ma.indicator_values iv JOIN rf.indicators i ON i.code = iv.indicator_code WHERE iv.layer_id = 1 GROUP BY i.pillar_code ORDER BY i.pillar_code;
