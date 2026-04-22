@@ -204,8 +204,8 @@ FAO_INDICATOR_MAP: dict = {
     },
     "ENV_CO2": {
         "dataset":      "GT",
-        "element_code": "723113",
-        "item_code":    "1711",    # Agriculture total
+        "element_code": "72332",
+        "item_code":    "6751",    # Agriculture total
         "name_fr":      "Emissions agriculture (Gg CO2 eq)",
         "unit_code":    "TONNES",
         "direction":    "-",
