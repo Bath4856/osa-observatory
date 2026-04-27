@@ -320,7 +320,6 @@ Exemples :
     parser.add_argument("--indicator", type=str, default=None,
                         help="MIL_MIS | GEO_PEA")
     parser.add_argument("--dry-run",   action="store_true")
-    parser.add_argument("--output", choices=["csv", "db", "both"], default="both", help="Mode de sortie (ignoré — compatibilité orchestrateur)")
     parser.add_argument("--detect",    action="store_true",
                         help="Afficher les colonnes sans importer")
     args = parser.parse_args()

@@ -585,33 +585,3 @@ ISO3_TO_ISO2: dict[str, str] = {
     "COD": "CD", "GNQ": "GQ", "GAB": "GA", "STP": "ST", "BWA": "BW",
     "SWZ": "SZ", "LSO": "LS", "NAM": "NA", "ZAF": "ZA",
 }
-
-
-    # ── Indicateurs ajoutés par merge_patches.py ──────────────
-    "PTRA_RD_TOTAL": {
-        "candidate_source":  "IRF World Road Statistics CSV",
-        "candidate_url":     "https://worldroadstatistics.org/data/",
-        "exclusion_reason":  "Série disponible 2018–2023 uniquement (édition libre 2025). "
-                             "Manque 2010–2017 (47% de la fenêtre ISA). "
-                             "Incohérences inter-annuelles documentées pour Afrique "
-                             "(PLOS One 2017, IRF ~134% sous-estimation vs OSM). "
-                             "À réintégrer si série historique complète disponible.",
-        "sprint_target":     "Sprint 8+ (conditionnel accès données)",
-    },
-    "PTRA_RAIL_LINES": {
-        "candidate_source":  "WB WDI IS.RRS.TOTL.KM",
-        "candidate_url":     "https://api.worldbank.org/v2/country/all/indicator/IS.RRS.TOTL.KM",
-        "exclusion_reason":  "Couverture ~25/54 pays africains. "
-                             "Garde-fou imputer (>50% NaN) déclenché. "
-                             "Mise à jour arrêtée ~2020 pour la majorité des pays. "
-                             "Réseaux hérités ère coloniale — peu représentatifs "
-                             "capacité transport contemporaine.",
-        "sprint_target":     "Sprint 8+ si source AfDB/AFRAA disponible",
-    },
-    "PTRA_AIR_CONNECT": {
-        "candidate_source":  "IATA / OAG (payant)",
-        "exclusion_reason":  "Licence commerciale requise (coût non compatible budget OSA). "
-                             "Couverture et qualité excellentes — exclusion temporaire. "
-                             "Alternative libre partielle : OAG via partenariats académiques.",
-        "sprint_target":     "Sprint 7+ si partenariat IATA ou OAG académique",
-    },

@@ -320,7 +320,6 @@ Attention :
     parser.add_argument("--indicator", type=str, default=None,
                         help="ECO_EXP | ECO_IMP | MIN_EXP")
     parser.add_argument("--dry-run",   action="store_true")
-    parser.add_argument("--output", choices=["csv", "db", "both"], default="both", help="Mode de sortie (ignoré — compatibilité orchestrateur)")
     parser.add_argument("--sample",    action="store_true",
                         help="10 pays représentatifs uniquement")
     args = parser.parse_args()

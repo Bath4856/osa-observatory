@@ -568,7 +568,6 @@ Exemples :
     parser.add_argument("--to",           type=int, dest="year_to",   default=2024)
     parser.add_argument("--indicator",    type=str, default=None)
     parser.add_argument("--dry-run",      action="store_true")
-    parser.add_argument("--output", choices=["csv", "db", "both"], default="both", help="Mode de sortie (ignoré — compatibilité orchestrateur)")
     parser.add_argument("--snctm",        type=str, default=None,
                         help="Chemin vers le fichier SNCTM CSV")
     parser.add_argument("--list-missing", action="store_true")

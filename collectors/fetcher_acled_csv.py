@@ -1,4 +1,4 @@
-"""
+﻿"""
 OSA Observatory
 collectors/fetcher_acled_csv.py -- Ingestion ACLED (Armed Conflict Location & Event Data)
 
@@ -405,6 +405,7 @@ Exemples :
                         help="Limiter a un indicateur")
     parser.add_argument("--dry-run",    action="store_true",
                         help="Simulation sans ecriture en base")
+    parser.add_argument("--output", choices=["csv", "db", "both"], default="both")
     args = parser.parse_args()
 
     if not os.path.exists(args.file):

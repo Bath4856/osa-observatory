@@ -77,8 +77,8 @@ PILLAR_JOBS = {
     ],
     "PGEO": [
         ("fetcher_wb_pres_pmil_pnum.py", ["--pillar", "PGEO"]),
-        ("fetcher_wgi_csv.py",           ["--file", "data/raw/wgi/WGI_Data.csv", "--wgicsv", "data/raw/wgi/WGICSV.csv"]),  # GEO_RSK/STAB + PGEO_COR
-        ("fetcher_ucdp_csv.py",         ["--file", "data/manual/organizedviolencecy_v25_1.csv", "--conflict", "data/manual/UcdpPrioConflict_v25_1.csv"]),  # GEO conflits UCDP
+        ("fetcher_wgi_csv.py",           ["--file", "data/raw/wgi/WGI_Data.csv"]),  # GEO_RSK/STAB WGI natif CSV
+        ("fetcher_acled_csv.py",         ["--file", "data/raw/pgeo/country_level_data.csv"]),  # GEO conflits ACLED CSV
         ("fetcher_unpk_csv.py",          ["--file", "data/raw/pgeo/country_level_data.csv"]),  # GEO_PEA UNPK CSV
     ],
     "PHUM": [
@@ -91,10 +91,10 @@ PILLAR_JOBS = {
     "PMIL": [
         ("fetcher_wb_pres_pmil_pnum.py", ["--pillar", "PMIL"]),
         ("fetcher_itu.py",               []),           # PMIL_GCI_CYBER
-        ("fetcher_wgi_csv.py",           ["--file", "data/raw/wgi/WGI_Data.csv", "--wgicsv", "data/raw/wgi/WGICSV.csv"]),  # PMIL_STABILITY_WGI + PGEO_COR
+        ("fetcher_wgi_csv.py",           ["--file", "data/raw/wgi/WGI_Data.csv"]),  # PMIL_STABILITY_WGI natif
         ("fetcher_sipri_csv.py",         ["--dir", "data/raw/sipri"]),  # PMIL_ARMS CSV
         ("fetcher_sipri_milex.py",       ["--file", "data/raw/sipri/SIPRI-Milex-data-1949-2024_2.xlsx"]),  # PMIL_DEF_BUDGET SIPRI
-        ("fetcher_ucdp_csv.py",         ["--file", "data/manual/organizedviolencecy_v25_1.csv"]),  # PMIL conflits UCDP
+        ("fetcher_acled_csv.py",         ["--file", "data/raw/pgeo/country_level_data.csv"]),  # PMIL conflits ACLED CSV
     ],
     "PMIN": [
         ("fetcher_wb_pres_pmil_pnum.py", ["--pillar", "PMIN"]),

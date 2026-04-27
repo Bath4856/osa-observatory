@@ -1,4 +1,4 @@
-"""
+﻿"""
 OSA Observatory
 collectors/fetcher_sipri_milex.py -- Ingestion SIPRI Military Expenditure
 
@@ -382,6 +382,7 @@ Exemples :
                         help="Chemin vers SIPRI-Milex-data-1949-2024.xlsx")
     parser.add_argument("--dry-run", action="store_true",
                         help="Simulation sans ecriture en base")
+    parser.add_argument("--output", choices=["csv", "db", "both"], default="both")
     args = parser.parse_args()
 
     log.info("=" * 55)

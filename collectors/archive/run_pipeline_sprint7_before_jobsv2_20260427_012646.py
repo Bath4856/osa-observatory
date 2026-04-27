@@ -1,4 +1,4 @@
-﻿"""
+"""
 ============================================================
 OSA Observatory — collectors/run_pipeline_sprint7.py
 Sprint 7 — Avril 2026
@@ -66,47 +66,47 @@ PILLAR_JOBS = {
         ("fetcher_comtrade_api.py",       []),          # ECO_EXP/IMP
         ("fetcher_imf.py",                []),          # ECO_GDP/GRW via IMF API
         ("fetcher_imf_weo_csv.py",        []),          # ECO_GDP/GRW WEO CSV
-        ("fetcher_imf_dots_csv.py",      ["--file", "data/raw/imf/DOTS.csv"]),  # ECO_IMP/EXP DOTS CSV
+        ("fetcher_imf_dots_csv.py",       []),          # ECO_IMP/EXP DOTS CSV
         ("fetcher_unctad.py",             []),          # ECO_FDI via UNCTAD API
-        ("fetcher_unctad_csv.py",         ["--file", "data/raw/ptra/lsci_2010_2024.csv"]),  # ECO_FDI/IMP UNCTAD CSV
+        ("fetcher_unctad_csv.py",         []),          # ECO_FDI/IMP UNCTAD CSV
     ],
     "PENV": [
         ("fetcher_wb_pres_pmil_pnum.py", ["--pillar", "PENV"]),
         ("fetcher_fao.py",               []),           # ENV_FOR via FAO API
-        ("fetcher_fao_csv.py",           ["--dir", "data/raw/fao"]),           # ENV_FOR/WATER FAO CSV
+        ("fetcher_fao_csv.py",           []),           # ENV_FOR/WATER FAO CSV
     ],
     "PGEO": [
         ("fetcher_wb_pres_pmil_pnum.py", ["--pillar", "PGEO"]),
-        ("fetcher_wgi_csv.py",           ["--file", "data/raw/wgi/WGI_Data.csv", "--wgicsv", "data/raw/wgi/WGICSV.csv"]),  # GEO_RSK/STAB + PGEO_COR
-        ("fetcher_ucdp_csv.py",         ["--file", "data/manual/organizedviolencecy_v25_1.csv", "--conflict", "data/manual/UcdpPrioConflict_v25_1.csv"]),  # GEO conflits UCDP
-        ("fetcher_unpk_csv.py",          ["--file", "data/raw/pgeo/country_level_data.csv"]),  # GEO_PEA UNPK CSV
+        ("fetcher_wgi_csv.py",           []),           # GEO_RSK/STAB WGI natif CSV
+        ("fetcher_acled_csv.py",         []),           # GEO conflits ACLED CSV
+        ("fetcher_unpk_csv.py",          []),           # GEO_PEA UNPK CSV
     ],
     "PHUM": [
         ("fetcher_wb_pres_pmil_pnum.py", ["--pillar", "PHUM"]),
         ("fetcher_who.py",               []),           # HUM_SAN/WAT via WHO API
         ("fetcher_undp.py",              []),           # HUM_POV via UNDP API
-        ("fetcher_undp_csv.py",          ["--file", "data/raw/undp/HDR_2024.csv"]),  # HUM_POV UNDP CSV
+        ("fetcher_undp_csv.py",          []),           # HUM_POV UNDP CSV
         ("fetcher_unesco.py",            []),           # HUM_LIT/EDU via UNESCO API
     ],
     "PMIL": [
         ("fetcher_wb_pres_pmil_pnum.py", ["--pillar", "PMIL"]),
         ("fetcher_itu.py",               []),           # PMIL_GCI_CYBER
-        ("fetcher_wgi_csv.py",           ["--file", "data/raw/wgi/WGI_Data.csv", "--wgicsv", "data/raw/wgi/WGICSV.csv"]),  # PMIL_STABILITY_WGI + PGEO_COR
-        ("fetcher_sipri_csv.py",         ["--dir", "data/raw/sipri"]),  # PMIL_ARMS CSV
-        ("fetcher_sipri_milex.py",       ["--file", "data/raw/sipri/SIPRI-Milex-data-1949-2024_2.xlsx"]),  # PMIL_DEF_BUDGET SIPRI
-        ("fetcher_ucdp_csv.py",         ["--file", "data/manual/organizedviolencecy_v25_1.csv"]),  # PMIL conflits UCDP
+        ("fetcher_wgi_csv.py",           []),           # PMIL_STABILITY_WGI natif
+        ("fetcher_sipri_csv.py",         []),           # PMIL_ARMS CSV
+        ("fetcher_sipri_milex.py",       []),           # PMIL_DEF_BUDGET SIPRI
+        ("fetcher_acled_csv.py",         []),           # PMIL conflits ACLED CSV
     ],
     "PMIN": [
         ("fetcher_wb_pres_pmil_pnum.py", ["--pillar", "PMIN"]),
         ("fetcher_comtrade_api.py",       []),          # MIN_EXP Comtrade
-        ("fetcher_unctad_csv.py",         ["--file", "data/raw/ptra/lsci_2010_2024.csv"]),  # MIN export UNCTAD CSV
-        ("fetcher_usgs_csv.py",           ["--dir", "data/raw/pmin/usgs"]),  # MIN production USGS CSV
+        ("fetcher_unctad_csv.py",         []),          # MIN export UNCTAD CSV
+        ("fetcher_usgs_csv.py",           []),          # MIN production USGS CSV
         ("fetcher_eiti_csv.py",           []),          # MIN_GOV/TAX EITI CSV
     ],
     "PMON": [
         ("fetcher_wb_pres_pmil_pnum.py", ["--pillar", "PMON"]),
         ("fetcher_imf.py",               []),           # MON_EXT/PAY IMF API
-        ("fetcher_imf_bop_csv.py",       ["--file", "data/raw/imf/BOP.csv"]),  # MON_PAY BOP CSV
+        ("fetcher_imf_bop_csv.py",       []),           # MON_PAY BOP CSV
         ("fetcher_imf_weo_csv.py",       []),           # MON_EXT WEO CSV
     ],
     "PNUM": [
@@ -118,7 +118,7 @@ PILLAR_JOBS = {
     "PRES": [
         ("fetcher_wb_pres_pmil_pnum.py", ["--pillar", "PRES"]),
         ("fetcher_fao.py",               []),           # PRES_WATER via FAO API
-        ("fetcher_fao_csv.py",           ["--dir", "data/raw/fao"]),           # PRES_WATER FAO CSV
+        ("fetcher_fao_csv.py",           []),           # PRES_WATER FAO CSV
     ],
     "PTRA": [
         ("fetcher_wb_ptra.py",  ["--skip-lsci"]),

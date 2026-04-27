@@ -331,7 +331,6 @@ def main() -> None:
     parser.add_argument("--to",        type=int, dest="year_to",   default=2022)
     parser.add_argument("--indicator", type=str, default=None)
     parser.add_argument("--dry-run",   action="store_true")
-    parser.add_argument("--output", choices=["csv", "db", "both"], default="both", help="Mode de sortie (ignoré — compatibilité orchestrateur)")
     args = parser.parse_args()
 
     year_from = year_to = args.year if args.year else args.year_from
