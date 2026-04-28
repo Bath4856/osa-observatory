@@ -462,9 +462,9 @@ class PGEOWikipediaFetcher:
         with self.conn.cursor() as cur:
 
             # Récupérer les country_id
-            cur.execute("SELECT iso3, id FROM ref.country WHERE iso3 = ANY(%s)",
+            cur.execute("SELECT iso3 FROM rf.countries WHERE iso3 = ANY(%s)",
                         (list(df["iso3"].unique()),))
-            country_map = {row[0]: row[1] for row in cur.fetchall()}
+            country_map = {row[0]: row[0] for row in cur.fetchall()}
 
             # Récupérer les resource_id
             cur.execute("SELECT code, id FROM osa.mineral_resource")
@@ -477,17 +477,17 @@ class PGEOWikipediaFetcher:
                 resource   = row.get("resource_detected", "Unknown")
                 lat        = row.get("lat")
                 lon        = row.get("lon")
-                country_id = country_map.get(iso3)
+                country_iso3_val = country_map.get(iso3)
                 resource_id = resource_map.get(resource)
 
-                if not country_id:
+                if not country_iso3_val:
                     log.debug("Pays inconnu : %s — site ignoré.", iso3)
                     continue
 
                 try:
                     cur.execute("""
                         INSERT INTO osa.pgeo_site
-                            (site_code, name, country_id, resource_id,
+                            (site_code, name, country_iso3, resource_id,
                              latitude, longitude, source, metadata)
                         VALUES (%s, %s, %s, %s, %s, %s, 'WIKIPEDIA',
                                 %s::jsonb)
@@ -498,7 +498,7 @@ class PGEOWikipediaFetcher:
                             longitude   = EXCLUDED.longitude,
                             source      = EXCLUDED.source
                     """, (
-                        site_code, name, country_id, resource_id,
+                        site_code, name, country_iso3_val, resource_id,
                         lat if lat else None,
                         lon if lon else None,
                         json.dumps({
