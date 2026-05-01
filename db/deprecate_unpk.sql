@@ -1,0 +1,1 @@
+INSERT INTO ma.indicator_exclusions (indicator_code, reason, excluded_by, comment) VALUES ('GEO_PEA', 'DEPRECATED', 'OSA-team', 'Source IPI Peacekeeping arretee en 2017. Aucune donnee 2020-2024. Sans impact sur L2.'), ('MIL_MIS', 'DEPRECATED', 'OSA-team', 'Source IPI Peacekeeping arretee en 2017. Aucune donnee 2020-2024. Sans impact sur L2.');
