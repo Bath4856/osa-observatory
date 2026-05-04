@@ -254,6 +254,80 @@ WB_INDICATOR_MAP: dict = {
         "notes":      "Consommation energie primaire par unite de PIB",
     },
 
+
+    # -- PENV complement D9
+    "ENV_PRO": {
+        "wb_code":    "ER.LND.PTLD.ZS",
+        "name_fr":    "Aires protegees pct superficie",
+        "unit_code":  "PERCENT",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "Part territoire en aires protegees",
+    },
+    "ENV_WAT": {
+        "wb_code":    "ER.H2O.INTR.PC",
+        "name_fr":    "Ressources eau douce par hab",
+        "unit_code":  "M3_PC",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "m3 par habitant par an",
+    },
+    "ENV_LAN": {
+        "wb_code":    "AG.LND.AGRI.ZS",
+        "name_fr":    "Terres agricoles pct superficie",
+        "unit_code":  "PERCENT",
+        "direction":  "-",
+        "multiplier": 1.0,
+        "notes":      "Proxy degradation terres",
+    },
+    "ENV_FIS": {
+        "wb_code":    "ER.FSH.PROD.MT",
+        "name_fr":    "Production halieutique totale",
+        "unit_code":  "TONNES",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "Production peche et aquaculture",
+    },
+    "ENV_SOL": {
+        "wb_code":    "AG.LND.ARBL.ZS",
+        "name_fr":    "Terres arables pct superficie",
+        "unit_code":  "PERCENT",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "Proxy fertilite sols",
+    },
+    "ENV_WAS": {
+        "wb_code":    "EN.POP.SLUM.UR.ZS",
+        "name_fr":    "Emissions methane par habitant",
+        "unit_code":  "TONNES",
+        "direction":  "-",
+        "multiplier": 1.0,
+        "notes":      "Proxy gestion dechets",
+    },
+    "ENV_RSK": {
+        "wb_code":    "SH.DYN.NCOM.ZS",
+        "name_fr":    "Mortalite catastrophes climatiques",
+        "unit_code":  "PERCENT",
+        "direction":  "-",
+        "multiplier": 1.0,
+        "notes":      "Proxy risque climatique",
+    },
+    "ENV_ADA": {
+        "wb_code":    "SH.DYN.MORT",
+        "name_fr":    "Adaptation climatique proxy",
+        "unit_code":  "PERCENT",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "Inverse mortalite catastrophes",
+    },
+    "ENV_ECO": {
+        "wb_code":    "AG.LND.FRST.K2",
+        "name_fr":    "Superficie forestiere km2",
+        "unit_code":  "KM_TOTAL",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "Proxy resilience ecologique",
+    },
     # ── PILIER NUMERIQUE (PNUM) ───────────────────────────
     "NUM_INT": {
         "wb_code":    "IT.NET.USER.ZS",
@@ -298,6 +372,80 @@ WB_INDICATOR_MAP: dict = {
         "notes":      "Proxy GCI ITU inaccessible. Sprint 5.",
     },
 
+
+    # -- PENV complement D9
+    "ENV_PRO": {
+        "wb_code":    "ER.LND.PTLD.ZS",
+        "name_fr":    "Aires protegees pct superficie",
+        "unit_code":  "PERCENT",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "Part territoire en aires protegees",
+    },
+    "ENV_WAT": {
+        "wb_code":    "ER.H2O.INTR.PC",
+        "name_fr":    "Ressources eau douce par hab",
+        "unit_code":  "M3_PC",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "m3 par habitant par an",
+    },
+    "ENV_LAN": {
+        "wb_code":    "AG.LND.AGRI.ZS",
+        "name_fr":    "Terres agricoles pct superficie",
+        "unit_code":  "PERCENT",
+        "direction":  "-",
+        "multiplier": 1.0,
+        "notes":      "Proxy degradation terres",
+    },
+    "ENV_FIS": {
+        "wb_code":    "ER.FSH.PROD.MT",
+        "name_fr":    "Production halieutique totale",
+        "unit_code":  "TONNES",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "Production peche et aquaculture",
+    },
+    "ENV_SOL": {
+        "wb_code":    "AG.LND.ARBL.ZS",
+        "name_fr":    "Terres arables pct superficie",
+        "unit_code":  "PERCENT",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "Proxy fertilite sols",
+    },
+    "ENV_WAS": {
+        "wb_code":    "EN.POP.SLUM.UR.ZS",
+        "name_fr":    "Emissions methane par habitant",
+        "unit_code":  "TONNES",
+        "direction":  "-",
+        "multiplier": 1.0,
+        "notes":      "Proxy gestion dechets",
+    },
+    "ENV_RSK": {
+        "wb_code":    "SH.DYN.NCOM.ZS",
+        "name_fr":    "Mortalite catastrophes climatiques",
+        "unit_code":  "PERCENT",
+        "direction":  "-",
+        "multiplier": 1.0,
+        "notes":      "Proxy risque climatique",
+    },
+    "ENV_ADA": {
+        "wb_code":    "SH.DYN.MORT",
+        "name_fr":    "Adaptation climatique proxy",
+        "unit_code":  "PERCENT",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "Inverse mortalite catastrophes",
+    },
+    "ENV_ECO": {
+        "wb_code":    "AG.LND.FRST.K2",
+        "name_fr":    "Superficie forestiere km2",
+        "unit_code":  "KM_TOTAL",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "Proxy resilience ecologique",
+    },
     # ── PILIER NUMERIQUE (PNUM) -- indicateurs supplementaires ──
     "NUM_DIG": {
         "wb_code":    "BX.GSR.CCIS.ZS",
@@ -587,6 +735,8 @@ ISO3_TO_ISO2: dict[str, str] = {
 }
 
 
+
+CANDIDATE_INDICATORS = {
     # ── Indicateurs ajoutés par merge_patches.py ──────────────
     "PTRA_RD_TOTAL": {
         "candidate_source":  "IRF World Road Statistics CSV",
@@ -615,3 +765,4 @@ ISO3_TO_ISO2: dict[str, str] = {
                              "Alternative libre partielle : OAG via partenariats académiques.",
         "sprint_target":     "Sprint 7+ si partenariat IATA ou OAG académique",
     },
+}
