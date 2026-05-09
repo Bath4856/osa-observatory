@@ -1,0 +1,101 @@
+{
+  "timestamp": "2026-05-09T16:40:14.300830",
+  "summary": {
+    "ok": 10,
+    "warn": 0,
+    "ko": 0,
+    "total": 10
+  },
+  "results": [
+    {
+      "indicator": "PNUM_INTERNET_USERS",
+      "source_code": "IT.NET.USER.ZS",
+      "country": "ZAF",
+      "status": "OK",
+      "year": "2024",
+      "value": 78.35759735,
+      "url": "https://api.worldbank.org/v2/country/ZAF/indicator/IT.NET.USER.ZS?format=json&per_page=100&mrv=10"
+    },
+    {
+      "indicator": "PNUM_BROADBAND_FIXED",
+      "source_code": "IT.NET.BBND.P2",
+      "country": "ZAF",
+      "status": "OK",
+      "year": "2024",
+      "value": 5.34791194620067,
+      "url": "https://api.worldbank.org/v2/country/ZAF/indicator/IT.NET.BBND.P2?format=json&per_page=100&mrv=10"
+    },
+    {
+      "indicator": "PNUM_MOBILE_SUBSCRIPTIONS",
+      "source_code": "IT.CEL.SETS.P2",
+      "country": "ZAF",
+      "status": "OK",
+      "year": "2024",
+      "value": 179.336329840585,
+      "url": "https://api.worldbank.org/v2/country/ZAF/indicator/IT.CEL.SETS.P2?format=json&per_page=100&mrv=10"
+    },
+    {
+      "indicator": "PNUM_SECURE_SERVERS",
+      "source_code": "IT.NET.SECR.P6",
+      "country": "ZAF",
+      "status": "OK",
+      "year": "2024",
+      "value": 16658.2387068502,
+      "url": "https://api.worldbank.org/v2/country/ZAF/indicator/IT.NET.SECR.P6?format=json&per_page=100&mrv=10"
+    },
+    {
+      "indicator": "PMIL_DEF_BUDGET_GDP",
+      "source_code": "MS.MIL.XPND.GD.ZS",
+      "country": "ZAF",
+      "status": "OK",
+      "year": "2024",
+      "value": 0.700150834276412,
+      "url": "https://api.worldbank.org/v2/country/ZAF/indicator/MS.MIL.XPND.GD.ZS?format=json&per_page=100&mrv=10"
+    },
+    {
+      "indicator": "PMIL_DEF_BUDGET_GOV",
+      "source_code": "MS.MIL.XPND.ZS",
+      "country": "ZAF",
+      "status": "OK",
+      "year": "2024",
+      "value": 2.10984756687901,
+      "url": "https://api.worldbank.org/v2/country/ZAF/indicator/MS.MIL.XPND.ZS?format=json&per_page=100&mrv=10"
+    },
+    {
+      "indicator": "PMIL_ARMED_FORCES",
+      "source_code": "MS.MIL.TOTL.P1",
+      "country": "ZAF",
+      "status": "OK",
+      "year": "2020",
+      "value": 89000,
+      "url": "https://api.worldbank.org/v2/country/ZAF/indicator/MS.MIL.TOTL.P1?format=json&per_page=100&mrv=10"
+    },
+    {
+      "indicator": "PTRA_AIR_PASSENGERS",
+      "source_code": "IS.AIR.PSGR",
+      "country": "ZAF",
+      "status": "OK",
+      "year": "2023",
+      "value": 15454595.699,
+      "url": "https://api.worldbank.org/v2/country/ZAF/indicator/IS.AIR.PSGR?format=json&per_page=100&mrv=10"
+    },
+    {
+      "indicator": "PTRA_AIR_CARGO",
+      "source_code": "IS.AIR.GOOD.MT.K1",
+      "country": "ZAF",
+      "status": "OK",
+      "year": "2023",
+      "value": 59.665317008098,
+      "url": "https://api.worldbank.org/v2/country/ZAF/indicator/IS.AIR.GOOD.MT.K1?format=json&per_page=100&mrv=10"
+    },
+    {
+      "indicator": "PTRA_AIR_AIRPORTS",
+      "source_code": "IS.AIR.DPRT",
+      "country": "ZAF",
+      "status": "OK",
+      "year": "2023",
+      "value": 169154,
+      "url": "https://api.worldbank.org/v2/country/ZAF/indicator/IS.AIR.DPRT?format=json&per_page=100&mrv=10"
+    }
+  ]
+}
