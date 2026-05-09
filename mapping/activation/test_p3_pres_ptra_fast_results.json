@@ -1,0 +1,109 @@
+{
+  "timestamp": "2026-05-09T19:43:21.125171",
+  "summary": {
+    "ok": 9,
+    "warn": 1,
+    "ko": 0,
+    "total": 10
+  },
+  "results": [
+    {
+      "indicator": "PRES_OIL_RENTS",
+      "provider": "WB",
+      "source_code": "NY.GDP.PETR.RT.ZS",
+      "country": "ZAF",
+      "status": "OK",
+      "year": "2021",
+      "value": 0.395954206545834,
+      "url": "https://api.worldbank.org/v2/country/ZAF/indicator/NY.GDP.PETR.RT.ZS?format=json&per_page=100&mrv=10"
+    },
+    {
+      "indicator": "PRES_GAS_RENTS",
+      "provider": "WB",
+      "source_code": "NY.GDP.NGAS.RT.ZS",
+      "country": "ZAF",
+      "status": "OK",
+      "year": "2021",
+      "value": 0.0293827523467257,
+      "url": "https://api.worldbank.org/v2/country/ZAF/indicator/NY.GDP.NGAS.RT.ZS?format=json&per_page=100&mrv=10"
+    },
+    {
+      "indicator": "PRES_ENRG_USE_CAP",
+      "provider": "WB",
+      "source_code": "EG.USE.PCAP.KG.OE",
+      "country": "ZAF",
+      "status": "OK",
+      "year": "2023",
+      "value": 1938.50916018053,
+      "url": "https://api.worldbank.org/v2/country/ZAF/indicator/EG.USE.PCAP.KG.OE?format=json&per_page=100&mrv=10"
+    },
+    {
+      "indicator": "PRES_FOSSIL_RENTS_EIA",
+      "provider": "WB",
+      "source_code": "NY.GDP.TOTL.RT.ZS",
+      "country": "ZAF",
+      "status": "OK",
+      "year": "2021",
+      "value": 7.32857859192335,
+      "url": "https://api.worldbank.org/v2/country/ZAF/indicator/NY.GDP.TOTL.RT.ZS?format=json&per_page=100&mrv=10"
+    },
+    {
+      "indicator": "PRES_RENEW_SHARE_FEC",
+      "provider": "WB",
+      "source_code": "EG.FEC.RNEW.ZS",
+      "country": "ZAF",
+      "status": "OK",
+      "year": "2021",
+      "value": 9.7,
+      "url": "https://api.worldbank.org/v2/country/ZAF/indicator/EG.FEC.RNEW.ZS?format=json&per_page=100&mrv=10"
+    },
+    {
+      "indicator": "PRES_WATER_AGRI",
+      "provider": "WB",
+      "source_code": "AG.LND.IRIG.AG.ZS",
+      "country": "ZAF",
+      "status": "OK",
+      "year": "2011",
+      "value": 1.66123643306286,
+      "url": "https://api.worldbank.org/v2/country/ZAF/indicator/AG.LND.IRIG.AG.ZS?format=json&per_page=100&mrv=10"
+    },
+    {
+      "indicator": "PTRA_RD_PAVED",
+      "provider": "WB",
+      "source_code": "IS.ROD.PAVE.ZS",
+      "country": "ZAF",
+      "status": "OK",
+      "year": "2001",
+      "value": 17.2999992370605,
+      "url": "https://api.worldbank.org/v2/country/ZAF/indicator/IS.ROD.PAVE.ZS?format=json&per_page=100&mrv=10"
+    },
+    {
+      "indicator": "PTRA_RD_DENSITY",
+      "provider": "WB",
+      "source_code": "IS.ROD.DNST.K2",
+      "country": "ZAF",
+      "status": "OK",
+      "year": "2001",
+      "value": 30.00000119,
+      "url": "https://api.worldbank.org/v2/country/ZAF/indicator/IS.ROD.DNST.K2?format=json&per_page=100&mrv=10"
+    },
+    {
+      "indicator": "PTRA_LOG_LPI",
+      "provider": "WB",
+      "source_code": "LP.LPI.OVRL.XQ",
+      "country": "ZAF",
+      "status": "OK",
+      "year": "2022",
+      "value": 3.7,
+      "url": "https://api.worldbank.org/v2/country/ZAF/indicator/LP.LPI.OVRL.XQ?format=json&per_page=100&mrv=10"
+    },
+    {
+      "indicator": "PTRA_RD_QUALITY",
+      "provider": "WEF_GCI_MANUAL",
+      "source_code": "GCI_ROAD_QUALITY",
+      "status": "WARN",
+      "error": "Série WEF/GCI manuelle ; rupture GCI3/GCI4 en 2018",
+      "url": "manual://wef/gci"
+    }
+  ]
+}

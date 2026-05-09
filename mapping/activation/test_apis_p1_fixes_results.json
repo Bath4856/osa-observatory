@@ -1,0 +1,76 @@
+{
+  "timestamp": "2026-05-09T16:17:15.534736",
+  "summary": {
+    "ok": 5,
+    "warn": 1,
+    "ko": 0,
+    "total": 6
+  },
+  "results": [
+    {
+      "indicator": "ECO_UNE",
+      "provider": "WB",
+      "source_code": "SL.UEM.TOTL.ZS",
+      "country": "ZAF",
+      "note": "Chômage total — proxy WB WDI",
+      "status": "OK",
+      "year": "2025",
+      "value": 32.391,
+      "url": "https://api.worldbank.org/v2/country/ZAF/indicator/SL.UEM.TOTL.ZS?format=json&per_page=100&mrv=10"
+    },
+    {
+      "indicator": "PRES_WATER_FRESH",
+      "provider": "WB",
+      "source_code": "ER.H2O.INTR.PC",
+      "country": "ZAF",
+      "note": "Ressources internes renouvelables en eau douce par habitant",
+      "status": "OK",
+      "year": "2022",
+      "value": 718.197209579404,
+      "url": "https://api.worldbank.org/v2/country/ZAF/indicator/ER.H2O.INTR.PC?format=json&per_page=100&mrv=10"
+    },
+    {
+      "indicator": "PRES_WATER_WITHDRAWAL",
+      "provider": "WB",
+      "source_code": "ER.H2O.FWTL.ZS",
+      "country": "ZAF",
+      "note": "Prélèvements annuels eau douce % ressources internes",
+      "status": "OK",
+      "year": "2022",
+      "value": 47.1205357142857,
+      "url": "https://api.worldbank.org/v2/country/ZAF/indicator/ER.H2O.FWTL.ZS?format=json&per_page=100&mrv=10"
+    },
+    {
+      "indicator": "PNUM_TERTIARY_ENROLL",
+      "provider": "WB",
+      "source_code": "SE.TER.ENRR",
+      "country": "ZAF",
+      "note": "Scolarisation supérieur brute",
+      "status": "OK",
+      "year": "2023",
+      "value": 23.493768799339,
+      "url": "https://api.worldbank.org/v2/country/ZAF/indicator/SE.TER.ENRR?format=json&per_page=100&mrv=10"
+    },
+    {
+      "indicator": "PTRA_PORT_CONNECT",
+      "provider": "WB",
+      "source_code": "IS.SHP.GCNW.XQ",
+      "country": "ZAF",
+      "note": "Liner Shipping Connectivity Index — proxy WB",
+      "status": "OK",
+      "year": "2021",
+      "value": 39.0636958837,
+      "url": "https://api.worldbank.org/v2/country/ZAF/indicator/IS.SHP.GCNW.XQ?format=json&per_page=100&mrv=10"
+    },
+    {
+      "indicator": "PRES_RENEW_CAP_IRENA",
+      "provider": "IRENA",
+      "source_code": "RENEW_CAP_MW",
+      "country": null,
+      "note": "IRENA CSV/manual — endpoint non testé comme API JSON WB",
+      "status": "WARN",
+      "error": "Source IRENA à traiter en CSV/manual, pas en API WB",
+      "url": "https://www.irena.org/Data/Downloads/IRENASTAT"
+    }
+  ]
+}

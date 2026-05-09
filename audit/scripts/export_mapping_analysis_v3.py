@@ -1,95 +1,57 @@
 # ============================================================
-# OSA — EXPORT MAPPING ANALYSIS (SIMPLE & PROPRE)
+# OSA — EXPORT MAPPING ANALYSIS V3
 # ============================================================
 
 import os
 from datetime import datetime
-
 import pandas as pd
 from sqlalchemy import create_engine
 
-
-# ============================================================
-# CONFIGURATION
-# ============================================================
-
-DB_URI = "postgresql+psycopg2://postgres:osa2026@localhost:5432/osa_db"
+DB_URI = os.getenv("OSA_DB_URI", "postgresql+psycopg2://postgres:osa2026@localhost:5432/osa_db")
 OUTPUT_DIR = "G:/osa-observatory/exports"
-
-
-# ============================================================
-# INITIALISATION
-# ============================================================
-
 os.makedirs(OUTPUT_DIR, exist_ok=True)
-
 engine = create_engine(DB_URI)
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 file_path = f"{OUTPUT_DIR}/mapping_analysis_{timestamp}.xlsx"
-
-print("📊 Export mapping analysis...")
-
-
-# ============================================================
-# REQUÊTES
-# ============================================================
+print("📊 Export mapping analysis V3...")
 
 df_critique = pd.read_sql("""
-    SELECT *
-    FROM ma.v_mapping_quality_score
+    SELECT * FROM ma.v_mapping_quality_score
     WHERE quality_class = 'D — CRITIQUE'
     ORDER BY mapping_quality_score
 """, engine)
 
 df_orphelins = pd.read_sql("""
-    SELECT *
-    FROM ma.v_mapping_quality_score
+    SELECT * FROM ma.v_mapping_quality_score
     WHERE orphan_flag = 'ORPHELIN'
+    ORDER BY pillar_code, indicator_code
 """, engine)
 
 df_exclus = pd.read_sql("""
-    SELECT *
-    FROM ma.v_mapping_quality_score
+    SELECT * FROM ma.v_mapping_quality_score
     WHERE isa_status = 'EXCLU ISA'
+    ORDER BY pillar_code, indicator_code
 """, engine)
 
 df_piliers = pd.read_sql("""
-    SELECT
-        pillar_code,
-        ROUND(AVG(mapping_quality_score), 3) AS avg_score
+    SELECT pillar_code, ROUND(AVG(mapping_quality_score), 3) AS avg_score
     FROM ma.v_mapping_quality_score
     GROUP BY pillar_code
     ORDER BY avg_score
 """, engine)
 
-
-# ============================================================
-# RÉSUMÉ SIMPLE
-# ============================================================
-
 df_summary = pd.DataFrame({
-    "Indicateur": [
-        "Nb CRITIQUES",
-        "Nb ORPHELINS",
-        "Nb EXCLUS ISA",
-        "Score moyen global"
-    ],
+    "Indicateur": ["Nb CRITIQUES", "Nb ORPHELINS", "Nb EXCLUS ISA", "Score moyen global"],
     "Valeur": [
         len(df_critique),
         len(df_orphelins),
         len(df_exclus),
-        round(df_piliers["avg_score"].mean(), 3)
-    ]
+        round(df_piliers["avg_score"].mean(), 3) if not df_piliers.empty else 0,
+    ],
 })
 
-
-# ============================================================
-# EXPORT EXCEL
-# ============================================================
-
 with pd.ExcelWriter(file_path, engine="xlsxwriter") as writer:
-
     df_summary.to_excel(writer, sheet_name="SUMMARY", index=False)
     df_critique.to_excel(writer, sheet_name="CRITIQUE", index=False)
     df_orphelins.to_excel(writer, sheet_name="ORPHELINS", index=False)
