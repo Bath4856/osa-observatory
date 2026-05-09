@@ -1,0 +1,251 @@
+{
+  "timestamp": "2026-05-09T20:52:40.507564",
+  "summary": {
+    "ok": 3,
+    "warn": 27,
+    "ko": 0,
+    "total": 30
+  },
+  "results": [
+    {
+      "phase": "P4A",
+      "indicator": "MIN_PRD_GOL",
+      "provider": "USGS",
+      "source_code": "gold_mine_production",
+      "status": "WARN",
+      "note": "USGS MYB/MCS manual/xlsx source"
+    },
+    {
+      "phase": "P4A",
+      "indicator": "MIN_PRD_COP",
+      "provider": "USGS",
+      "source_code": "copper_mine_production",
+      "status": "WARN",
+      "note": "USGS MYB/MCS manual/xlsx source"
+    },
+    {
+      "phase": "P4A",
+      "indicator": "MIN_PRD_IRN",
+      "provider": "USGS",
+      "source_code": "iron_ore_production",
+      "status": "WARN",
+      "note": "USGS MYB/MCS manual/xlsx source"
+    },
+    {
+      "phase": "P4A",
+      "indicator": "MIN_PRD_BAU",
+      "provider": "USGS",
+      "source_code": "bauxite_production",
+      "status": "WARN",
+      "note": "USGS MYB/MCS manual/xlsx source"
+    },
+    {
+      "phase": "P4A",
+      "indicator": "MIN_PRD_STL",
+      "provider": "USGS",
+      "source_code": "steel_production",
+      "status": "WARN",
+      "note": "USGS MYB/MCS manual/xlsx source"
+    },
+    {
+      "phase": "P4A",
+      "indicator": "MIN_PRD_ALU",
+      "provider": "USGS",
+      "source_code": "aluminum_production",
+      "status": "WARN",
+      "note": "USGS MYB/MCS manual/xlsx source"
+    },
+    {
+      "phase": "P4A",
+      "indicator": "MIN_PRD_COB",
+      "provider": "USGS",
+      "source_code": "cobalt_mine_production",
+      "status": "WARN",
+      "note": "USGS MYB/MCS manual/xlsx source"
+    },
+    {
+      "phase": "P4A",
+      "indicator": "MIN_PRD_MAN",
+      "provider": "USGS",
+      "source_code": "manganese_mine_production",
+      "status": "WARN",
+      "note": "USGS MYB/MCS manual/xlsx source"
+    },
+    {
+      "phase": "P4A",
+      "indicator": "MIN_PRD_CHR",
+      "provider": "USGS",
+      "source_code": "chromite_production",
+      "status": "WARN",
+      "note": "USGS MYB/MCS manual/xlsx source"
+    },
+    {
+      "phase": "P4B",
+      "indicator": "MIN_RES",
+      "provider": "USGS/OSA",
+      "source_code": "mineral_reserves_value",
+      "status": "WARN",
+      "note": "Reserve data require curated source table"
+    },
+    {
+      "phase": "P4B",
+      "indicator": "MIN_RAR",
+      "provider": "USGS/OSA",
+      "source_code": "rare_earths_strategic",
+      "status": "WARN",
+      "note": "Strategic minerals require curated source table"
+    },
+    {
+      "phase": "P4B",
+      "indicator": "MIN_GEO",
+      "provider": "USGS/OSA",
+      "source_code": "proved_reserves_index",
+      "status": "WARN",
+      "note": "Structural reserve index"
+    },
+    {
+      "phase": "P4B",
+      "indicator": "MIN_POT",
+      "provider": "USGS/OSA",
+      "source_code": "geological_potential",
+      "status": "WARN",
+      "note": "Geological potential proxy"
+    },
+    {
+      "phase": "P4B",
+      "indicator": "MIN_SITE_COUNT",
+      "provider": "OSA",
+      "source_code": "active_mine_site_density",
+      "status": "OK",
+      "note": "Internal geospatial layer"
+    },
+    {
+      "phase": "P4B",
+      "indicator": "MIN_PMIN_SITE",
+      "provider": "OSA",
+      "source_code": "pmin_site_score",
+      "status": "OK",
+      "note": "Internal geospatial layer"
+    },
+    {
+      "phase": "P4C",
+      "indicator": "MIN_CRI",
+      "provider": "COMTRADE/USGS/OSA",
+      "source_code": "critical_minerals_index",
+      "status": "WARN",
+      "note": "Composite criticality index"
+    },
+    {
+      "phase": "P4C",
+      "indicator": "MIN_DIV",
+      "provider": "COMTRADE/OSA",
+      "source_code": "mining_diversification",
+      "status": "OK",
+      "note": "Computed from trade/mineral diversity"
+    },
+    {
+      "phase": "P4C",
+      "indicator": "MIN_TECH",
+      "provider": "OSA",
+      "source_code": "mining_technology_level",
+      "status": "WARN",
+      "note": "Structural proxy"
+    },
+    {
+      "phase": "P4C",
+      "indicator": "MIN_CERT",
+      "provider": "EITI/OSA",
+      "source_code": "mining_certification",
+      "status": "WARN",
+      "note": "EITI/manual certification"
+    },
+    {
+      "phase": "P4C",
+      "indicator": "MIN_ENV",
+      "provider": "OSA",
+      "source_code": "mining_env_impact",
+      "status": "WARN",
+      "note": "Composite environmental impact"
+    },
+    {
+      "phase": "P4D",
+      "indicator": "MIN_COM",
+      "provider": "COMTRADE",
+      "source_code": "mineral_trade_total",
+      "status": "WARN",
+      "note": "Comtrade/manual activation"
+    },
+    {
+      "phase": "P4D",
+      "indicator": "MIN_DEP",
+      "provider": "COMTRADE",
+      "source_code": "mineral_export_dependence",
+      "status": "WARN",
+      "note": "Computed from exports"
+    },
+    {
+      "phase": "P4D",
+      "indicator": "MIN_EXP_FUL",
+      "provider": "COMTRADE",
+      "source_code": "mineral_exports_ful",
+      "status": "WARN",
+      "note": "Comtrade mineral category"
+    },
+    {
+      "phase": "P4D",
+      "indicator": "MIN_EXP_PRC",
+      "provider": "COMTRADE",
+      "source_code": "mineral_exports_prc",
+      "status": "WARN",
+      "note": "Comtrade mineral category"
+    },
+    {
+      "phase": "P4D",
+      "indicator": "MIN_EXP_ORE",
+      "provider": "COMTRADE",
+      "source_code": "mineral_exports_ore",
+      "status": "WARN",
+      "note": "Comtrade mineral category"
+    },
+    {
+      "phase": "P4D",
+      "indicator": "MIN_SEC",
+      "provider": "OSA/ACLED",
+      "source_code": "mining_site_security",
+      "status": "WARN",
+      "note": "Security/event overlay"
+    },
+    {
+      "phase": "P4D",
+      "indicator": "MIN_TRAC",
+      "provider": "EITI/OSA",
+      "source_code": "mining_traceability",
+      "status": "WARN",
+      "note": "Traceability proxy"
+    },
+    {
+      "phase": "P4D",
+      "indicator": "MIN_INV",
+      "provider": "EITI/OSA",
+      "source_code": "mining_investment",
+      "status": "WARN",
+      "note": "Investment proxy"
+    },
+    {
+      "phase": "P4D",
+      "indicator": "MIN_EMP",
+      "provider": "EITI/OSA",
+      "source_code": "mining_employment",
+      "status": "WARN",
+      "note": "Employment proxy"
+    },
+    {
+      "phase": "P4D",
+      "indicator": "MIN_LOC",
+      "provider": "EITI/OSA",
+      "source_code": "local_content_mining",
+      "status": "WARN",
+      "note": "Local content proxy"
+    }
+  ]
+}
