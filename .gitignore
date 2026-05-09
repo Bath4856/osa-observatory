@@ -12,3 +12,5 @@ logs/
 data/
 backup_*.csv
 project_tree.csv
+mapping/activation/test_apis_p1_results.json
+mapping/activation/*.xlsx
