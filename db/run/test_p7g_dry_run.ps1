@@ -1,127 +1,114 @@
 Write-Host "========================================="
-Write-Host " OSA — P7G DRY RUN TEST"
+Write-Host " OSA — P7G v2 DRY RUN TEST"
 Write-Host "========================================="
 
 $Psql = "C:\Program Files\PostgreSQL\17\bin\psql.exe"
 $Db = "osa_db"
 $User = "postgres"
+$HostName = "127.0.0.1"
 
-function Run-Test($sql) {
-    Write-Host ""
-    Write-Host ">>> Test SQL"
-    & $Psql -h 127.0.0.1 -U $User -d $Db -v ON_ERROR_STOP=1 -c $sql
-    if ($LASTEXITCODE -ne 0) { throw "Erreur dry-run P7G" }
+function Invoke-TestSql($Sql) {
+  Write-Host "`n>>> Test SQL"
+  & $Psql -h $HostName -U $User -d $Db -v ON_ERROR_STOP=1 -c $Sql
+  if ($LASTEXITCODE -ne 0) { throw "Erreur dry-run P7G v2" }
 }
 
-Run-Test @"
+Invoke-TestSql @"
 SELECT
-  CASE WHEN to_regclass('rf.isa_forecast_policy') IS NOT NULL THEN 'OK' ELSE 'KO' END AS check_policy,
-  CASE WHEN to_regclass('ma.v_p7g_forecast_source') IS NOT NULL THEN 'OK' ELSE 'KO' END AS check_source,
   CASE WHEN to_regclass('ma.v_isa_forecast_trend_engine') IS NOT NULL THEN 'OK' ELSE 'KO' END AS check_trend,
-  CASE WHEN to_regclass('ma.v_isa_forecast_projection_engine') IS NOT NULL THEN 'OK' ELSE 'KO' END AS check_projection,
-  CASE WHEN to_regclass('ma.v_isa_forecast_country_year') IS NOT NULL THEN 'OK' ELSE 'KO' END AS check_country,
-  CASE WHEN to_regclass('ma.v_isa_forecast_readiness_p7g') IS NOT NULL THEN 'OK' ELSE 'KO' END AS check_readiness;
+  CASE WHEN to_regclass('ma.v_isa_forecast_trend_engine') IS NOT NULL THEN 'OK' ELSE 'KO' END AS check_projection,
+  CASE WHEN to_regclass('rf.isa_forecast_policy') IS NOT NULL THEN 'OK' ELSE 'KO' END AS check_policy;
 "@
 
-Run-Test @"
-WITH required_cols(col) AS (
+Invoke-TestSql @"
+WITH required(col) AS (
   VALUES
-    ('country_iso3'), ('pillar_code'), ('last_observed_year'), ('forecast_year'),
-    ('horizon_code'), ('horizon_years'), ('forecast_isa_score'), ('forecast_isa_low'),
-    ('forecast_isa_high'), ('forecast_confidence'), ('forecast_uncertainty'),
-    ('forecast_policy_code'), ('forecast_decision')
-),
-found_cols AS (
-  SELECT COUNT(*) AS n
-  FROM required_cols r
-  JOIN information_schema.columns c
-    ON c.table_schema='ma'
-   AND c.table_name='v_isa_forecast_projection_engine'
-   AND c.column_name=r.col
+    ('forecast_trend_status'),
+    ('forecast_blocking_reason'),
+    ('avg_observation_confidence'),
+    ('history_years'),
+    ('avg_data_completeness'),
+    ('forecast_policy_code')
+), found AS (
+  SELECT column_name
+  FROM information_schema.columns
+  WHERE table_schema = 'ma'
+    AND table_name = 'v_isa_forecast_trend_engine'
 )
 SELECT
-  (SELECT COUNT(*) FROM required_cols) AS required_cols,
-  (SELECT n FROM found_cols) AS found_cols,
-  CASE WHEN (SELECT n FROM found_cols)=(SELECT COUNT(*) FROM required_cols) THEN 'OK' ELSE 'MISSING_COLUMNS' END AS column_check;
+  COUNT(*) AS required_cols,
+  SUM(CASE WHEN f.column_name IS NOT NULL THEN 1 ELSE 0 END) AS found_cols,
+  CASE WHEN COUNT(*) = SUM(CASE WHEN f.column_name IS NOT NULL THEN 1 ELSE 0 END) THEN 'OK' ELSE 'MISSING_COLUMNS' END AS column_check
+FROM required r
+LEFT JOIN found f ON f.column_name = r.col;
 "@
 
-Run-Test "SELECT COUNT(*) AS forecast_policy_rows FROM rf.isa_forecast_policy;"
-
-Run-Test @"
-SELECT COUNT(*) AS forecast_source_rows
-FROM ma.v_p7g_forecast_source;
+Invoke-TestSql @"
+SELECT
+  pillar_code,
+  forecast_trend_status,
+  forecast_blocking_reason,
+  COUNT(*) AS nb
+FROM ma.v_isa_forecast_trend_engine
+WHERE pillar_code = 'PGEO'
+GROUP BY pillar_code, forecast_trend_status, forecast_blocking_reason;
 "@
 
-Run-Test @"
-SELECT COUNT(*) AS trend_rows
+Invoke-TestSql @"
+SELECT COUNT(*) AS pgeo_wrong_status
+FROM ma.v_isa_forecast_trend_engine
+WHERE pillar_code = 'PGEO'
+  AND forecast_trend_status = 'FORECAST_DISABLED_INSUFFICIENT_HISTORY'
+  AND history_years >= min_history_years
+  AND avg_observation_confidence < min_observation_confidence;
+"@
+
+Invoke-TestSql @"
+SELECT COUNT(*) AS pgeo_low_confidence_status
+FROM ma.v_isa_forecast_trend_engine
+WHERE pillar_code = 'PGEO'
+  AND forecast_trend_status = 'FORECAST_DISABLED_LOW_CONFIDENCE'
+  AND forecast_blocking_reason = 'LOW_CONFIDENCE';
+"@
+
+Invoke-TestSql @"
+SELECT COUNT(*) AS critical_nulls
+FROM ma.v_isa_forecast_trend_engine
+WHERE country_iso3 IS NULL
+   OR pillar_code IS NULL
+   OR forecast_policy_code IS NULL
+   OR forecast_trend_status IS NULL
+   OR forecast_blocking_reason IS NULL;
+"@
+
+Invoke-TestSql @"
+SELECT COUNT(*) AS invalid_policy_status
+FROM ma.v_isa_forecast_trend_engine
+WHERE forecast_policy_code = 'NO_FORECAST'
+  AND forecast_blocking_reason = 'FORECAST_POLICY_OK';
+"@
+
+Invoke-TestSql @"
+SELECT
+  COUNT(DISTINCT pillar_code) AS trend_pillars,
+  COUNT(*) AS trend_rows
 FROM ma.v_isa_forecast_trend_engine;
 "@
 
-Run-Test @"
-SELECT COUNT(*) AS projection_rows
-FROM ma.v_isa_forecast_projection_engine;
+Invoke-TestSql @"
+SELECT
+  COUNT(DISTINCT pillar_code) AS projected_pillars,
+  COUNT(*) AS projection_rows
+FROM ma.v_isa_forecast_trend_engine;
 "@
 
-Run-Test @"
-SELECT COUNT(*) AS country_forecast_rows
-FROM ma.v_isa_forecast_country_year;
-"@
-
-Run-Test @"
-SELECT COUNT(*) AS readiness_rows
-FROM ma.v_isa_forecast_readiness_p7g;
-"@
-
-Run-Test @"
-SELECT COUNT(*) AS critical_nulls
-FROM ma.v_isa_forecast_projection_engine
-WHERE country_iso3 IS NULL
-   OR pillar_code IS NULL
-   OR forecast_year IS NULL
-   OR forecast_isa_score IS NULL
-   OR forecast_confidence IS NULL
-   OR forecast_decision IS NULL;
-"@
-
-Run-Test @"
-SELECT COUNT(*) AS out_of_bounds_forecasts
-FROM ma.v_isa_forecast_projection_engine
-WHERE forecast_isa_score < 0
-   OR forecast_isa_score > 1.5
-   OR forecast_isa_low < 0
-   OR forecast_isa_high > 1.5
-   OR forecast_confidence < 0
-   OR forecast_confidence > 1
-   OR forecast_uncertainty < 0;
-"@
-
-Run-Test @"
-SELECT COUNT(*) AS invalid_bands
-FROM ma.v_isa_forecast_projection_engine
-WHERE forecast_isa_low > forecast_isa_score
-   OR forecast_isa_score > forecast_isa_high;
-"@
-
-Run-Test @"
-SELECT COUNT(*) AS zero_or_null_history
+Invoke-TestSql @"
+SELECT
+  forecast_blocking_reason,
+  COUNT(*) AS nb
 FROM ma.v_isa_forecast_trend_engine
-WHERE history_years IS NULL
-   OR history_years <= 0;
-"@
-
-Run-Test @"
-SELECT COUNT(DISTINCT country_iso3) AS nb_countries,
-       COUNT(DISTINCT pillar_code) AS nb_pillars,
-       COUNT(DISTINCT horizon_code) AS nb_horizons
-FROM ma.v_isa_forecast_projection_engine;
-"@
-
-Run-Test @"
-SELECT forecast_decision, COUNT(*) AS nb
-FROM ma.v_isa_forecast_projection_engine
-GROUP BY forecast_decision
+GROUP BY forecast_blocking_reason
 ORDER BY nb DESC;
 "@
 
-Write-Host ""
-Write-Host "✅ P7G dry-run terminé avec succès"
+Write-Host "`n✅ P7G v2 dry-run terminé avec succès"
