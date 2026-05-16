@@ -16,3 +16,4 @@ mapping/activation/test_apis_p1_results.json
 mapping/activation/*.xlsx
 exports/*.xlsx
 db/patch_db/patch_p7b2_semantic_confidence_engine_old.sql
+api/.env
