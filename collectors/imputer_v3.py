@@ -283,7 +283,7 @@ def step1_duckdb(df_raw: pd.DataFrame) -> pd.DataFrame:
         py   = row["prev_year"]
         ny   = row["next_year"]
 
-        if pd.notnull(pv) and pd.notnull(nv):
+        if pd.notnull(pv) and pd.notnull(nv) and ny != py:
             alpha = (row["year"] - py) / (ny - py)
             val   = float(pv) + alpha * (float(nv) - float(pv))
             imputed_vals.append(round(val, 6))
