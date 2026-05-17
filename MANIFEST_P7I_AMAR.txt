@@ -1,0 +1,30 @@
+P7I-AMAR MERGE PACK v2 — OSA / ISA
+
+Purpose:
+- Extend existing P7I with AMAR risk domain.
+- No replacement of P7G.
+- No replacement of P7I Core.
+- No recreation of v_p7i_risk_source, v_isa_early_warning_engine, or v_isa_risk_escalation_engine.
+
+Files:
+- AUDIT_P7I_AMAR_REAL.md
+- README_p7i_amar_extension.md
+- db/patch_db/patch_p7i_amar_extension.sql
+- db/views/ma/v_p7i_amar_atrocity_precursor_engine.sql
+- db/views/ma/v_p7i_amar_dashboard.sql
+- db/views/mg/v_public_p7i_amar_alerts.sql
+- db/patch_db/patch_p7i_amar_alert_refresh.sql
+- audit/list_p7i_amar_columns.sql
+- audit/p7i_amar_report.sql
+- db/run/run_p7i_amar_extension.ps1
+- db/run/test_p7i_amar_dry_run.ps1
+- db/patch_db/rollback_p7i_amar_extension.sql
+- db/run/rollback_p7i_amar_extension.ps1
+
+Main correction vs first pack:
+- AMAR thresholds corrected to 0–1 scale:
+  GREEN < 0.25
+  YELLOW < 0.45
+  ORANGE < 0.65
+  RED < 0.80
+  BLACK >= 0.80

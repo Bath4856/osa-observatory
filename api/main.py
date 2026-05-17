@@ -6,6 +6,7 @@ from api.config import settings
 from api.db import check_db_connection
 from api.routers import countries, rankings, predictive, release
 from api.routers.opportunities import opportunities_router, methodology_router
+from api.routers.early_warning import router as early_warning_router
 
 app = FastAPI(
     title="OSA ISA Public API",
@@ -13,7 +14,8 @@ app = FastAPI(
     description=(
         "Observatoire de la Souveraineté Africaine — Institutional Sovereign Intelligence API. "
         "Provides ISA scores, country rankings, predictive execution signals (P7Z Phase 2), "
-        "and sovereign fragility indices for 54 African countries (2010–2024)."
+        "sovereign fragility indices, civilian protection risk (P7I-AMAR), "
+        "and conflict-economy exposure (P7I-AMAR-GENECO) for 54 African countries (2010–2024)."
     ),
     docs_url="/docs",
     redoc_url="/redoc",
@@ -37,7 +39,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["GET"],   # Lecture seule en production
+    allow_methods=["GET"],
     allow_headers=["*"],
 )
 
@@ -48,6 +50,7 @@ app.include_router(predictive.router)
 app.include_router(release.router)
 app.include_router(opportunities_router)
 app.include_router(methodology_router)
+app.include_router(early_warning_router)
 
 # ── Health + Root ─────────────────────────────────────────────────────────────
 @app.get("/", tags=["Health"])
