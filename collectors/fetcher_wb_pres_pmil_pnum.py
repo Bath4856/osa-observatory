@@ -1174,6 +1174,7 @@ def insert_indicator(
         )
         return len(df)
 
+    WB_SOURCE_ID = 11  # collect.source_registry WB (id=11)
     batch_data = []
     for _, row in df.iterrows():
         iso3   = str(row["country_iso3"]).strip()
@@ -1193,14 +1194,22 @@ def insert_indicator(
         batch_data.append((
             osa_code, iso3, year, LAYER_RAW,
             scaled, quality_flag, conf, value_status
+            WB_SOURCE_ID
         ))
 
     sql = """
         INSERT INTO ma.indicator_values
-            (indicator_code, country_iso3, year, layer_id,
-             raw_value, quality_flag, confidence_score, value_status)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        ON CONFLICT DO NOTHING
+                (indicator_code, country_iso3, year, layer_id,
+                 raw_value, quality_flag, confidence_score, value_status,
+                 source_id)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (indicator_code, country_iso3, year, layer_id, method_version_id)
+            DO UPDATE SET
+                raw_value        = EXCLUDED.raw_value,
+                quality_flag     = EXCLUDED.quality_flag,
+                confidence_score = EXCLUDED.confidence_score,
+                value_status     = EXCLUDED.value_status,
+                source_id        = EXCLUDED.source_id
     """
 
     try:
