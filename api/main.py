@@ -9,6 +9,10 @@ from api.routers.opportunities import opportunities_router, methodology_router
 from api.routers.early_warning import router as early_warning_router
 from api.routers.sovereignty import router as sovereignty_router
 from api.routers.early_warning_sprint7 import router as early_warning_sprint7_router
+from api.routers.decision_scenarios_sprint7 import (
+    decision_router, sovereignty_router as sovereignty_readiness_router,
+    ew_router as ew_sprint7_phase2_router, scenario_router
+)
 
 app = FastAPI(
     title="OSA ISA Public API",
@@ -55,6 +59,10 @@ app.include_router(methodology_router)
 app.include_router(early_warning_router)
 app.include_router(sovereignty_router)
 app.include_router(early_warning_sprint7_router)
+app.include_router(decision_router)
+app.include_router(sovereignty_readiness_router)
+app.include_router(ew_sprint7_phase2_router)
+app.include_router(scenario_router)
 
 # ── Health + Root ─────────────────────────────────────────────────────────────
 @app.get("/", tags=["Health"])
