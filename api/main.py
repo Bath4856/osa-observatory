@@ -7,6 +7,8 @@ from api.db import check_db_connection
 from api.routers import countries, rankings, predictive, release
 from api.routers.opportunities import opportunities_router, methodology_router
 from api.routers.early_warning import router as early_warning_router
+from api.routers.sovereignty import router as sovereignty_router
+from api.routers.early_warning_sprint7 import router as early_warning_sprint7_router
 
 app = FastAPI(
     title="OSA ISA Public API",
@@ -51,6 +53,8 @@ app.include_router(release.router)
 app.include_router(opportunities_router)
 app.include_router(methodology_router)
 app.include_router(early_warning_router)
+app.include_router(sovereignty_router)
+app.include_router(early_warning_sprint7_router)
 
 # ── Health + Root ─────────────────────────────────────────────────────────────
 @app.get("/", tags=["Health"])
