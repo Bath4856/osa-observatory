@@ -839,6 +839,71 @@ WB_MAP = {
         "max_valid":            1e12,
     },
 
+
+    # ══════════════════════════════════════════════════════
+    # PMON — Sprint 8 — MON_IFF_PRESSURE + auxiliaire PIB
+    # ══════════════════════════════════════════════════════
+
+    "BN.KAC.EOMS.CD": {
+        "osa_code":             "MON_IFF_PRESSURE",
+        "pillar":               "PMON",
+        "name_fr":              "Pression de fuite financière externe (erreurs et omissions BoP % PIB)",
+        "unit":                 "PCT_GDP",
+        "direction":            "-",
+        "multiplier":           1.0,
+        # Valeur brute WB en USD courants — le fetcher divise par NY.GDP.MKTP.CD
+        # pour obtenir le % PIB avant insertion L1.
+        # Proxy comportemental : écart comptable BoP publié par le FMI.
+        # Doctrine OSA : fait observable — pas de perception.
+        # Publication : libellé "External Financial Leakage Pressure"
+        # Couverture : 52/54 pays africains (SOM manquant)
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            -5e12,
+        "max_valid":            5e12,
+        "requires_gdp_deflator": True,   # flag pour conversion % PIB
+    },
+
+    "NY.GDP.MKTP.CD": {
+        "osa_code":             "MON_GDP_CURRENT",
+        "pillar":               "PMON",
+        "name_fr":              "PIB courant (USD) — auxiliaire conversion BoP",
+        "unit":                 "USD_M",
+        "direction":            "+",
+        "multiplier":           1e-6,    # → millions USD
+        # Indicateur auxiliaire — sert à convertir BN.KAC.EOMS.CD en % PIB.
+        # Stocké en L1 pour traçabilité. Non exposé directement dans l'API.
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            0.0,
+        "max_valid":            1e15,
+    },
+
+    # ══════════════════════════════════════════════════════
+    # PECO — Sprint 8 — ECO_PUBLIC_REV (composante ECO_PUBLIC_LEAKAGE)
+    # GC.TAX.TOTL.GD.ZS (ECO_TAX) est déjà dans le WB_MAP
+    # ══════════════════════════════════════════════════════
+
+    "GC.REV.XGRT.GD.ZS": {
+        "osa_code":             "ECO_PUBLIC_REV",
+        "pillar":               "PECO",
+        "name_fr":              "Recettes publiques hors dons (% PIB)",
+        "unit":                 "PCT_GDP",
+        "direction":            "+",
+        # Composante 2 de ECO_PUBLIC_LEAKAGE.
+        # ECO_TAX (GC.TAX.TOTL.GD.ZS) est déjà collecté.
+        # ECO_PUBLIC_LEAKAGE = indicateur COMPUTED calculé en L3
+        # depuis ECO_TAX et ECO_PUBLIC_REV.
+        # Couverture : 42/54 pays africains (GO confirmé audit 19 mai 2026)
+        "multiplier":           1.0,
+        "imputation_regime":    "STANDARD",
+        "has_structural_zeros": False,
+        "is_composite_score":   False,
+        "min_valid":            0.0,
+        "max_valid":            100.0,
+    },
     "FB.BNK.CAPA.ZS": {
         "osa_code":             "MON_STB",
         "pillar":               "PMON",
