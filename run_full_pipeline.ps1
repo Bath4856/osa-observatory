@@ -240,7 +240,7 @@ function Run-L3-Normalize($yearFrom, $yearTo, $dryRun) {
 
 function Run-AlertRefresh($dryRun) {
     if ($dryRun) { Log "WARN" "[DRY-RUN] Alert refresh — non exécuté"; return }
-    Log "STEP" "Refresh alertes AMAR + GENECO"
+    Log "STEP" "Refresh vues materialisees ISA (AMAR, GENECO, scores piliers)"
     $tStart = Get-Date
 
     $sql = @"
@@ -285,7 +285,7 @@ COMMIT;
 
     if ($exit -eq 0) {
         Set-CheckpointStep "ALERT_REFRESH" "OK" "${elapsed}s"
-        Log "OK" "Alert refresh terminé en ${elapsed}s"
+        Log "OK" "Refresh vues materialisees terminé en ${elapsed}s"
     } else {
         Log "ERROR" "Alert refresh ECHEC (exit $exit)"
     }
@@ -351,10 +351,11 @@ Write-Host "  [3]  L1 collecte      — tous piliers" -ForegroundColor White
 Write-Host "  [4]  L1 collecte      — pilier unique" -ForegroundColor White
 Write-Host "  [5]  L2 imputation    — tous piliers" -ForegroundColor White
 Write-Host "  [6]  L2 imputation    — pilier unique" -ForegroundColor White
-Write-Host "  [7]  L3 normalisation — run_pipeline_historical" -ForegroundColor White
-Write-Host "  [8]  Alert refresh    — AMAR + GENECO" -ForegroundColor White
+Write-Host "  [7]  L3 mise a jour annuelle — 2021 a annee courante (usage normal)" -ForegroundColor White
+Write-Host "  [8]  Refresh vues materialisees ISA (AMAR, GENECO, scores)" -ForegroundColor White
 Write-Host "  [9]  Probe            — couverture L1/L2/L3" -ForegroundColor White
-Write-Host "  [D]  Dry-run complet  — tous piliers (aucune écriture)" -ForegroundColor White
+Write-Host "  [D]  Dry-run complet  — tous piliers (aucune ecriture)" -ForegroundColor White
+Write-Host "  [H]  L3 historique complet — 2010 a 2024 (recalibration exceptionnelle)" -ForegroundColor Yellow
 Write-Host "  [R]  Reset checkpoint" -ForegroundColor Magenta
 Write-Host ""
 $choice = Read-Host "Votre choix"
@@ -369,7 +370,8 @@ switch ($choice.ToUpper()) {
             Run-L1-Collect $pillar $false | Out-Null
             Run-L2-Imputer $pillar $false | Out-Null
         }
-        Run-L3-Normalize 2010 2024 $false | Out-Null
+        $currentYear = (Get-Date).Year
+        Run-L3-Normalize 2021 $currentYear $false | Out-Null
         Run-AlertRefresh $false
         Run-Probe
         Log "OK" "Pipeline complet terminé"
@@ -409,16 +411,39 @@ switch ($choice.ToUpper()) {
     }
 
     "7" {
-        Log-Banner "L3 normalisation"
-        $yearFrom = Read-Host "Année début (défaut 2010)"
-        $yearTo   = Read-Host "Année fin   (défaut 2024)"
-        if (-not $yearFrom) { $yearFrom = 2010 }
-        if (-not $yearTo)   { $yearTo   = 2024 }
-        Run-L3-Normalize $yearFrom $yearTo $false | Out-Null
+        # Mise a jour annuelle — 2021 a annee courante
+        # Les bornes 2010-2020 sont gelees dans rf.normalization_bounds v1_2026
+        # Les annees 2010-2020 ne sont PAS recalculees
+        $currentYear = (Get-Date).Year
+        Log-Banner "L3 mise a jour annuelle (2021 -> $currentYear)"
+        Log "INFO" "Bornes de reference : rf.normalization_bounds v1_2026 (gel 2010-2020)"
+        Log "INFO" "Les annees 2010-2020 ne sont PAS recalculees (periode de reference stable)"
+        Run-L3-Normalize 2021 $currentYear $false | Out-Null
+    }
+
+    "H" {
+        # Recalibration historique complete — usage exceptionnel uniquement
+        # A n'utiliser qu'en cas de changement de bornes ou de correction structurelle
+        Log-Banner "L3 historique complet (2010 -> 2024) — EXCEPTIONNEL"
+        Write-Host "  ATTENTION : Cette option recalcule toute la periode historique." -ForegroundColor Yellow
+        Write-Host "  A utiliser uniquement pour une recalibration officielle." -ForegroundColor Yellow
+        Write-Host "  Les scores 2010-2020 seront recalcules sur les bornes figees." -ForegroundColor Yellow
+        Write-Host ""
+        $confirm = Read-Host "Confirmer recalcul historique complet ? (oui/non)"
+        if ($confirm -eq "oui") {
+            $yearFrom = Read-Host "Annee debut (defaut 2010)"
+            $yearTo   = Read-Host "Annee fin   (defaut 2024)"
+            if (-not $yearFrom) { $yearFrom = 2010 }
+            if (-not $yearTo)   { $yearTo   = 2024 }
+            Log "INFO" "Recalcul historique $yearFrom -> $yearTo confirme"
+            Run-L3-Normalize $yearFrom $yearTo $false | Out-Null
+        } else {
+            Log "INFO" "Recalibration historique annulee"
+        }
     }
 
     "8" {
-        Log-Banner "Alert refresh AMAR + GENECO"
+        Log-Banner "Refresh vues materialisees ISA"
         Run-AlertRefresh $false
     }
 
