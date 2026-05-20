@@ -597,11 +597,23 @@ def insert_l2_batch(conn, df_final: pd.DataFrame, dry_run: bool = False) -> int:
     Compte les insertions réelles via COUNT avant/après (ON CONFLICT safe).
     value_status mappé depuis method_chain vers les valeurs DB autorisées.
     """
-    to_insert = df_final[
+    # Fix Sprint 8 : insérer TOUS les pays en L2
+    # Observés (raw_value non null) : copie L1 -> L2, confidence=0.95
+    # Imputés  (raw_value null)     : valeur MICE, confidence calculée
+    df_obs = df_final[df_final["raw_value"].notna()].copy()
+    df_obs["imputed_value"] = df_obs["raw_value"]
+    df_obs["confidence"]    = 0.95
+    df_obs["method_chain"]  = "ORIGINAL"
+    df_obs["quality_flag"]  = df_obs["quality_flag"].fillna("OK")
+
+    df_imp = df_final[
         df_final["raw_value"].isna() &
         df_final["imputed_value"].notna() &
         df_final["quality_flag"].notna()
     ].copy()
+
+    to_insert = pd.concat([df_obs, df_imp], ignore_index=True)
+    to_insert = to_insert[to_insert["imputed_value"].notna()].copy()
 
     if to_insert.empty:
         log.info("Aucune valeur à insérer")

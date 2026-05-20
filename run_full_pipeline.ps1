@@ -356,6 +356,7 @@ Write-Host "  [8]  Refresh vues materialisees ISA (AMAR, GENECO, scores)" -Foreg
 Write-Host "  [9]  Probe            — couverture L1/L2/L3" -ForegroundColor White
 Write-Host "  [D]  Dry-run complet  — tous piliers (aucune ecriture)" -ForegroundColor White
 Write-Host "  [H]  L3 historique complet — 2010 a 2024 (recalibration exceptionnelle)" -ForegroundColor Yellow
+Write-Host "  [A]  Audit pipeline    — rapport qualite L1/L2/L3 + Excel" -ForegroundColor Cyan
 Write-Host "  [R]  Reset checkpoint" -ForegroundColor Magenta
 Write-Host ""
 $choice = Read-Host "Votre choix"
@@ -467,6 +468,18 @@ switch ($choice.ToUpper()) {
             if (Test-Path $CheckpointFile) { Remove-Item $CheckpointFile }
             Log "OK" "Checkpoint réinitialisé"
         } else { Log "INFO" "Annulé" }
+    }
+
+    "A" {
+        Log-Banner "Audit pipeline — qualite L1/L2/L3"
+        $auditDate = Get-Date -Format "yyyyMMdd_HHmm"
+        $auditExcel = "logs\audit_pipeline_$auditDate.xlsx"
+        Log "STEP" "Audit pipeline en cours..."
+        $auditArgs = @("-3.12", "collectors\audit_pipeline.py", "--detail", "--excel", $auditExcel)
+        $exit = Run-Proc $PyExe $auditArgs "AUDIT"
+        if (Test-Path $auditExcel) {
+            Log "OK" "Rapport Excel : $auditExcel"
+        }
     }
 
     default { Log "WARN" "Choix non reconnu : '$choice'" }
