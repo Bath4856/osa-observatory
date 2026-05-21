@@ -287,6 +287,28 @@ CHECKS = [
         "niveau": "ATTENTION",
     },
 
+
+    {
+        "code": "DOCTRINE_COMPLIANCE",
+        "label": "Indicateurs actifs non conformes Doctrine OSA v1",
+        "query": """
+            SELECT COUNT(*) AS n
+            FROM rf.indicators
+            WHERE is_active = TRUE
+              AND doctrine_compliance_flag = FALSE
+        """,
+        "detail_query": """
+            SELECT code, pillar_code, imputation_regime,
+                   'Non conforme Doctrine OSA v1 — proxy comportemental requis' AS justification
+            FROM rf.indicators
+            WHERE is_active = TRUE
+              AND doctrine_compliance_flag = FALSE
+            ORDER BY pillar_code, code
+        """,
+        "seuil": 0,
+        "niveau": "ATTENTION",
+    },
+
     {
         "code": "AMAR_LOW_CONFIDENCE",
         "label": "Pays LOW_CONFIDENCE dans AMAR 2024",
