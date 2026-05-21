@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+﻿from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -14,6 +14,7 @@ from api.routers.decision_scenarios_sprint7 import (
     ew_router as ew_sprint7_phase2_router, scenario_router
 )
 from api.routers.api_phase3_sprint8 import decision_phase3_router, ew_phase3_router
+from api.routers.sovereignty_fiscal_margin import router as fiscal_margin_router
 
 app = FastAPI(
     title="OSA ISA Public API",
@@ -66,6 +67,7 @@ app.include_router(ew_sprint7_phase2_router)
 app.include_router(scenario_router)
 app.include_router(decision_phase3_router)
 app.include_router(ew_phase3_router)
+app.include_router(fiscal_margin_router)
 
 # ── Health + Root ─────────────────────────────────────────────────────────────
 @app.get("/", tags=["Health"])
@@ -90,3 +92,4 @@ def health():
             "version":   settings.APP_VERSION,
         }
     )
+
