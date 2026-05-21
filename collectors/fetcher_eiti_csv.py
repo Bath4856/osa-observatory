@@ -253,7 +253,76 @@ class EITIFetcher(BaseFetcher):
     def _generate_compliance_builtin(
         self, metric: str, year_from: int, year_to: int
     ) -> list[DataRecord]:
-        """Génère les scores depuis EITI_AFRICAN_MEMBERS pour toutes les années."""
+        """
+        Charge les statuts EITI depuis collect.reference_classifications.
+        Fallback sur EITI_AFRICAN_MEMBERS si la table est inaccessible.
+        Doctrine OSA : pas de données de référence codées en dur.
+        """
+        try:
+            return self._generate_compliance_from_db(metric, year_from, year_to)
+        except Exception as e:
+            self.log.warning(
+                "collect.reference_classifications inaccessible (%s) "
+                "— fallback sur données intégrées 2024", e
+            )
+            return self._generate_compliance_legacy(metric, year_from, year_to)
+
+    def _generate_compliance_from_db(
+        self, metric: str, year_from: int, year_to: int
+    ) -> list[DataRecord]:
+        """Lit les statuts EITI depuis collect.reference_classifications."""
+        import psycopg2
+        conn = self._get_db_conn()
+        records: list[DataRecord] = []
+        try:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT country_iso3, classification, score_value,
+                           valid_from, valid_to,
+                           (metadata->>'since')::int AS since
+                    FROM collect.reference_classifications
+                    WHERE source_code = 'EITI'
+                      AND country_iso3 IS NOT NULL
+                    ORDER BY country_iso3, valid_from
+                """)
+                rows = cur.fetchall()
+        finally:
+            conn.close()
+
+        # Construire un dict pays → liste de statuts historiques
+        statuts: dict[str, list] = {}
+        for iso3, classif, score, vfrom, vto, since in rows:
+            if iso3 not in statuts:
+                statuts[iso3] = []
+            statuts[iso3].append({
+                "status": classif, "score": score,
+                "valid_from": vfrom, "valid_to": vto or 9999,
+                "since": since or vfrom
+            })
+
+        for iso3, history in statuts.items():
+            if iso3 not in AFRICAN_ISO3:
+                continue
+            for year in range(year_from, year_to + 1):
+                # Trouver le statut valide pour cette année
+                status = "non-member"
+                for entry in sorted(history, key=lambda x: x["valid_from"]):
+                    if year >= entry["since"] and year <= entry["valid_to"]:
+                        status = entry["status"]
+                        break
+                value = self._status_to_metric(status, metric)
+                records.append({"iso3": iso3, "year": year, "value": value})
+
+        self.log.info(
+            "Compliance depuis DB → %d enregistrements (%d pays)",
+            len(records), len(statuts)
+        )
+        return records
+
+    def _generate_compliance_legacy(
+        self, metric: str, year_from: int, year_to: int
+    ) -> list[DataRecord]:
+        """Fallback legacy — utilise EITI_AFRICAN_MEMBERS codé en dur."""
         records: list[DataRecord] = []
         for iso3 in AFRICAN_ISO3:
             info   = EITI_AFRICAN_MEMBERS.get(iso3)

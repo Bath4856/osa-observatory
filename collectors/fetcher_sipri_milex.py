@@ -50,11 +50,37 @@ DATA_START  = 6                   # donnees a partir de la ligne 6
 MISSING_VALUES = {"...", ". .", "xxx", "", "None", None}
 
 # Sous-regions a ignorer (pas des pays)
-SUBREGIONS = {
-    "Africa", "North Africa", "Sub-Saharan Africa", "sub-Saharan Africa",
-    "Central Africa", "East Africa", "Southern Africa", "West Africa",
-    "Europe", "Americas", "Asia & Oceania", "Middle East",
-}
+# Source : collect.reference_classifications (source_code='SIPRI_LABELS')
+def _load_sipri_subregions() -> set:
+    """Charge les sous-régions SIPRI depuis collect.reference_classifications."""
+    try:
+        import psycopg2, os
+        from dotenv import load_dotenv
+        load_dotenv()
+        conn = psycopg2.connect(
+            host=os.getenv("OSA_DB_HOST","127.0.0.1"),
+            port=int(os.getenv("OSA_DB_PORT",5432)),
+            dbname=os.getenv("OSA_DB_NAME","osa_db"),
+            user=os.getenv("OSA_DB_USER","postgres"),
+            password=os.getenv("OSA_DB_PASS",""),
+        )
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT classification FROM collect.reference_classifications
+                WHERE source_code = 'SIPRI_LABELS'
+                  AND country_iso3 IS NULL
+            """)
+            labels = {row[0] for row in cur.fetchall()}
+        conn.close()
+        return labels
+    except Exception:
+        return {
+            "Africa", "North Africa", "Sub-Saharan Africa", "sub-Saharan Africa",
+            "Central Africa", "East Africa", "Southern Africa", "West Africa",
+            "Europe", "Americas", "Asia & Oceania", "Middle East",
+        }
+
+SUBREGIONS = _load_sipri_subregions()
 
 # Mapping nom SIPRI -> ISO3
 # Seuls les cas ambigus ou non standards sont listés

@@ -67,10 +67,39 @@ logging.basicConfig(
 )
 
 # ── Lignes de sous-regions SIPRI a ignorer ────────────────
-SIPRI_REGION_LABELS = {
-    "africa", "north africa", "sub-saharan africa",
-    "central africa", "east africa", "west africa",
-    "southern africa", "middle east", "europe",
+# Source : collect.reference_classifications (source_code='SIPRI_LABELS')
+# Fallback sur liste locale si DB inaccessible
+def _load_sipri_region_labels() -> set:
+    """Charge les labels régionaux SIPRI depuis collect.reference_classifications."""
+    try:
+        import psycopg2, os
+        from dotenv import load_dotenv
+        load_dotenv()
+        conn = psycopg2.connect(
+            host=os.getenv("OSA_DB_HOST","127.0.0.1"),
+            port=int(os.getenv("OSA_DB_PORT",5432)),
+            dbname=os.getenv("OSA_DB_NAME","osa_db"),
+            user=os.getenv("OSA_DB_USER","postgres"),
+            password=os.getenv("OSA_DB_PASS",""),
+        )
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT classification FROM collect.reference_classifications
+                WHERE source_code = 'SIPRI_LABELS'
+                  AND country_iso3 IS NULL
+            """)
+            labels = {row[0].lower() for row in cur.fetchall()}
+        conn.close()
+        return labels
+    except Exception:
+        # Fallback local
+        return {
+            "africa", "north africa", "sub-saharan africa",
+            "central africa", "east africa", "west africa",
+            "southern africa", "middle east", "europe",
+        }
+
+SIPRI_REGION_LABELS = _load_sipri_region_labels()
     "north america", "latin america", "asia & oceania",
     "asia and oceania", "central asia and south asia",
     "east asia", "south asia", "southeast asia", "oceania",

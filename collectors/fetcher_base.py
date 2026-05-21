@@ -48,16 +48,50 @@ PAUSE_BETWEEN_CALLS = 0.5  # politesse entre requêtes
 
 # ── 54 pays africains (ISO-3) ─────────────────────────────
 
-AFRICAN_ISO3: list[str] = [
+AFRICAN_ISO3_FALLBACK: list[str] = [
     "DZA","EGY","LBY","MAR","MRT","SDN","TUN",
-    "BEN","BFA","CIV","CPV","GMB","GHA","GIN",
-    "GNB","LBR","MLI","NER","NGA","SLE","SEN","TGO",
-    "BDI","COM","DJI","ERI","ETH","KEN","MDG",
-    "MWI","MUS","MOZ","RWA","SYC","SOM","SSD",
-    "TZA","UGA","ZMB","ZWE",
+    "BEN","BFA","CIV","CPV","GMB","GHA","GIN","GNB","LBR",
+    "MLI","NER","NGA","SEN","SLE","TGO",
+    "BDI","COM","DJI","ERI","ETH","KEN","MDG","MWI","MUS",
+    "MOZ","RWA","SYC","SOM","SSD","TZA","UGA","ZMB","ZWE",
     "AGO","CMR","CAF","TCD","COG","COD","GNQ","GAB","STP",
-    "BWA","SWZ","LSO","NAM","ZAF",
+    "BWA","LSO","NAM","ZAF","SWZ",
 ]
+
+def _load_african_iso3() -> list:
+    """Charge la liste des pays OSA actifs depuis rf.countries.
+    Fallback sur liste locale si DB inaccessible.
+    Doctrine OSA : rf.countries est la source de verite unique.
+    Ajouter un pays = 1 INSERT dans rf.countries WHERE is_active=TRUE.
+    """
+    try:
+        import psycopg2, os
+        from dotenv import load_dotenv
+        load_dotenv()
+        conn = psycopg2.connect(
+            host=os.getenv("OSA_DB_HOST", "127.0.0.1"),
+            port=int(os.getenv("OSA_DB_PORT", 5432)),
+            dbname=os.getenv("OSA_DB_NAME", "osa_db"),
+            user=os.getenv("OSA_DB_USER", "postgres"),
+            password=os.getenv("OSA_DB_PASS", ""),
+        )
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT iso3 FROM rf.countries WHERE is_active = TRUE ORDER BY iso3"
+            )
+            iso3_list = [row[0] for row in cur.fetchall()]
+        conn.close()
+        if len(iso3_list) >= 50:
+            return iso3_list
+        return AFRICAN_ISO3_FALLBACK
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(
+            "rf.countries inaccessible (%s) -- fallback liste locale", e
+        )
+        return AFRICAN_ISO3_FALLBACK
+
+AFRICAN_ISO3: list[str] = _load_african_iso3()
 
 # ── Échantillon 10 pays représentatifs (1 par région + Sahel) ────
 SAMPLE_ISO3: list[str] = [
