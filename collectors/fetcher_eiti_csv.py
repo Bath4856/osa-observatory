@@ -272,7 +272,7 @@ class EITIFetcher(BaseFetcher):
     ) -> list[DataRecord]:
         """Lit les statuts EITI depuis collect.reference_classifications."""
         import psycopg2
-        conn = self._get_db_conn()
+        conn = self.conn
         records: list[DataRecord] = []
         try:
             with conn.cursor() as cur:
@@ -287,7 +287,7 @@ class EITIFetcher(BaseFetcher):
                 """)
                 rows = cur.fetchall()
         finally:
-            conn.close()
+            pass  # self.conn geree par BaseFetcher
 
         # Construire un dict pays → liste de statuts historiques
         statuts: dict[str, list] = {}
