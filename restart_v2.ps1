@@ -1,5 +1,5 @@
-﻿# ============================================================
-# OSA Observatory — restart_v2.ps1
+# ============================================================
+# OSA Observatory -- restart_v2.ps1
 # Lancer depuis G:\osa-observatory en PowerShell
 # ============================================================
 
@@ -40,13 +40,13 @@ function Start-Postgres {
     $svc = Get-Service -Name "postgresql-x64-17" -ErrorAction SilentlyContinue
     if ($null -eq $svc) { Write-Err "Service postgresql-x64-17 introuvable."; exit 1 }
     if ($svc.Status -ne "Running") {
-        Write-Host "    Démarrage PostgreSQL..."
+        Write-Host "    Demarrage PostgreSQL..."
         Start-Service -Name "postgresql-x64-17"
         Start-Sleep -Seconds 3
     }
     $svc = Get-Service -Name "postgresql-x64-17"
     if ($svc.Status -eq "Running") { Write-OK "PostgreSQL Running" }
-    else { Write-Err "PostgreSQL ECHEC démarrage"; exit 1 }
+    else { Write-Err "PostgreSQL ECHEC demarrage"; exit 1 }
 }
 
 function Test-DbConnection {
@@ -71,7 +71,7 @@ function Install-Deps([switch]$Silent) {
     & $PyExe $PyVer -m pip install "uvicorn[standard]" fastapi sqlalchemy `
         psycopg2-binary pydantic pydantic-settings python-dotenv `
         --target $PkgRoot @pipArgs
-    Write-OK "Dépendances installées dans $PkgRoot"
+    Write-OK "Dependances installees dans $PkgRoot"
 }
 
 function Run-Psql($file, [switch]$Audit) {
@@ -80,32 +80,34 @@ function Run-Psql($file, [switch]$Audit) {
         & $PsqlExe -h $DbHost -p $DbPort -U $DbUser -d $DbName -f $file
     } else {
         & $PsqlExe -h $DbHost -p $DbPort -U $DbUser -d $DbName -v ON_ERROR_STOP=1 -f $file
-        if ($LASTEXITCODE -ne 0) { Write-Err "Erreur SQL : $file"; throw "Arrêt" }
+        if ($LASTEXITCODE -ne 0) { Write-Err "Erreur SQL : $file"; throw "Arret" }
     }
 }
 
 function Run-PsqlInline($sql) {
     & $PsqlExe -h $DbHost -p $DbPort -U $DbUser -d $DbName -v ON_ERROR_STOP=1 -c $sql
-    if ($LASTEXITCODE -ne 0) { Write-Err "Erreur SQL inline"; throw "Arrêt" }
+    if ($LASTEXITCODE -ne 0) { Write-Err "Erreur SQL inline"; throw "Arret" }
 }
 
 # ============================================================
 # MENU
 # ============================================================
 
-Write-Header "OSA Observatory — restart_v2"
+Write-Header "OSA Observatory -- restart_v2"
 Write-Host ""
 Write-Host "  Choisissez une action :" -ForegroundColor White
 Write-Host ""
 Write-Host "  [1]  Restart complet  (PostgreSQL + deps + API)" -ForegroundColor White
 Write-Host "  [2]  PostgreSQL uniquement" -ForegroundColor White
-Write-Host "  [3]  Dépendances Python uniquement" -ForegroundColor White
-Write-Host "  [4]  API FastAPI uniquement  — http://localhost:8000" -ForegroundColor White
-Write-Host "  [5]  Déployer AMAR v2" -ForegroundColor White
-Write-Host "  [6]  Déployer GENECO  (nécessite AMAR)" -ForegroundColor White
-Write-Host "  [7]  Déployer AMAR v2 + GENECO  (séquence complète)" -ForegroundColor White
-Write-Host "  [8]  Dry run  — état P7I Core / AMAR / GENECO" -ForegroundColor White
+Write-Host "  [3]  Dependances Python uniquement" -ForegroundColor White
+Write-Host "  [4]  API FastAPI uniquement  -- http://localhost:8000" -ForegroundColor White
+Write-Host "  [5]  Deployer AMAR v2" -ForegroundColor White
+Write-Host "  [6]  Deployer GENECO  (necessite AMAR)" -ForegroundColor White
+Write-Host "  [7]  Deployer AMAR v2 + GENECO  (sequence complete)" -ForegroundColor White
+Write-Host "  [8]  Dry run  -- etat P7I Core / AMAR / GENECO" -ForegroundColor White
 Write-Host "  [9]  Audit colonnes P7I source" -ForegroundColor White
+Write-Host "  [A]  Audit pipeline   -- rapport qualite L1/L2/L3 + Excel" -ForegroundColor White
+Write-Host "  [HC] Healthcheck auto -- diagnostic pipeline + AMAR + doctrine" -ForegroundColor Cyan
 Write-Host "  [R]  Rollback GENECO uniquement" -ForegroundColor Magenta
 Write-Host "  [X]  Rollback AMAR + GENECO" -ForegroundColor Red
 Write-Host ""
@@ -121,7 +123,7 @@ switch ($choice.ToUpper()) {
         Write-Header "Restart complet"
         Write-Step 1 4 "PostgreSQL"
         Start-Postgres
-        Write-Step 2 4 "Dépendances Python"
+        Write-Step 2 4 "Dependances Python"
         Install-Deps -Silent
         Write-Step 3 4 "Connexion base"
         Test-DbConnection
@@ -137,7 +139,7 @@ switch ($choice.ToUpper()) {
     }
 
     "3" {
-        Write-Header "Dépendances Python"
+        Write-Header "Dependances Python"
         Install-Deps
     }
 
@@ -151,9 +153,9 @@ switch ($choice.ToUpper()) {
     }
 
     "5" {
-        Write-Header "Déploiement AMAR v2"
+        Write-Header "Deploiement AMAR v2"
 
-        Write-Step 1 3 "Vérification P7I Core"
+        Write-Step 1 3 "Verification P7I Core"
         Run-PsqlInline "SELECT
   CASE WHEN to_regclass('ma.v_p7i_risk_source') IS NOT NULL THEN 'OK' ELSE 'MISSING' END AS check_p7i_source,
   CASE WHEN to_regclass('ma.v_isa_early_warning_engine') IS NOT NULL THEN 'OK' ELSE 'MISSING' END AS check_p7i_core,
@@ -161,7 +163,7 @@ switch ($choice.ToUpper()) {
   CASE WHEN to_regclass('ma.v_isa_early_warning_country_year') IS NOT NULL THEN 'OK' ELSE 'MISSING' END AS check_p7i_country_year,
   CASE WHEN to_regclass('mg.package_registry') IS NOT NULL THEN 'OK' ELSE 'MISSING' END AS check_registry;"
 
-        Write-Step 2 3 "Déploiement SQL"
+        Write-Step 2 3 "Deploiement SQL"
         Run-Psql "db/patch_db/patch_p7i_amar_extension.sql"
         Run-Psql "db/views/ma/v_p7i_amar_atrocity_precursor_engine.sql"
         Run-Psql "db/views/ma/v_p7i_amar_dashboard.sql"
@@ -172,18 +174,18 @@ switch ($choice.ToUpper()) {
         Run-Psql "audit/list_p7i_amar_columns.sql" -Audit
         Run-Psql "audit/p7i_amar_report.sql" -Audit
 
-        Write-OK "AMAR v2 déployé"
+        Write-OK "AMAR v2 deploye"
     }
 
     "6" {
-        Write-Header "Déploiement GENECO"
+        Write-Header "Deploiement GENECO"
 
-        Write-Step 1 3 "Vérification prérequis"
+        Write-Step 1 3 "Verification prerequis"
         Run-PsqlInline "SELECT
-  CASE WHEN to_regclass('ma.v_p7i_amar_dashboard') IS NOT NULL THEN 'OK' ELSE 'MISSING — lancez option 5 avant' END AS check_amar,
+  CASE WHEN to_regclass('ma.v_p7i_amar_dashboard') IS NOT NULL THEN 'OK' ELSE 'MISSING -- lancez option 5 avant' END AS check_amar,
   CASE WHEN to_regclass('ma.v_isa_early_warning_engine') IS NOT NULL THEN 'OK' ELSE 'MISSING' END AS check_p7i_core;"
 
-        Write-Step 2 3 "Déploiement SQL"
+        Write-Step 2 3 "Deploiement SQL"
         Run-Psql "db/patch_db/patch_p7i_amar_geneco_registry.sql"
         Run-Psql "db/views/ma/v_p7i_amar_geneco_engine.sql"
         Run-Psql "db/views/ma/v_p7i_amar_geneco_dashboard.sql"
@@ -195,29 +197,29 @@ switch ($choice.ToUpper()) {
         Run-Psql "audit/list_p7i_amar_geneco_columns.sql" -Audit
         Run-Psql "audit/p7i_amar_geneco_report.sql" -Audit
 
-        Write-OK "GENECO déployé"
+        Write-OK "GENECO deploye"
     }
 
     "7" {
-        Write-Header "Déploiement AMAR v2 + GENECO"
+        Write-Header "Deploiement AMAR v2 + GENECO"
 
-        Write-Step 1 5 "Vérification P7I Core"
+        Write-Step 1 5 "Verification P7I Core"
         Run-PsqlInline "SELECT
   CASE WHEN to_regclass('ma.v_p7i_risk_source') IS NOT NULL THEN 'OK' ELSE 'MISSING' END AS check_p7i_source,
   CASE WHEN to_regclass('ma.v_isa_early_warning_engine') IS NOT NULL THEN 'OK' ELSE 'MISSING' END AS check_p7i_core,
   CASE WHEN to_regclass('ma.v_isa_risk_escalation_engine') IS NOT NULL THEN 'OK' ELSE 'MISSING' END AS check_p7i_escalation,
   CASE WHEN to_regclass('ma.v_isa_early_warning_country_year') IS NOT NULL THEN 'OK' ELSE 'MISSING' END AS check_p7i_country_year;"
 
-        Write-Step 2 5 "AMAR — patch tables + registry"
+        Write-Step 2 5 "AMAR -- patch tables + registry"
         Run-Psql "db/patch_db/patch_p7i_amar_extension.sql"
 
-        Write-Step 3 5 "AMAR — vues + alerts"
+        Write-Step 3 5 "AMAR -- vues + alerts"
         Run-Psql "db/views/ma/v_p7i_amar_atrocity_precursor_engine.sql"
         Run-Psql "db/views/ma/v_p7i_amar_dashboard.sql"
         Run-Psql "db/views/mg/v_public_p7i_amar_alerts.sql"
         Run-Psql "db/patch_db/patch_p7i_amar_alert_refresh.sql"
 
-        Write-Step 4 5 "GENECO — vues + alerts"
+        Write-Step 4 5 "GENECO -- vues + alerts"
         Run-Psql "db/patch_db/patch_p7i_amar_geneco_registry.sql"
         Run-Psql "db/views/ma/v_p7i_amar_geneco_engine.sql"
         Run-Psql "db/views/ma/v_p7i_amar_geneco_dashboard.sql"
@@ -228,13 +230,14 @@ switch ($choice.ToUpper()) {
         Write-Step 5 5 "Audit complet"
         Run-Psql "audit/list_p7i_amar_columns.sql" -Audit
         Run-Psql "audit/p7i_amar_report.sql" -Audit
+        Run-Psql "audit/list_p7i_amar_geneco_columns.sql" -Audit
         Run-Psql "audit/p7i_amar_geneco_report.sql" -Audit
 
-        Write-OK "AMAR v2 + GENECO déployés"
+        Write-OK "AMAR v2 + GENECO deployes"
     }
 
     "8" {
-        Write-Header "Dry run — état P7I / AMAR / GENECO"
+        Write-Header "Dry run -- etat P7I / AMAR / GENECO"
 
         Write-Host ""
         Write-Host "  -- P7I Core --" -ForegroundColor Cyan
@@ -261,12 +264,12 @@ switch ($choice.ToUpper()) {
   to_regclass('mg.v_public_p7i_amar_geneco_alerts') AS geneco_public;"
 
         Write-Host ""
-        Write-Host "  -- Scores AMAR (si déployé) --" -ForegroundColor Cyan
+        Write-Host "  -- Scores AMAR (si deploye) --" -ForegroundColor Cyan
         & $PsqlExe -h $DbHost -p $DbPort -U $DbUser -d $DbName -c `
             "SELECT year, risk_band, COUNT(*) AS nb, ROUND(AVG(risk_score),3) AS avg_score FROM ma.v_p7i_amar_dashboard GROUP BY year, risk_band ORDER BY year DESC, risk_band;" 2>&1
 
         Write-Host ""
-        Write-Host "  -- Scores GENECO (si déployé) --" -ForegroundColor Cyan
+        Write-Host "  -- Scores GENECO (si deploye) --" -ForegroundColor Cyan
         & $PsqlExe -h $DbHost -p $DbPort -U $DbUser -d $DbName -c `
             "SELECT year, risk_band, COUNT(*) AS nb, ROUND(AVG(risk_score),3) AS avg_score FROM ma.v_p7i_amar_geneco_dashboard GROUP BY year, risk_band ORDER BY year DESC, risk_band;" 2>&1
     }
@@ -276,11 +279,44 @@ switch ($choice.ToUpper()) {
         Run-Psql "audit/list_p7i_source_columns.sql" -Audit
     }
 
+    "A" {
+        Write-Header "Audit pipeline"
+        Write-Step 1 1 "Audit qualite L1/L2/L3"
+        & $PyExe $PyVer -m uvicorn api.main:app --reload --port 8000 2>&1 | Out-Null
+        Run-Psql "audit/osa_audit_completude_mapping_v2.sql" -Audit
+        Write-OK "Audit pipeline termine"
+    }
+
+    "HC" {
+        Write-Header "Healthcheck automatise"
+
+        Write-Step 1 3 "Execution SQL diagnostic"
+        $HcTs  = Get-Date -Format "yyyyMMdd_HHmmss"
+        $HcLog = "$RepoRoot\logs\healthcheck\healthcheck_$HcTs.log"
+        New-Item -ItemType Directory -Force -Path "$RepoRoot\logs\healthcheck" | Out-Null
+        & $PsqlExe -h $DbHost -p $DbPort -U $DbUser -d $DbName `
+            -f "$RepoRoot\audit\osa_healthcheck.sql" | Out-File $HcLog -Encoding UTF8
+        Write-OK "Log SQL : $HcLog"
+
+        Write-Step 2 3 "Analyse Python"
+        $env:PYTHONPATH = $RepoRoot
+        & $PyExe $PyVer "$RepoRoot\scripts\analyse\osa_healthcheck.py" --log $HcLog --report
+        $HcExit = $LASTEXITCODE
+
+        Write-Step 3 3 "Resultat"
+        if ($HcExit -eq 0)     { Write-OK   "Statut GLOBAL : OK -- pipeline sain" }
+        elseif ($HcExit -eq 1) { Write-Warn "Statut GLOBAL : ATTENTION -- avertissements detectes" }
+        else                   { Write-Err  "Statut GLOBAL : CRITIQUE -- anomalies detectees" }
+        Write-Host "    Log  : $HcLog"
+        $HcJson = $HcLog -replace "\.log$", ".json"
+        Write-Host "    JSON : $HcJson"
+    }
+
     "R" {
         Write-Header "Rollback GENECO"
-        Write-Warn "Supprime les vues GENECO et les alertes persistées GENECO."
+        Write-Warn "Supprime les vues GENECO et les alertes persistees GENECO."
         $confirm = Read-Host "    Confirmer ? (oui/non)"
-        if ($confirm -ne "oui") { Write-Host "    Annulé."; exit 0 }
+        if ($confirm -ne "oui") { Write-Host "    Annule."; exit 0 }
         Run-PsqlInline "BEGIN;
 DROP VIEW IF EXISTS mg.v_public_p7i_amar_geneco_alerts;
 DROP VIEW IF EXISTS ma.v_p7i_amar_composite_dashboard;
@@ -290,14 +326,14 @@ DELETE FROM mg.early_warning_alerts WHERE source_engine = 'P7I-AMAR-GENECO';
 DELETE FROM mg.risk_taxonomy WHERE risk_code = 'CONFLICT_ECONOMY_EXPOSURE';
 DELETE FROM mg.package_registry WHERE package_code = 'P7I-AMAR-GENECO';
 COMMIT;"
-        Write-OK "Rollback GENECO effectué"
+        Write-OK "Rollback GENECO effectue"
     }
 
     "X" {
         Write-Header "Rollback AMAR + GENECO"
-        Write-Warn "Supprime TOUTES les vues AMAR et GENECO. P7I Core non touché."
+        Write-Warn "Supprime TOUTES les vues AMAR et GENECO. P7I Core non touche."
         $confirm = Read-Host "    Confirmer ? (oui/non)"
-        if ($confirm -ne "oui") { Write-Host "    Annulé."; exit 0 }
+        if ($confirm -ne "oui") { Write-Host "    Annule."; exit 0 }
 
         Write-Host "    Rollback GENECO..."
         Run-PsqlInline "BEGIN;
@@ -313,7 +349,7 @@ COMMIT;"
         Write-Host "    Rollback AMAR..."
         Run-Psql "db/patch_db/rollback_p7i_amar_extension.sql"
 
-        Write-OK "Rollback AMAR + GENECO effectué"
+        Write-OK "Rollback AMAR + GENECO effectue"
     }
 
     default {
@@ -324,7 +360,6 @@ COMMIT;"
 
 Write-Host ""
 Write-Host "=======================================" -ForegroundColor Cyan
-Write-Host "  Terminé." -ForegroundColor Cyan
+Write-Host "  Termine." -ForegroundColor Cyan
 Write-Host "=======================================" -ForegroundColor Cyan
 Write-Host ""
-
