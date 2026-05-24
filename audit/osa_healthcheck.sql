@@ -147,5 +147,18 @@ FROM rf.indicator_versions
 GROUP BY sprint, action
 ORDER BY sprint, action;
 
+
+-- ── 13. RUPTURES AMAR CONNUES ET DOCUMENTEES ─────────────────
+SELECT 'AMAR_KNOWN_BREAKS|'
+    || id::text || '|'
+    || year_from::text || '|'
+    || year_to::text || '|'
+    || risk_band || '|'
+    || cause_code || '|'
+    || is_artefact::text AS result
+FROM rf.amar_known_breaks
+ORDER BY year_from;
+
 \t off
 \pset format aligned
+

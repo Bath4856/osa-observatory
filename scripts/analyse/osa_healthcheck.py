@@ -99,6 +99,7 @@ def parse_lines(lines: list[str]) -> dict:
         "piliers":       {},
         "layers":        {},
         "versions":      [],
+        "known_breaks":  [],
     }
 
     for line in lines:
@@ -174,6 +175,16 @@ def parse_lines(lines: list[str]) -> dict:
                 "indicateurs":int(parts[3]) if parts[3].isdigit() else 0,
                 "pays":       int(parts[4]) if len(parts) > 4 and parts[4].isdigit() else 0,
             }
+
+        elif key == "AMAR_KNOWN_BREAKS" and len(parts) >= 7:
+            data["known_breaks"].append({
+                "id":        int(parts[1]) if parts[1].isdigit() else 0,
+                "year_from": int(parts[2]) if parts[2].isdigit() else 0,
+                "year_to":   int(parts[3]) if parts[3].isdigit() else 0,
+                "band":      parts[4],
+                "cause":     parts[5],
+                "artefact":  parts[6].lower() == "true",
+            })
 
         elif key == "VERSIONS_COUNT" and len(parts) >= 4:
             data["versions"].append({
@@ -264,15 +275,19 @@ def analyse(data: dict) -> dict:
                 "action": "Verifier recalcul L3 - possible artefact de recalibration"
             })
 
-    # ── Ruptures AMAR
+    # ── Ruptures AMAR (hors ruptures connues et documentees)
+    known = {(k["year_to"], k["band"]) for k in data["known_breaks"]}
     for b in data["amar_breaks"]:
         if b["delta"] >= SEUILS["amar_break_min"]:
-            avertissements.append({
-                "code": "AMAR_BREAK",
-                "niveau": "ATTENTION",
-                "message": f"Rupture AMAR {b['band']} en {b['year']} : {b['prev_nb']} -> {b['nb_pays']} pays (delta={b['delta']})",
-                "action": "Verifier recalibration seuils AMAR - possible artefact post-desactivation indicateurs"
-            })
+            if (b["year"], b["band"]) in known:
+                ok.append(f"Rupture AMAR {b['band']} {b['year']-1}->{b['year']} documentee et justifiee (rf.amar_known_breaks)")
+            else:
+                avertissements.append({
+                    "code": "AMAR_BREAK",
+                    "niveau": "ATTENTION",
+                    "message": f"Rupture AMAR {b['band']} en {b['year']} : {b['prev_nb']} -> {b['nb_pays']} pays (delta={b['delta']})",
+                    "action": "Verifier recalibration seuils AMAR - possible artefact post-desactivation indicateurs"
+                })
 
     # ── GREEN sur annees recentes (2020+)
     for year in range(2020, 2025):
