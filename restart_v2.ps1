@@ -1,4 +1,4 @@
-# ============================================================
+﻿# ============================================================
 # OSA Observatory — restart_v2.ps1
 # Lancer depuis G:\osa-observatory en PowerShell
 # ============================================================
@@ -192,6 +192,7 @@ switch ($choice.ToUpper()) {
         Run-Psql "db/patch_db/patch_p7i_amar_geneco_alert_refresh.sql"
 
         Write-Step 3 3 "Audit"
+        Run-Psql "audit/list_p7i_amar_geneco_columns.sql" -Audit
         Run-Psql "audit/p7i_amar_geneco_report.sql" -Audit
 
         Write-OK "GENECO déployé"
@@ -326,3 +327,4 @@ Write-Host "=======================================" -ForegroundColor Cyan
 Write-Host "  Terminé." -ForegroundColor Cyan
 Write-Host "=======================================" -ForegroundColor Cyan
 Write-Host ""
+
