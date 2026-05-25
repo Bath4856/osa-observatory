@@ -6,6 +6,7 @@ DATABASE_URL = (
     f"postgresql+psycopg2://{settings.DB_USER}:"
     f"{settings.DB_PASSWORD}@{settings.DB_HOST}:"
     f"{settings.DB_PORT}/{settings.DB_NAME}"
+    f"?client_encoding=utf8"
 )
 
 engine = create_engine(
@@ -13,6 +14,7 @@ engine = create_engine(
     pool_pre_ping=True,
     pool_size=10,
     max_overflow=20,
+    connect_args={"client_encoding": "utf8"},
 )
 
 SessionLocal = sessionmaker(
