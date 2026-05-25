@@ -191,6 +191,16 @@ class BaseFetcher(ABC):
         return row[0] if row else None
 
     def _get_source_id(self, cur) -> Optional[int]:
+        # Sprint 12 -- source_id depuis collect.data_providers (pas mm.source_origins)
+        # Garantit que source_id reflete le vrai fournisseur PROVIDER_CODE
+        cur.execute(
+            "SELECT id FROM collect.data_providers WHERE code = %s",
+            (self.PROVIDER_CODE,),
+        )
+        row = cur.fetchone()
+        if row:
+            return row[0]
+        # Fallback mm.source_origins pour compatibilite ascendante
         cur.execute(
             "SELECT id FROM mm.source_origins WHERE code = %s",
             (self.PROVIDER_CODE,),
