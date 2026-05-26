@@ -16,6 +16,7 @@ from api.routers.sovereignty import router as sovereignty_router
 # SPRINT14 DEPRECATED -- from api.routers.api_phase3_sprint8 import decision_phase3_router, ew_phase3_router
 from api.routers.sovereignty_fiscal_margin import router as fiscal_margin_router
 from api.routers.opendata import router as opendata_router
+from api.routers.eparticipation import router as eparticipation_router
 from api.routers.tokens import router as tokens_router, public_router as tokens_public_router
 
 app = FastAPI(
@@ -71,6 +72,7 @@ app.include_router(sovereignty_router)
 # SPRINT14 DEPRECATED -- app.include_router(ew_phase3_router)
 app.include_router(fiscal_margin_router)
 app.include_router(opendata_router)
+app.include_router(eparticipation_router)
 app.include_router(tokens_router)
 app.include_router(tokens_public_router)
 
