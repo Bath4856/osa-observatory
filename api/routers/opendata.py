@@ -29,7 +29,7 @@ def _wrap(data: list, dataset_code: str) -> Response:
     payload = {
         "dataset":    dataset_code,
         "license":    "CC-BY-4.0",
-        "access":     "Couche 0 -- Open Data",
+        "access":     "Couche 0 -- Open Data -- CC-BY-4.0",
         "disclaimer": _DISCLAIMER,
         "count":      len(data),
         "data":       data,
@@ -278,4 +278,4 @@ async def get_country_trajectories(
 async def get_methodology(db: Session = Depends(get_db)):
     data = _rows(db, "SELECT * FROM pub.v_isa_public_methodology LIMIT 1")
     return {"dataset": "ISA_METHODOLOGY", "license": "CC-BY-4.0",
-            "access": "Couche 0 -- Open Data", "disclaimer": _DISCLAIMER, "data": data}
+            "access": "Couche 0 -- Open Data -- CC-BY-4.0", "disclaimer": _DISCLAIMER, "data": data}

@@ -66,7 +66,7 @@ async def get_readiness(
     return _json({
         "count":      len(data),
         "elapsed_ms": elapsed,
-        "access":     "Couche 2 -- Premium",
+        "access":     "Couche 2 -- Affilie Premium",
         "data":       data,
     })
 
@@ -88,7 +88,7 @@ async def get_country_readiness(
     if not data:
         return JSONResponse(status_code=404,
             content={"error": f"Country {iso3.upper()} not found"})
-    return _json({"country_iso3": iso3.upper(), "access": "Couche 2", "data": data})
+    return _json({"country_iso3": iso3.upper(), "access": "Couche 2 -- Affilie Premium", "data": data})
 
 
 @router.get(
@@ -132,7 +132,7 @@ async def get_signals(
     return _json({
         "count":      len(data),
         "elapsed_ms": elapsed,
-        "access":     "Couche 2 -- Premium",
+        "access":     "Couche 2 -- Affilie Premium",
         "data":       data,
     })
 
@@ -154,7 +154,7 @@ async def get_country_signals(
     if not data:
         return JSONResponse(status_code=404,
             content={"error": f"Country {iso3.upper()} not found"})
-    return _json({"country_iso3": iso3.upper(), "access": "Couche 2", "data": data})
+    return _json({"country_iso3": iso3.upper(), "access": "Couche 2 -- Affilie Premium", "data": data})
 
 
 @router.get(
@@ -183,7 +183,7 @@ async def get_fragility(
     return _json({
         "count":      len(data),
         "elapsed_ms": elapsed,
-        "access":     "Couche 2 -- Premium",
+        "access":     "Couche 2 -- Affilie Premium",
         "data":       data,
     })
 
@@ -205,4 +205,4 @@ async def get_country_fragility(
     if not data:
         return JSONResponse(status_code=404,
             content={"error": f"Country {iso3.upper()} not found"})
-    return _json({"country_iso3": iso3.upper(), "access": "Couche 2", "data": data})
+    return _json({"country_iso3": iso3.upper(), "access": "Couche 2 -- Affilie Premium", "data": data})

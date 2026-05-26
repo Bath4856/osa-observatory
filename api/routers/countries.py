@@ -72,7 +72,7 @@ async def get_latest_countries(
         "year":       effective_year,
         "count":      len(rows),
         "elapsed_ms": elapsed,
-        "access":     "Couche 1 -- Standard",
+        "access":     "Couche 1 -- Affilie Standard",
         "data":       rows,
     })
 
@@ -122,7 +122,7 @@ async def get_country_profile(
     return _json({
         "country_iso3": iso3.upper(),
         "elapsed_ms":   elapsed,
-        "access":       "Couche 1 -- Standard",
+        "access":       "Couche 1 -- Affilie Standard",
         "data":         rows,
     })
 
@@ -180,7 +180,7 @@ async def get_country_pillars(
         "country_iso3": iso3.upper(),
         "year":         effective_year,
         "elapsed_ms":   elapsed,
-        "access":       "Couche 1 -- Standard",
+        "access":       "Couche 1 -- Affilie Standard",
         "data":         rows,
     })
 
@@ -227,6 +227,6 @@ async def get_country_history(
     return _json({
         "country_iso3": iso3.upper(),
         "elapsed_ms":   elapsed,
-        "access":       "Couche 1 -- Standard",
+        "access":       "Couche 1 -- Affilie Standard",
         "data":         rows,
     })

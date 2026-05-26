@@ -272,6 +272,8 @@ ON CONFLICT (country_iso3, year, risk_code, source_engine)
 DO UPDATE SET risk_band=EXCLUDED.risk_band, risk_score=EXCLUDED.risk_score,
               confidence_score=EXCLUDED.confidence_score,
               public_narrative=EXCLUDED.public_narrative, updated_at=NOW();
+-- Refresh vues materialisees pub.* (Sprint 16)
+SELECT pub.refresh_materialized_views();
 COMMIT;
 "@
     # SQL via fichier temp

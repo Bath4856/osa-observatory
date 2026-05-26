@@ -260,7 +260,7 @@ async def get_queue(
     })
     return _json({
         "count":  len(data),
-        "access": "Couche 1 -- Standard",
+        "access": "Couche 1 -- Affilie Standard",
         "data":   data,
     })
 
@@ -282,7 +282,7 @@ async def get_country_queue(
     if not data:
         return JSONResponse(status_code=404,
             content={"error": f"Country {iso3.upper()} not found"})
-    return _json({"country_iso3": iso3.upper(), "access": "Couche 1", "data": data})
+    return _json({"country_iso3": iso3.upper(), "access": "Couche 1 -- Affilie Standard", "data": data})
 
 
 @router.get(
@@ -301,7 +301,7 @@ async def get_priorities(
     """, {"region": region.upper() if region else None})
     return _json({
         "count":  len(data),
-        "access": "Couche 1 -- Standard",
+        "access": "Couche 1 -- Affilie Standard",
         "data":   data,
     })
 
@@ -326,7 +326,7 @@ async def get_pending(
         WHERE moderation_status = 'PENDING'
         ORDER BY created_at ASC
     """)
-    return _json({"count": len(data), "access": "Expert", "data": data})
+    return _json({"count": len(data), "access": "Expert -- OSA Internal", "data": data})
 
 
 @router.post(
