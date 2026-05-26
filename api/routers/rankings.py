@@ -1,7 +1,7 @@
 """
 OSA Observatory -- Sprint 14
 Router rankings -- Classement ISA par pays
-Reecrit proprement depuis pub.v_isa_country_rankings
+Reecrit proprement depuis pub.mv_isa_country_rankings
 """
 
 import time
@@ -56,7 +56,7 @@ async def get_rankings(
             nb_pillars_observed, isa_rank, regional_rank,
             avg_priority_score, nb_pillars_accelerating, nb_pillars_critical,
             sovereign_momentum, publication_status
-        FROM pub.v_isa_country_rankings
+        FROM pub.mv_isa_country_rankings
         WHERE year = :year
           AND (:region IS NULL OR region_code = :region)
         ORDER BY isa_rank
@@ -90,7 +90,7 @@ async def get_country_rankings(
             resilience_score, data_confidence,
             isa_rank, regional_rank, sovereign_momentum,
             nb_pillars_accelerating, nb_pillars_critical
-        FROM pub.v_isa_country_rankings
+        FROM pub.mv_isa_country_rankings
         WHERE country_iso3 = :iso3
         ORDER BY year DESC
     """, {"iso3": iso3.upper()})
@@ -120,7 +120,7 @@ async def get_region_rankings(
             country_iso3, year, region_code, region_label,
             isa_observed_score, isa_rank, regional_rank,
             sovereign_momentum, nb_pillars_accelerating, nb_pillars_critical
-        FROM pub.v_isa_country_rankings
+        FROM pub.mv_isa_country_rankings
         WHERE region_code = :region
           AND year = :year
         ORDER BY regional_rank

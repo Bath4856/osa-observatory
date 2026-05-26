@@ -61,7 +61,7 @@ async def get_countries_latest(
     amar_band: Optional[str] = Query(default=None),
 ):
     data = _rows(db, """
-        SELECT * FROM pub.v_isa_country_latest
+        SELECT * FROM pub.mv_isa_country_latest
         WHERE (:region   IS NULL OR region_code       = :region)
           AND (:momentum IS NULL OR sovereign_momentum = :momentum)
           AND (:amar     IS NULL OR amar_risk_band     = :amar)
@@ -77,7 +77,7 @@ async def get_countries_latest(
 @router.get("/countries/latest/{iso3}", summary="Etat souverain le plus recent -- un pays")
 async def get_country_latest(iso3: str, db: Session = Depends(get_db)):
     data = _rows(db,
-        "SELECT * FROM pub.v_isa_country_latest WHERE country_iso3 = :iso3",
+        "SELECT * FROM pub.mv_isa_country_latest WHERE country_iso3 = :iso3",
         {"iso3": iso3.upper()})
     if not data:
         return JSONResponse(status_code=404, content={"error": f"Country {iso3.upper()} not found"})
@@ -122,7 +122,7 @@ async def get_pillars(
     year:       Optional[int] = Query(default=None),
 ):
     data = _rows(db, """
-        SELECT * FROM pub.v_isa_pillar_breakdown
+        SELECT * FROM pub.mv_isa_pillar_breakdown
         WHERE (:pillar     IS NULL OR pillar_code      = :pillar)
           AND (:trajectory IS NULL OR trajectory_class = :trajectory)
           AND (:year       IS NULL OR year             = :year)
@@ -142,7 +142,7 @@ async def get_country_pillars(
     year: Optional[int] = Query(default=None),
 ):
     data = _rows(db, """
-        SELECT * FROM pub.v_isa_pillar_breakdown
+        SELECT * FROM pub.mv_isa_pillar_breakdown
         WHERE country_iso3 = :iso3
           AND (:year IS NULL OR year = :year)
         ORDER BY year, pillar_code
