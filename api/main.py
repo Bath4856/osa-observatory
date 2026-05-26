@@ -8,14 +8,15 @@ from api.routers import countries, rankings, predictive, release
 from api.routers.opportunities import opportunities_router, methodology_router
 from api.routers.early_warning import router as early_warning_router
 from api.routers.sovereignty import router as sovereignty_router
-from api.routers.early_warning_sprint7 import router as early_warning_sprint7_router
-from api.routers.decision_scenarios_sprint7 import (
-    decision_router, sovereignty_router as sovereignty_readiness_router,
-    ew_router as ew_sprint7_phase2_router, scenario_router
-)
-from api.routers.api_phase3_sprint8 import decision_phase3_router, ew_phase3_router
+# SPRINT14 DEPRECATED -- from api.routers.early_warning_sprint7 import router as early_warning_sprint7_router
+# SPRINT14 DEPRECATED -- from api.routers.decision_scenarios_sprint7 import (
+# SPRINT14 DEPRECATED --     decision_router, sovereignty_router as sovereignty_readiness_router,
+# SPRINT14 DEPRECATED --     ew_router as ew_sprint7_phase2_router, scenario_router
+# SPRINT14 DEPRECATED -- )
+# SPRINT14 DEPRECATED -- from api.routers.api_phase3_sprint8 import decision_phase3_router, ew_phase3_router
 from api.routers.sovereignty_fiscal_margin import router as fiscal_margin_router
 from api.routers.opendata import router as opendata_router
+from api.routers.tokens import router as tokens_router, public_router as tokens_public_router
 
 app = FastAPI(
     title="OSA ISA Public API",
@@ -61,15 +62,17 @@ app.include_router(opportunities_router)
 app.include_router(methodology_router)
 app.include_router(early_warning_router)
 app.include_router(sovereignty_router)
-app.include_router(early_warning_sprint7_router)
-app.include_router(decision_router)
-app.include_router(sovereignty_readiness_router)
-app.include_router(ew_sprint7_phase2_router)
-app.include_router(scenario_router)
-app.include_router(decision_phase3_router)
-app.include_router(ew_phase3_router)
+# SPRINT14 DEPRECATED -- app.include_router(early_warning_sprint7_router)
+# SPRINT14 DEPRECATED -- app.include_router(decision_router)
+# SPRINT14 DEPRECATED -- app.include_router(sovereignty_readiness_router)
+# SPRINT14 DEPRECATED -- app.include_router(ew_sprint7_phase2_router)
+# SPRINT14 DEPRECATED -- app.include_router(scenario_router)
+# SPRINT14 DEPRECATED -- app.include_router(decision_phase3_router)
+# SPRINT14 DEPRECATED -- app.include_router(ew_phase3_router)
 app.include_router(fiscal_margin_router)
 app.include_router(opendata_router)
+app.include_router(tokens_router)
+app.include_router(tokens_public_router)
 
 # ── Health + Root ─────────────────────────────────────────────────────────────
 @app.get("/", tags=["Health"])

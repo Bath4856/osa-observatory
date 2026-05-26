@@ -1,144 +1,208 @@
+"""
+OSA Observatory -- Sprint 14
+Router predictive -- Intelligence predictive P7Z
+Reecrit proprement depuis pub.v_isa_p7z_country_readiness
+et pub.v_isa_p7z_execution_signals
+Acces Couche 2 -- Affilie premium requis
+"""
+
 import time
-from fastapi import APIRouter, Depends, Query, Path
+from fastapi import APIRouter, Depends, Query
+from fastapi.responses import JSONResponse, Response
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-
+from typing import Optional
 from api.db import get_db
-from api.security import validate_expert_access
-from api.middleware.telemetry import register_api_usage
+from api.security import validate_premium_access
+import json
 
-router = APIRouter(prefix="/api/v2/predictive", tags=["Predictive"])
+router = APIRouter(prefix="/api/v2/predictive", tags=["Predictive -- Couche 2"])
+
+def _json(data) -> Response:
+    return Response(
+        content=json.dumps(data, ensure_ascii=False, default=str),
+        media_type="application/json; charset=utf-8"
+    )
+
+def _rows(db: Session, sql: str, params: dict = None) -> list:
+    result = db.execute(text(sql), params or {})
+    return [dict(r) for r in result.mappings().all()]
 
 
 @router.get(
     "/readiness",
-    summary="P7Z country predictive readiness — all countries",
-    description="Returns P7Z Phase 2 predictive readiness aggregated by country/year. "
-                "Includes nb_simulation_ready, avg_execution_probability, convergence years, "
-                "and sovereign fragility class.",
+    summary="P7Z country predictive readiness -- all countries",
+    description=(
+        "Returns P7Z predictive readiness aggregated by country/year. "
+        "Includes nb_simulation_ready, execution maturity class, "
+        "and sovereign execution pressure. "
+        "Requires Premium affiliation (Couche 2)."
+    ),
 )
 async def get_readiness(
-    year: int = Query(default=None, description="Filter by year (optional)"),
-    db: Session = Depends(get_db),
+    db:     Session       = Depends(get_db),
+    auth:   dict          = Depends(validate_premium_access),
+    year:   Optional[int] = Query(default=None),
+    region: Optional[str] = Query(default=None),
+    readiness_class: Optional[str] = Query(
+        default=None,
+        description="HIGH_READINESS | PARTIAL_READINESS | LOW_READINESS"
+    ),
 ):
     t0 = time.time()
-
-    if year:
-        rows = db.execute(text("""
-            SELECT *
-            FROM pub.v_isa_p7z_country_readiness
-            WHERE year = :year
-            ORDER BY avg_execution_probability DESC NULLS LAST
-        """), {"year": year}).mappings().all()
-    else:
-        rows = db.execute(text("""
-            SELECT *
-            FROM pub.v_isa_p7z_country_readiness
-            ORDER BY year DESC, avg_execution_probability DESC NULLS LAST
-        """)).mappings().all()
-
+    data = _rows(db, """
+        SELECT *
+        FROM pub.v_isa_p7z_country_readiness
+        WHERE (:year    IS NULL OR year = :year)
+          AND (:region  IS NULL OR region_code = :region)
+          AND (:rclass  IS NULL OR predictive_readiness_class = :rclass)
+        ORDER BY year DESC, avg_execution_maturity DESC NULLS LAST
+    """, {
+        "year":   year,
+        "region": region.upper()         if region         else None,
+        "rclass": readiness_class.upper() if readiness_class else None,
+    })
     elapsed = round((time.time() - t0) * 1000, 2)
-    await register_api_usage(
-        "V2_P7Z_READINESS", "/api/v2/predictive/readiness", "GET",
-        "PUBLIC", 200, elapsed, len(rows)
-    )
-    return {"count": len(rows), "data": [dict(r) for r in rows]}
+    return _json({
+        "count":      len(data),
+        "elapsed_ms": elapsed,
+        "access":     "Couche 2 -- Premium",
+        "data":       data,
+    })
 
 
 @router.get(
     "/readiness/{iso3}",
-    summary="P7Z predictive readiness — single country",
-    description="Returns P7Z readiness for a single country across all years.",
+    summary="P7Z predictive readiness -- one country",
 )
-async def get_readiness_by_country(
-    iso3: str = Path(description="ISO3 country code"),
-    db: Session = Depends(get_db),
+async def get_country_readiness(
+    iso3: str,
+    db:   Session = Depends(get_db),
+    auth: dict    = Depends(validate_premium_access),
 ):
-    t0 = time.time()
-
-    rows = db.execute(text("""
-        SELECT *
-        FROM pub.v_isa_p7z_country_readiness
+    data = _rows(db, """
+        SELECT * FROM pub.v_isa_p7z_country_readiness
         WHERE country_iso3 = :iso3
         ORDER BY year DESC
-    """), {"iso3": iso3.upper()}).mappings().all()
-
-    elapsed = round((time.time() - t0) * 1000, 2)
-    await register_api_usage(
-        "V2_P7Z_READINESS_ISO3", f"/api/v2/predictive/readiness/{iso3}", "GET",
-        "PUBLIC", 200, elapsed, len(rows)
-    )
-    return {"count": len(rows), "data": [dict(r) for r in rows]}
+    """, {"iso3": iso3.upper()})
+    if not data:
+        return JSONResponse(status_code=404,
+            content={"error": f"Country {iso3.upper()} not found"})
+    return _json({"country_iso3": iso3.upper(), "access": "Couche 2", "data": data})
 
 
 @router.get(
     "/signals",
-    summary="P7Z execution probability signals — EXPERT",
-    description="Returns detailed P7Z Phase 2 execution probability signals with all "
-                "probability components. Requires X-API-Key header. Expert access only.",
+    summary="P7Z execution signals -- all countries",
+    description=(
+        "Returns sovereign execution signals (HIGH_PROBABILITY, CONVERGENCE_IMMINENT). "
+        "Requires Premium affiliation (Couche 2)."
+    ),
 )
-async def get_predictive_signals(
-    iso3: str = Query(default=None, description="Filter by ISO3 country code"),
-    year: int = Query(default=None, description="Filter by year"),
-    db: Session = Depends(get_db),
-    auth=Depends(validate_expert_access),
+async def get_signals(
+    db:     Session       = Depends(get_db),
+    auth:   dict          = Depends(validate_premium_access),
+    year:   Optional[int] = Query(default=None),
+    status: Optional[str] = Query(
+        default=None,
+        description="CONVERGENCE_IMMINENT | HIGH_PROBABILITY | MODERATE_PROBABILITY"
+    ),
+    pillar: Optional[str] = Query(default=None),
 ):
     t0 = time.time()
-
-    base_query = "SELECT * FROM pub.v_isa_p7z_execution_signals"
-    params = {}
-    filters = []
-
-    if iso3:
-        filters.append("country_iso3 = :iso3")
-        params["iso3"] = iso3.upper()
-    if year:
-        filters.append("year = :year")
-        params["year"] = year
-
-    if filters:
-        base_query += " WHERE " + " AND ".join(filters)
-    base_query += " ORDER BY execution_probability DESC NULLS LAST"
-
-    rows = db.execute(text(base_query), params).mappings().all()
-
+    data = _rows(db, """
+        SELECT *
+        FROM pub.v_isa_p7z_execution_signals
+        WHERE (:year   IS NULL OR year = :year)
+          AND (:status IS NULL OR predictive_execution_status = :status)
+          AND (:pillar IS NULL OR pillar_code = :pillar)
+        ORDER BY year DESC,
+            CASE predictive_execution_status
+                WHEN 'CONVERGENCE_IMMINENT' THEN 1
+                WHEN 'HIGH_PROBABILITY'     THEN 2
+                ELSE 3
+            END,
+            country_iso3
+    """, {
+        "year":   year,
+        "status": status.upper() if status else None,
+        "pillar": pillar.upper() if pillar else None,
+    })
     elapsed = round((time.time() - t0) * 1000, 2)
-    await register_api_usage(
-        "V2_P7Z_SIGNALS", "/api/v2/predictive/signals", "GET",
-        "EXPERT", 200, elapsed, len(rows)
-    )
-    return {"count": len(rows), "data": [dict(r) for r in rows]}
+    return _json({
+        "count":      len(data),
+        "elapsed_ms": elapsed,
+        "access":     "Couche 2 -- Premium",
+        "data":       data,
+    })
+
+
+@router.get(
+    "/signals/{iso3}",
+    summary="P7Z execution signals -- one country",
+)
+async def get_country_signals(
+    iso3: str,
+    db:   Session = Depends(get_db),
+    auth: dict    = Depends(validate_premium_access),
+):
+    data = _rows(db, """
+        SELECT * FROM pub.v_isa_p7z_execution_signals
+        WHERE country_iso3 = :iso3
+        ORDER BY year DESC, execution_signal_class
+    """, {"iso3": iso3.upper()})
+    if not data:
+        return JSONResponse(status_code=404,
+            content={"error": f"Country {iso3.upper()} not found"})
+    return _json({"country_iso3": iso3.upper(), "access": "Couche 2", "data": data})
 
 
 @router.get(
     "/fragility",
-    summary="Sovereign fragility index — P7Z Phase 2",
-    description="Returns the sovereign fragility index by country/year. "
-                "Includes most_fragile_pillar, most_resilient_pillar, p7z_national_status.",
+    summary="Sovereign fragility -- all countries",
+    description="Returns sovereign fragility scores and classes. Couche 2.",
 )
-async def get_sovereign_fragility(
-    year: int = Query(default=None, description="Filter by year"),
-    db: Session = Depends(get_db),
+async def get_fragility(
+    db:     Session       = Depends(get_db),
+    auth:   dict          = Depends(validate_premium_access),
+    year:   Optional[int] = Query(default=None),
+    region: Optional[str] = Query(default=None),
 ):
     t0 = time.time()
-
-    if year:
-        rows = db.execute(text("""
-            SELECT *
-            FROM pub.v_isa_sovereign_fragility
-            WHERE year = :year
-            ORDER BY sovereign_fragility_index DESC NULLS LAST
-        """), {"year": year}).mappings().all()
-    else:
-        rows = db.execute(text("""
-            SELECT *
-            FROM pub.v_isa_sovereign_fragility
-            ORDER BY year DESC, sovereign_fragility_index DESC NULLS LAST
-        """)).mappings().all()
-
+    data = _rows(db, """
+        SELECT *
+        FROM pub.v_isa_sovereign_fragility
+        WHERE (:year   IS NULL OR year = :year)
+          AND (:region IS NULL OR region_code = :region)
+        ORDER BY year DESC, sovereign_fragility_score DESC NULLS LAST
+    """, {
+        "year":   year,
+        "region": region.upper() if region else None,
+    })
     elapsed = round((time.time() - t0) * 1000, 2)
-    await register_api_usage(
-        "V2_SOVEREIGN_FRAGILITY", "/api/v2/predictive/fragility", "GET",
-        "PUBLIC", 200, elapsed, len(rows)
-    )
-    return {"count": len(rows), "data": [dict(r) for r in rows]}
+    return _json({
+        "count":      len(data),
+        "elapsed_ms": elapsed,
+        "access":     "Couche 2 -- Premium",
+        "data":       data,
+    })
+
+
+@router.get(
+    "/fragility/{iso3}",
+    summary="Sovereign fragility -- one country",
+)
+async def get_country_fragility(
+    iso3: str,
+    db:   Session = Depends(get_db),
+    auth: dict    = Depends(validate_premium_access),
+):
+    data = _rows(db, """
+        SELECT * FROM pub.v_isa_sovereign_fragility
+        WHERE country_iso3 = :iso3
+        ORDER BY year DESC
+    """, {"iso3": iso3.upper()})
+    if not data:
+        return JSONResponse(status_code=404,
+            content={"error": f"Country {iso3.upper()} not found"})
+    return _json({"country_iso3": iso3.upper(), "access": "Couche 2", "data": data})
