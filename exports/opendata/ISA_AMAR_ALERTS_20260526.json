@@ -1,0 +1,2172 @@
+{
+  "dataset": "ISA_AMAR_ALERTS",
+  "label": "Atrocity precursor alerts -- 2020-2024",
+  "license": "CC-BY-4.0",
+  "access": "Couche 0 -- Open Data",
+  "generated": "2026-05-26T01:11:36",
+  "disclaimer": "OSA Observatory -- Observatoire de la Souverainete Africaine. Published under CC-BY-4.0. Early-warning analytical tool -- not a legal or diplomatic qualification. Subscribe at open.osa-observatory.org for full scores and analytics.",
+  "source": "open.osa-observatory.org",
+  "count": 270,
+  "data": [
+    {
+      "country_iso3": "SDN",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "ORANGE",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Early-warning atrocity precursor risk requiring reinforced monitoring."
+    },
+    {
+      "country_iso3": "SSD",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "ORANGE",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Early-warning atrocity precursor risk requiring reinforced monitoring."
+    },
+    {
+      "country_iso3": "AGO",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "BDI",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "BEN",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "BFA",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "BWA",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "CAF",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "CIV",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "CMR",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "COD",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "COG",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "COM",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "CPV",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "DJI",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "DZA",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "EGY",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "ERI",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "ETH",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GAB",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GHA",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GIN",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GMB",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GNB",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GNQ",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "KEN",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "LBR",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "LBY",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "LSO",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MAR",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MDG",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MLI",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MOZ",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MRT",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MUS",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MWI",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "NAM",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "NER",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "NGA",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "RWA",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SEN",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SLE",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SOM",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "STP",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SWZ",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SYC",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "TCD",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "TGO",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "TUN",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "TZA",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "UGA",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "ZAF",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "ZMB",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "ZWE",
+      "year": 2024,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SSD",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "ORANGE",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Early-warning atrocity precursor risk requiring reinforced monitoring."
+    },
+    {
+      "country_iso3": "AGO",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "BDI",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "BEN",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "BFA",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "BWA",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "CAF",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "CIV",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "CMR",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "COD",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "COG",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "COM",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "CPV",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "DJI",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "DZA",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "EGY",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "ERI",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "ETH",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GAB",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GHA",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GIN",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GMB",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GNB",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GNQ",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "KEN",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "LBR",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "LBY",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "LSO",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MAR",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MDG",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MLI",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MOZ",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MRT",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MUS",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MWI",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "NAM",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "NER",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "NGA",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "RWA",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SDN",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SEN",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SLE",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SOM",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "STP",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SWZ",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SYC",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "TCD",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "TGO",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "TUN",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "TZA",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "UGA",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "ZAF",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "ZMB",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "ZWE",
+      "year": 2023,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "AGO",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "BDI",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "BEN",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "BFA",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "BWA",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "CAF",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "CIV",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "CMR",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "COD",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "COG",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "COM",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "CPV",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "DJI",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "DZA",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "EGY",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "ERI",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "ETH",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GAB",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GHA",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GIN",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GMB",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GNB",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GNQ",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "KEN",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "LBR",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "LBY",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "LSO",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MAR",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MDG",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MLI",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MOZ",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MRT",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MUS",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MWI",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "NAM",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "NER",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "NGA",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "RWA",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SDN",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SEN",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SLE",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SOM",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SSD",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "STP",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SWZ",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SYC",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "TCD",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "TGO",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "TUN",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "TZA",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "UGA",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "ZAF",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "ZMB",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "ZWE",
+      "year": 2022,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "AGO",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "BDI",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "BEN",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "BFA",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "BWA",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "CAF",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "CIV",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "CMR",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "COD",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "COG",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "COM",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "CPV",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "DJI",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "DZA",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "EGY",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "ERI",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "ETH",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GAB",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GHA",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GIN",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GMB",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GNB",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GNQ",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "KEN",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "LBR",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "LBY",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "LSO",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MAR",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MDG",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MLI",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MOZ",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MRT",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MUS",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MWI",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "NAM",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "NER",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "NGA",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "RWA",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SDN",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SEN",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SLE",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SOM",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SSD",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "STP",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SWZ",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SYC",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "TCD",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "TGO",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "TUN",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "TZA",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "UGA",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "ZAF",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "ZMB",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "ZWE",
+      "year": 2021,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "AGO",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "BDI",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "BEN",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "BFA",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "BWA",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "CAF",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "CIV",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "CMR",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "COD",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "COG",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "COM",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "CPV",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "DJI",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "DZA",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "EGY",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "ERI",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "ETH",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GAB",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GHA",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GIN",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GMB",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GNB",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "GNQ",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "KEN",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "LBR",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "LBY",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "LSO",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MAR",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MDG",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MLI",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MOZ",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MRT",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MUS",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "MWI",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "NAM",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "NER",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "NGA",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "RWA",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SDN",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SEN",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SLE",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SOM",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SSD",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "STP",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SWZ",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "SYC",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "TCD",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "TGO",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "TUN",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "TZA",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "UGA",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "ZAF",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "ZMB",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    },
+    {
+      "country_iso3": "ZWE",
+      "year": 2020,
+      "risk_code": "ATROCITY_PRECURSOR",
+      "risk_band": "YELLOW",
+      "source_engine": "P7I-AMAR",
+      "public_narrative": "Watchlist civilian protection risk requiring regular monitoring."
+    }
+  ]
+}
