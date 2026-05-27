@@ -1,42 +1,55 @@
 """
-OSA Observatory -- Sprint 14
-Module securite -- Validation tokens API par niveau d acces
+OSA Observatory -- api/security.py
+Sprint 17 -- Pont de compatibilité JWT
 
-3 niveaux :
-  validate_standard_access  -- Couche 1 -- affilies S1
-  validate_premium_access   -- Couche 2 -- affilies S2
-  validate_expert_access    -- Couche 2+ -- usage interne OSA (legacy)
+Ce fichier conserve intégralement la logique X-Api-Key Sprint 14
+(validate_standard_access / validate_premium_access / validate_expert_access)
+pour que les routers existants (countries.py, predictive.py, eparticipation.py,
+tokens.py) continuent de fonctionner sans aucune modification.
 
-Architecture :
-  - Cle API recue dans header X-Api-Key
-  - Hash SHA-256 compare a mg.api_key_registry
-  - Affiliation verifiee via mg.v_api_key_status
-  - Rate limiting verifie et mis a jour
+Ajout Sprint 17 : réexport des dépendances JWT depuis api.auth pour
+les nouveaux routers qui souhaitent consommer des Bearer tokens.
+
+Stratégie de migration (après la période de grâce de 90 jours) :
+    Remplacer dans chaque router :
+        from api.security import validate_standard_access
+    par :
+        from api.routers.auth import require_standard
+    puis supprimer ce fichier.
 """
 
 import hashlib
 import logging
+from datetime import date
 from fastapi import Header, HTTPException
 from sqlalchemy import text
 from api.db import SessionLocal
+
+# -- Imports JWT (nouveaux routers uniquement) --
+from api.routers.auth import (                           # noqa: F401
+    get_current_token,
+    require_standard,
+    require_premium,
+    require_expert,
+)
 
 log = logging.getLogger("osa_security")
 
 
 def _hash_key(raw_key: str) -> str:
-    """SHA-256 de la cle recue -- jamais la cle en clair."""
+    """SHA-256 de la clé reçue -- jamais la clé en clair."""
     return hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
 
 
 def _validate_access(raw_key: str | None, required_level: str) -> dict:
     """
-    Validation generique par niveau d acces.
+    Validation générique par niveau d'accès -- logique Sprint 14 inchangée.
 
     required_level : STANDARD | PREMIUM | EXPERT
-    Hierarchie : EXPERT >= PREMIUM >= STANDARD
+    Hiérarchie : EXPERT >= PREMIUM >= STANDARD
 
-    Retourne le dict de la cle si valide.
-    Leve HTTPException 401 ou 403 sinon.
+    Retourne le dict de la clé si valide.
+    Lève HTTPException 401 ou 403 sinon.
     """
     if not raw_key:
         raise HTTPException(status_code=401, detail="Missing API key -- X-Api-Key header required")
@@ -71,10 +84,8 @@ def _validate_access(raw_key: str | None, required_level: str) -> dict:
                 detail="API key inactive, expired, or affiliation suspended"
             )
 
-        # Verification du niveau d acces
-        # Hierarchie : EXPERT >= PREMIUM >= STANDARD
         level_hierarchy = {"STANDARD": 1, "PREMIUM": 2, "EXPERT": 3}
-        effective = row["effective_access_class"] or "STANDARD"
+        effective     = row["effective_access_class"] or "STANDARD"
         required_rank = level_hierarchy.get(required_level, 1)
         effective_rank = level_hierarchy.get(effective, 1)
 
@@ -85,15 +96,12 @@ def _validate_access(raw_key: str | None, required_level: str) -> dict:
                        f"Upgrade at open.osa-observatory.org/subscribe"
             )
 
-        # Rate limiting -- reset si nouveau jour
-        from datetime import date
-        today = date.today()
-        last_reset = row["last_reset_date"]
+        today         = date.today()
+        last_reset    = row["last_reset_date"]
         requests_today = row["requests_today"] or 0
-        rate_limit = row["rate_limit_per_hour"] or 500
+        rate_limit    = row["rate_limit_per_hour"] or 500
 
         if last_reset != today:
-            # Nouveau jour -- reset compteur
             db.execute(text("""
                 UPDATE mg.api_key_registry
                 SET requests_today = 1,
@@ -122,35 +130,25 @@ def _validate_access(raw_key: str | None, required_level: str) -> dict:
 
 
 def validate_standard_access(x_api_key: str = Header(default=None)) -> dict:
-    """
-    Dependency FastAPI -- Couche 1 -- Affilie standard S1.
-    Scores ISA absolus + pentes + actions souveraines.
-    """
+    """Dependency FastAPI -- Couche 1 -- Affilié standard S1."""
     return _validate_access(x_api_key, "STANDARD")
 
 
 def validate_premium_access(x_api_key: str = Header(default=None)) -> dict:
-    """
-    Dependency FastAPI -- Couche 2 -- Affilie premium S2.
-    Simulations CENTRAL/STRESS + IC P5-P95 + AMAR complet.
-    """
+    """Dependency FastAPI -- Couche 2 -- Affilié premium S2."""
     return _validate_access(x_api_key, "PREMIUM")
 
 
 def validate_expert_access(x_api_key: str = Header(default=None)) -> dict:
-    """
-    Dependency FastAPI -- Expert interne OSA.
-    Toutes couches -- usage interne.
-    Legacy compatible avec Sprint 12.
-    """
+    """Dependency FastAPI -- Expert interne OSA."""
     return _validate_access(x_api_key, "EXPERT")
 
 
 def generate_api_key() -> tuple[str, str]:
     """
-    Genere une nouvelle cle API et son hash SHA-256.
+    Génère une nouvelle clé API et son hash SHA-256.
     Retourne (raw_key, hashed_key).
-    La raw_key n est jamais stockee -- a transmettre une seule fois a l affilié.
+    La raw_key n'est jamais stockée -- à transmettre une seule fois à l'affilié.
     """
     import secrets
     raw_key = f"osa_{secrets.token_urlsafe(32)}"

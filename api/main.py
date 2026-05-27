@@ -1,4 +1,4 @@
-﻿from fastapi import FastAPI
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -18,6 +18,8 @@ from api.routers.sovereignty_fiscal_margin import router as fiscal_margin_router
 from api.routers.opendata import router as opendata_router
 from api.routers.eparticipation import router as eparticipation_router
 from api.routers.tokens import router as tokens_router, public_router as tokens_public_router
+# SPRINT17 -- Authentification JWT
+from api.routers.auth import router as auth_router
 
 app = FastAPI(
     title="OSA ISA Public API",
@@ -50,7 +52,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],   # SPRINT17 : POST ajouté pour /auth/*
     allow_headers=["*"],
 )
 
@@ -75,6 +77,7 @@ app.include_router(opendata_router)
 app.include_router(eparticipation_router)
 app.include_router(tokens_router)
 app.include_router(tokens_public_router)
+app.include_router(auth_router)          # SPRINT17 -- JWT /auth/*
 
 # ── Health + Root ─────────────────────────────────────────────────────────────
 @app.get("/", tags=["Health"])
@@ -99,4 +102,3 @@ def health():
             "version":   settings.APP_VERSION,
         }
     )
-
