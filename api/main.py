@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -20,6 +20,8 @@ from api.routers.eparticipation import router as eparticipation_router
 from api.routers.tokens import router as tokens_router, public_router as tokens_public_router
 # SPRINT17 -- Authentification JWT
 from api.routers.auth import router as auth_router
+# SPRINT17 -- Rate limiting
+from api.middleware.rate_limiter import rate_limit_middleware
 
 app = FastAPI(
     title="OSA ISA Public API",
@@ -41,6 +43,13 @@ app = FastAPI(
         "name": "OSA Institutional Data License",
     },
 )
+
+# ── Rate limiting -- SPRINT17 -- doit être déclaré AVANT CORSMiddleware ──────
+# @app.middleware("http") s'exécute dans l'ordre de déclaration (FIFO).
+# Le rate limiting est le premier traitement appliqué à chaque requête.
+@app.middleware("http")
+async def _rate_limit(request: Request, call_next):
+    return await rate_limit_middleware(request, call_next)
 
 # ── CORS ─────────────────────────────────────────────────────────────────────
 origins = (

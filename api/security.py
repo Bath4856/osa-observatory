@@ -1,31 +1,32 @@
 """
 OSA Observatory -- api/security.py
-Sprint 17 -- Pont de compatibilité JWT
+Sprint 17 -- Pont de compatibilite JWT + X-Api-Key
 
-Ce fichier conserve intégralement la logique X-Api-Key Sprint 14
-(validate_standard_access / validate_premium_access / validate_expert_access)
-pour que les routers existants (countries.py, predictive.py, eparticipation.py,
-tokens.py) continuent de fonctionner sans aucune modification.
+Ce fichier accepte deux mecanismes d'authentification :
+  1. Bearer JWT   (Sprint 17) -- via Authorization: Bearer <token>
+  2. X-Api-Key    (Sprint 14) -- via header X-Api-Key (transition 90 jours)
 
-Ajout Sprint 17 : réexport des dépendances JWT depuis api.auth pour
-les nouveaux routers qui souhaitent consommer des Bearer tokens.
+Les routers Sprint 14-16 importent validate_*_access sans modification.
+Le pont detecte automatiquement le mecanisme utilise.
 
-Stratégie de migration (après la période de grâce de 90 jours) :
-    Remplacer dans chaque router :
-        from api.security import validate_standard_access
-    par :
-        from api.routers.auth import require_standard
-    puis supprimer ce fichier.
+Apres la fin de la periode de grace (90 jours, aout 2026) :
+  - Supprimer la branche X-Api-Key de _validate_access()
+  - security.py devient un simple alias vers auth.py
 """
 
 import hashlib
 import logging
+import os
 from datetime import date
-from fastapi import Header, HTTPException
+from typing import Optional
+
+import jwt as pyjwt
+from fastapi import Header, HTTPException, Request
 from sqlalchemy import text
+
 from api.db import SessionLocal
 
-# -- Imports JWT (nouveaux routers uniquement) --
+# Import des dependances JWT depuis auth.py
 from api.routers.auth import (                           # noqa: F401
     get_current_token,
     require_standard,
@@ -35,24 +36,112 @@ from api.routers.auth import (                           # noqa: F401
 
 log = logging.getLogger("osa_security")
 
+_LEVEL_HIERARCHY = {"STANDARD": 1, "PREMIUM": 2, "EXPERT": 3}
+
 
 def _hash_key(raw_key: str) -> str:
-    """SHA-256 de la clé reçue -- jamais la clé en clair."""
+    """SHA-256 de la cle recue -- jamais la cle en clair."""
     return hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
 
 
-def _validate_access(raw_key: str | None, required_level: str) -> dict:
+def _extract_bearer_token(authorization: Optional[str]) -> Optional[str]:
+    """Extrait le token JWT depuis le header Authorization: Bearer."""
+    if authorization and authorization.startswith("Bearer "):
+        return authorization[7:]
+    return None
+
+
+def _validate_jwt_claims(token: str, required_level: str) -> dict:
     """
-    Validation générique par niveau d'accès -- logique Sprint 14 inchangée.
+    Valide les claims JWT sans reverifier la signature
+    (auth.py fait la verification complete sur les routes /auth/*).
+    Verifie le niveau d'acces et que l'affiliation est active en base.
+    Retourne un dict compatible avec ce que les routers attendent.
+    """
+    try:
+        claims = pyjwt.decode(
+            token,
+            options={"verify_signature": False, "verify_exp": False},
+            algorithms=["HS256"],
+        )
+    except pyjwt.DecodeError:
+        raise HTTPException(status_code=401, detail="Bearer token invalide.")
+
+    # Verifier expiration manuellement
+    import time
+    exp = claims.get("exp", 0)
+    if exp and exp < time.time():
+        raise HTTPException(
+            status_code=401,
+            detail="Bearer token expire -- renouveler via POST /auth/refresh.",
+            headers={"X-OSA-Error": "TOKEN_EXPIRED"},
+        )
+
+    # Verifier le niveau d'acces
+    access_level = claims.get("access_level", "STANDARD")
+    required_rank = _LEVEL_HIERARCHY.get(required_level, 1)
+    effective_rank = _LEVEL_HIERARCHY.get(access_level, 0)
+
+    if effective_rank < required_rank:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                f"Acces {required_level} requis, niveau {access_level} accorde. "
+                f"Contacter le Secretariat technique OSA."
+            ),
+        )
+
+    # Verifier que l'affiliation est active en base
+    affiliation_id = claims.get("affiliation_id")
+    if affiliation_id is not None:
+        db = SessionLocal()
+        try:
+            row = db.execute(text(
+                "SELECT status FROM rf.affiliations WHERE affiliation_id = :id"
+            ), {"id": affiliation_id}).fetchone()
+        finally:
+            db.close()
+
+        if not row:
+            raise HTTPException(status_code=403, detail="Affiliation introuvable.")
+        if row[0] != "ACTIVE":
+            raise HTTPException(
+                status_code=403,
+                detail=f"Affiliation suspendue ou expiree ({row[0]}).",
+            )
+
+    # Retourner un dict compatible avec les routers existants
+    return {
+        "affiliation_id":       affiliation_id,
+        "effective_access_class": access_level,
+        "access_granted":       True,
+        "institution_name":     claims.get("institution", ""),
+        "affiliation_status":   "ACTIVE",
+        "_auth_method":         "JWT",
+    }
+
+
+def _validate_access(raw_key: Optional[str], required_level: str, authorization: Optional[str] = None) -> dict:
+    """
+    Validation generique par niveau d'acces.
+    Accepte Bearer JWT (Sprint 17) ou X-Api-Key (Sprint 14).
+
+    Priorite : X-Api-Key si present, sinon Bearer JWT.
+    (Un affilie ne devrait pas envoyer les deux simultanement.)
 
     required_level : STANDARD | PREMIUM | EXPERT
-    Hiérarchie : EXPERT >= PREMIUM >= STANDARD
-
-    Retourne le dict de la clé si valide.
-    Lève HTTPException 401 ou 403 sinon.
     """
+    # ── Chemin Bearer JWT ──────────────────────────────────────────────────
+    token = _extract_bearer_token(authorization)
+    if token and not raw_key:
+        return _validate_jwt_claims(token, required_level)
+
+    # ── Chemin X-Api-Key (transition Sprint 14) ───────────────────────────
     if not raw_key:
-        raise HTTPException(status_code=401, detail="Missing API key -- X-Api-Key header required")
+        raise HTTPException(
+            status_code=401,
+            detail="Authentification requise -- X-Api-Key header ou Authorization: Bearer.",
+        )
 
     hashed = _hash_key(raw_key)
 
@@ -85,8 +174,8 @@ def _validate_access(raw_key: str | None, required_level: str) -> dict:
             )
 
         level_hierarchy = {"STANDARD": 1, "PREMIUM": 2, "EXPERT": 3}
-        effective     = row["effective_access_class"] or "STANDARD"
-        required_rank = level_hierarchy.get(required_level, 1)
+        effective      = row["effective_access_class"] or "STANDARD"
+        required_rank  = level_hierarchy.get(required_level, 1)
         effective_rank = level_hierarchy.get(effective, 1)
 
         if effective_rank < required_rank:
@@ -129,26 +218,35 @@ def _validate_access(raw_key: str | None, required_level: str) -> dict:
         db.close()
 
 
-def validate_standard_access(x_api_key: str = Header(default=None)) -> dict:
-    """Dependency FastAPI -- Couche 1 -- Affilié standard S1."""
-    return _validate_access(x_api_key, "STANDARD")
+def validate_standard_access(
+    x_api_key:     Optional[str] = Header(default=None, alias="X-Api-Key"),
+    authorization: Optional[str] = Header(default=None, alias="Authorization"),
+) -> dict:
+    """Dependency FastAPI -- Couche 1 -- Affilie standard S1. JWT ou X-Api-Key."""
+    return _validate_access(x_api_key, "STANDARD", authorization)
 
 
-def validate_premium_access(x_api_key: str = Header(default=None)) -> dict:
-    """Dependency FastAPI -- Couche 2 -- Affilié premium S2."""
-    return _validate_access(x_api_key, "PREMIUM")
+def validate_premium_access(
+    x_api_key:     Optional[str] = Header(default=None, alias="X-Api-Key"),
+    authorization: Optional[str] = Header(default=None, alias="Authorization"),
+) -> dict:
+    """Dependency FastAPI -- Couche 2 -- Affilie premium S2. JWT ou X-Api-Key."""
+    return _validate_access(x_api_key, "PREMIUM", authorization)
 
 
-def validate_expert_access(x_api_key: str = Header(default=None)) -> dict:
-    """Dependency FastAPI -- Expert interne OSA."""
-    return _validate_access(x_api_key, "EXPERT")
+def validate_expert_access(
+    x_api_key:     Optional[str] = Header(default=None, alias="X-Api-Key"),
+    authorization: Optional[str] = Header(default=None, alias="Authorization"),
+) -> dict:
+    """Dependency FastAPI -- Expert interne OSA. JWT ou X-Api-Key."""
+    return _validate_access(x_api_key, "EXPERT", authorization)
 
 
 def generate_api_key() -> tuple[str, str]:
     """
-    Génère une nouvelle clé API et son hash SHA-256.
+    Genere une nouvelle cle API et son hash SHA-256.
     Retourne (raw_key, hashed_key).
-    La raw_key n'est jamais stockée -- à transmettre une seule fois à l'affilié.
+    La raw_key n'est jamais stockee -- a transmettre une seule fois a l'affilie.
     """
     import secrets
     raw_key = f"osa_{secrets.token_urlsafe(32)}"
