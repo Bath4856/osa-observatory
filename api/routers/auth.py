@@ -41,7 +41,10 @@ import hashlib
 import logging
 import os
 import secrets
+import smtplib
 import uuid
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -109,6 +112,108 @@ def _otp_expire_minutes() -> int:
 
 def _otp_max_attempts() -> int:
     return int(os.environ.get("OSA_OTP_MAX_ATTEMPTS", "3"))
+
+def _send_otp_email(contact_email: str, institution_name: str, code: str) -> None:
+    """
+    Envoie le code OTP par email via SMTP Gandi (mail.gandi.net:587 STARTTLS).
+    Variables requises dans api/.env :
+        OSA_SMTP_HOST, OSA_SMTP_PORT, OSA_SMTP_USER, OSA_SMTP_PASSWORD, OSA_SMTP_FROM
+    """
+    smtp_host     = os.environ.get("OSA_SMTP_HOST", "mail.gandi.net")
+    smtp_port     = int(os.environ.get("OSA_SMTP_PORT", "587"))
+    smtp_user     = os.environ.get("OSA_SMTP_USER", "")
+    smtp_password = os.environ.get("OSA_SMTP_PASSWORD", "")
+    smtp_from     = os.environ.get("OSA_SMTP_FROM", smtp_user)
+
+    if not smtp_user or not smtp_password:
+        raise HTTPException(
+            status_code=500,
+            detail="Configuration SMTP manquante -- contacter le Secretariat technique OSA.",
+        )
+
+    expire_min = _otp_expire_minutes()
+
+    # Corps texte brut
+    body_text = (
+        f"OSA Observatory -- Code d'authentification\n"
+        f"\n"
+        f"Institution : {institution_name}\n"
+        f"\n"
+        f"Votre code OTP : {code}\n"
+        f"\n"
+        f"Ce code est valable {expire_min} minutes.\n"
+        f"Ne le partagez avec personne.\n"
+        f"\n"
+        f"Si vous n'etes pas a l'origine de cette demande,\n"
+        f"contactez immediatement : contact@osa-observatory.africa\n"
+        f"\n"
+        f"-- Secretariat technique OSA Observatory\n"
+    )
+
+    # Corps HTML
+    body_html = f"""<!DOCTYPE html>
+<html>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: #1F4E79; padding: 20px; border-radius: 8px 8px 0 0;">
+    <h2 style="color: white; margin: 0;">OSA Observatory</h2>
+    <p style="color: #BDD7EE; margin: 4px 0 0;">Code d'authentification</p>
+  </div>
+  <div style="border: 1px solid #D6E4F0; padding: 30px; border-radius: 0 0 8px 8px;">
+    <p>Institution : <strong>{institution_name}</strong></p>
+    <div style="background: #F2F7FC; border-left: 4px solid #2E75B6;
+                padding: 20px; text-align: center; margin: 20px 0;">
+      <p style="margin: 0 0 8px; color: #555;">Votre code OTP</p>
+      <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px;
+                   color: #1F4E79;">{code}</span>
+      <p style="margin: 8px 0 0; color: #888; font-size: 13px;">
+        Valable {expire_min} minutes -- usage unique
+      </p>
+    </div>
+    <p style="color: #555; font-size: 13px;">
+      Ne partagez pas ce code. Si vous n'etes pas a l'origine de cette demande,
+      contactez <a href="mailto:contact@osa-observatory.africa">contact@osa-observatory.africa</a>.
+    </p>
+  </div>
+  <p style="color: #AAA; font-size: 11px; text-align: center; margin-top: 16px;">
+    OSA Observatory -- Secretariat technique -- noreply@osa-observatory.africa
+  </p>
+</body>
+</html>"""
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"OSA Observatory -- Code OTP : {code[:3]}***"
+    msg["From"]    = smtp_from
+    msg["To"]      = contact_email
+
+    msg.attach(MIMEText(body_text, "plain", "utf-8"))
+    msg.attach(MIMEText(body_html,  "html",  "utf-8"))
+
+    try:
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            server.login(smtp_user, smtp_password)
+            server.sendmail(smtp_from, [contact_email], msg.as_bytes())
+    except smtplib.SMTPAuthenticationError:
+        log.error("SMTP auth error -- verifier OSA_SMTP_USER / OSA_SMTP_PASSWORD")
+        raise HTTPException(
+            status_code=500,
+            detail="Erreur d'envoi email -- contacter le Secretariat technique OSA.",
+        )
+    except smtplib.SMTPException as exc:
+        log.error("SMTP error : %s", exc)
+        raise HTTPException(
+            status_code=500,
+            detail="Erreur d'envoi email -- contacter le Secretariat technique OSA.",
+        )
+    except Exception as exc:
+        log.error("Email send error : %s", exc)
+        raise HTTPException(
+            status_code=500,
+            detail="Erreur d'envoi email -- contacter le Secretariat technique OSA.",
+        )
+
 
 def _generate_otp_code() -> str:
     """Génère un code OTP à 6 chiffres. secrets.randbelow garantit l'uniformité."""
@@ -610,7 +715,7 @@ async def request_otp(
 
     # Livraison du code
     if _otp_dev_mode():
-        # Mode développement -- log uvicorn uniquement
+        # Mode developpement -- log uvicorn uniquement (OSA_OTP_DEV_MODE=true)
         log.warning(
             "OSA OTP DEV MODE -- institution=%s email=%s code=%s expires_in=%dmin",
             row["institution_name"],
@@ -620,9 +725,10 @@ async def request_otp(
         )
         delivery_info = f"[DEV] Code logue dans uvicorn pour {contact_email}"
     else:
-        # Mode production -- envoi SMTP (à implémenter Sprint 18)
-        # _send_otp_email(contact_email, row["institution_name"], code)
-        delivery_info = f"Code envoye a {contact_email[:3]}***{contact_email[contact_email.find('@'):]}"
+        # Mode production -- envoi SMTP via mail.gandi.net
+        _send_otp_email(contact_email, row["institution_name"], code)
+        at = contact_email.find("@")
+        delivery_info = f"Code envoye a {contact_email[:3]}***{contact_email[at:]}"
 
     return {
         "message": "Code OTP genere.",
