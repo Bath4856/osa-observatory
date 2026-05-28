@@ -22,3 +22,5 @@ audit_p7i_long_search.txt
 osa_p8_v2_foundation.sql
 *.log
 *_long_search.txt
+
+*.pem
