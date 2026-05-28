@@ -22,15 +22,17 @@ from api.routers.tokens import router as tokens_router, public_router as tokens_
 from api.routers.auth import router as auth_router
 # SPRINT17 -- Rate limiting
 from api.middleware.rate_limiter import rate_limit_middleware
+# SPRINT17 -- Metriques Prometheus
+from api.middleware.metrics import metrics_middleware
 
 app = FastAPI(
     title="OSA ISA Public API",
     version=settings.APP_VERSION,
     description=(
-        "Observatoire de la Souveraineté Africaine — Institutional Sovereign Intelligence API. "
+        "Observatoire de la Souverainete Africaine -- Institutional Sovereign Intelligence API. "
         "Provides ISA scores, country rankings, predictive execution signals (P7Z Phase 2), "
         "sovereign fragility indices, civilian protection risk (P7I-AMAR), "
-        "and conflict-economy exposure (P7I-AMAR-GENECO) for 54 African countries (2010–2024)."
+        "and conflict-economy exposure (P7I-AMAR-GENECO) for 54 African countries (2010-2024)."
     ),
     docs_url="/docs",
     redoc_url="/redoc",
@@ -44,14 +46,20 @@ app = FastAPI(
     },
 )
 
-# ── Rate limiting -- SPRINT17 -- doit être déclaré AVANT CORSMiddleware ──────
-# @app.middleware("http") s'exécute dans l'ordre de déclaration (FIFO).
-# Le rate limiting est le premier traitement appliqué à chaque requête.
+# ── Middlewares -- ordre FIFO : premier declare = premier execute ─────────────
+# Ordre : metrics (mesure tout) -> rate_limit (bloque) -> CORS
+
+# 1. Metriques Prometheus -- DOIT etre avant rate_limit pour mesurer les 429
+@app.middleware("http")
+async def _metrics(request: Request, call_next):
+    return await metrics_middleware(request, call_next)
+
+# 2. Rate limiting -- DOIT etre avant CORS
 @app.middleware("http")
 async def _rate_limit(request: Request, call_next):
     return await rate_limit_middleware(request, call_next)
 
-# ── CORS ─────────────────────────────────────────────────────────────────────
+# 3. CORS
 origins = (
     settings.CORS_ORIGINS.split(",")
     if settings.CORS_ORIGINS != "*"
@@ -61,9 +69,30 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST"],   # SPRINT17 : POST ajouté pour /auth/*
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+# ── /metrics -- sous-application ASGI Prometheus ─────────────────────────────
+# Protege par le middleware : acces EXPERT uniquement via rate_limiter
+# (exempt du rate limit mais pas de l'auth JWT)
+import sys
+sys.path.insert(0, "G:/python-packages")
+from prometheus_client import make_asgi_app as _make_metrics_app
+from api.routers.auth import require_expert
+from fastapi import Depends
+
+metrics_app = _make_metrics_app()
+
+@app.get("/metrics", tags=["Monitoring"], include_in_schema=False)
+async def metrics_endpoint(claims: dict = Depends(require_expert)):
+    """Endpoint Prometheus -- acces EXPERT uniquement."""
+    from starlette.responses import Response
+    from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+    return Response(
+        content=generate_latest(),
+        media_type=CONTENT_TYPE_LATEST,
+    )
 
 # ── Routers ───────────────────────────────────────────────────────────────────
 app.include_router(countries.router)

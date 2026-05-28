@@ -1,0 +1,1444 @@
+{
+  "meta": {
+    "timestamp": "2026-05-28T11:55:55.275168+00:00",
+    "sprint": "Sprint 17",
+    "base_url": "http://localhost:8000",
+    "endpoints_total": 63,
+    "endpoints_tested": 59,
+    "endpoints_skipped": 5,
+    "passed": 10,
+    "failed": 49,
+    "verdict": "FAIL"
+  },
+  "skipped": [
+    {
+      "method": "POST",
+      "path": "/api/v1/consultation/submit",
+      "reason": "body_required"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/consultation/admin/moderate/{response_id}",
+      "reason": "body_required"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/affiliations",
+      "reason": "body_required"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/affiliations/{affiliation_id}/keys",
+      "reason": "body_required"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/keys/{key_id}",
+      "reason": "body_required"
+    }
+  ],
+  "results": [
+    {
+      "method": "GET",
+      "path": "/api/v2/countries",
+      "resolved": "/api/v2/countries",
+      "level": "STANDARD",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 401,
+          "expected": "401",
+          "passed": true,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": "SKIP",
+          "expected": "200/204",
+          "passed": true,
+          "note": "Token STANDARD non disponible"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/countries/{iso3}",
+      "resolved": "/api/v2/countries/SEN",
+      "level": "STANDARD",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 401,
+          "expected": "401",
+          "passed": true,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": "SKIP",
+          "expected": "200/204",
+          "passed": true,
+          "note": "Token STANDARD non disponible"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/countries/{iso3}/pillars",
+      "resolved": "/api/v2/countries/SEN/pillars",
+      "level": "STANDARD",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 401,
+          "expected": "401",
+          "passed": true,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": "SKIP",
+          "expected": "200/204",
+          "passed": true,
+          "note": "Token STANDARD non disponible"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/countries/{iso3}/history",
+      "resolved": "/api/v2/countries/SEN/history",
+      "level": "STANDARD",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 401,
+          "expected": "401",
+          "passed": true,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": "SKIP",
+          "expected": "200/204",
+          "passed": true,
+          "note": "Token STANDARD non disponible"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/rankings",
+      "resolved": "/api/v2/rankings",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 200,
+          "expected": "200/204",
+          "passed": true,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 200,
+          "expected": "200/204",
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/rankings/{iso3}",
+      "resolved": "/api/v2/rankings/SEN",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 200,
+          "expected": "200/204",
+          "passed": true,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 200,
+          "expected": "200/204",
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/rankings/region/{region_code}",
+      "resolved": "/api/v2/rankings/region/AFW",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 200,
+          "expected": "200/204",
+          "passed": true,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 200,
+          "expected": "200/204",
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/predictive/readiness",
+      "resolved": "/api/v2/predictive/readiness",
+      "level": "PREMIUM",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 401,
+          "expected": "401",
+          "passed": true,
+          "error_code": null
+        },
+        {
+          "ctrl": "INSUFF_AUTH",
+          "status": "SKIP",
+          "expected": "403",
+          "passed": true,
+          "note": "Pas de token inferieur disponible"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 200,
+          "expected": "200/204",
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/predictive/readiness/{iso3}",
+      "resolved": "/api/v2/predictive/readiness/SEN",
+      "level": "PREMIUM",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 401,
+          "expected": "401",
+          "passed": true,
+          "error_code": null
+        },
+        {
+          "ctrl": "INSUFF_AUTH",
+          "status": "SKIP",
+          "expected": "403",
+          "passed": true,
+          "note": "Pas de token inferieur disponible"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 200,
+          "expected": "200/204",
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/predictive/signals",
+      "resolved": "/api/v2/predictive/signals",
+      "level": "PREMIUM",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 401,
+          "expected": "401",
+          "passed": true,
+          "error_code": null
+        },
+        {
+          "ctrl": "INSUFF_AUTH",
+          "status": "SKIP",
+          "expected": "403",
+          "passed": true,
+          "note": "Pas de token inferieur disponible"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 200,
+          "expected": "200/204",
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/predictive/signals/{iso3}",
+      "resolved": "/api/v2/predictive/signals/SEN",
+      "level": "PREMIUM",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 401,
+          "expected": "401",
+          "passed": true,
+          "error_code": null
+        },
+        {
+          "ctrl": "INSUFF_AUTH",
+          "status": "SKIP",
+          "expected": "403",
+          "passed": true,
+          "note": "Pas de token inferieur disponible"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 404,
+          "expected": "200/204",
+          "passed": false
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/predictive/fragility",
+      "resolved": "/api/v2/predictive/fragility",
+      "level": "PREMIUM",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 401,
+          "expected": "401",
+          "passed": true,
+          "error_code": null
+        },
+        {
+          "ctrl": "INSUFF_AUTH",
+          "status": "SKIP",
+          "expected": "403",
+          "passed": true,
+          "note": "Pas de token inferieur disponible"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": null,
+          "expected": "200/204",
+          "passed": false,
+          "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=10)"
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/predictive/fragility/{iso3}",
+      "resolved": "/api/v2/predictive/fragility/SEN",
+      "level": "PREMIUM",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": null,
+          "expected": "N/A",
+          "passed": false,
+          "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=5)"
+        },
+        {
+          "ctrl": "INSUFF_AUTH",
+          "status": "SKIP",
+          "expected": "403",
+          "passed": true,
+          "note": "Pas de token inferieur disponible"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": null,
+          "expected": "200/204",
+          "passed": false,
+          "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=10)"
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/release",
+      "resolved": "/api/v2/release",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": null,
+          "expected": "N/A",
+          "passed": false,
+          "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=5)"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": null,
+          "expected": "200/204",
+          "passed": false,
+          "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=10)"
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/opportunities",
+      "resolved": "/api/v2/opportunities",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": null,
+          "expected": "N/A",
+          "passed": false,
+          "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=5)"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": null,
+          "expected": "200/204",
+          "passed": false,
+          "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=10)"
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/methodology",
+      "resolved": "/api/v2/methodology",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": null,
+          "expected": "N/A",
+          "passed": false,
+          "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=5)"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": null,
+          "expected": "200/204",
+          "passed": false,
+          "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=10)"
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/early-warning/civilian-protection",
+      "resolved": "/api/v2/early-warning/civilian-protection",
+      "level": "STANDARD",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": null,
+          "expected": "N/A",
+          "passed": false,
+          "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=5)"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": "SKIP",
+          "expected": "200/204",
+          "passed": true,
+          "note": "Token STANDARD non disponible"
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/early-warning/civilian-protection/{iso3}",
+      "resolved": "/api/v2/early-warning/civilian-protection/SEN",
+      "level": "STANDARD",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": null,
+          "expected": "N/A",
+          "passed": false,
+          "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=5)"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": "SKIP",
+          "expected": "200/204",
+          "passed": true,
+          "note": "Token STANDARD non disponible"
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/early-warning/conflict-economy",
+      "resolved": "/api/v2/early-warning/conflict-economy",
+      "level": "STANDARD",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": null,
+          "expected": "N/A",
+          "passed": false,
+          "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=5)"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": "SKIP",
+          "expected": "200/204",
+          "passed": true,
+          "note": "Token STANDARD non disponible"
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/early-warning/conflict-economy/{iso3}",
+      "resolved": "/api/v2/early-warning/conflict-economy/SEN",
+      "level": "STANDARD",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": null,
+          "expected": "N/A",
+          "passed": false,
+          "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=5)"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": "SKIP",
+          "expected": "200/204",
+          "passed": true,
+          "note": "Token STANDARD non disponible"
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/early-warning/composite",
+      "resolved": "/api/v2/early-warning/composite",
+      "level": "STANDARD",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": null,
+          "expected": "N/A",
+          "passed": false,
+          "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=5)"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": "SKIP",
+          "expected": "200/204",
+          "passed": true,
+          "note": "Token STANDARD non disponible"
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/early-warning/composite/{iso3}",
+      "resolved": "/api/v2/early-warning/composite/SEN",
+      "level": "STANDARD",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": null,
+          "expected": "N/A",
+          "passed": false,
+          "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=5)"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": "SKIP",
+          "expected": "200/204",
+          "passed": true,
+          "note": "Token STANDARD non disponible"
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/sovereignty/swot",
+      "resolved": "/api/v2/sovereignty/swot",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": null,
+          "expected": "N/A",
+          "passed": false,
+          "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=5)"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": null,
+          "expected": "200/204",
+          "passed": false,
+          "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=10)"
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/sovereignty/swot/{iso3}",
+      "resolved": "/api/v2/sovereignty/swot/SEN",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": null,
+          "expected": "N/A",
+          "passed": false,
+          "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=5)"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": null,
+          "expected": "200/204",
+          "passed": false,
+          "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=10)"
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/sovereignty/fiscal-margin",
+      "resolved": "/api/v2/sovereignty/fiscal-margin",
+      "level": "STANDARD",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": null,
+          "expected": "N/A",
+          "passed": false,
+          "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=5)"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": "SKIP",
+          "expected": "200/204",
+          "passed": true,
+          "note": "Token STANDARD non disponible"
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/sovereignty/fiscal-margin/{iso3}",
+      "resolved": "/api/v2/sovereignty/fiscal-margin/SEN",
+      "level": "STANDARD",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": null,
+          "expected": "N/A",
+          "passed": false,
+          "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=5)"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": "SKIP",
+          "expected": "200/204",
+          "passed": true,
+          "note": "Token STANDARD non disponible"
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/opendata/",
+      "resolved": "/opendata/",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": null,
+          "expected": "N/A",
+          "passed": false,
+          "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=5)"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": null,
+          "expected": "200/204",
+          "passed": false,
+          "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=10)"
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/opendata/countries/latest",
+      "resolved": "/opendata/countries/latest",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": null,
+          "expected": "N/A",
+          "passed": false,
+          "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=5)"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": null,
+          "expected": "200/204",
+          "passed": false,
+          "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=10)"
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/opendata/countries/latest/{iso3}",
+      "resolved": "/opendata/countries/latest/SEN",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 200,
+          "expected": "200/204",
+          "passed": true,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/opendata/countries/history",
+      "resolved": "/opendata/countries/history",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/opendata/countries/history/{iso3}",
+      "resolved": "/opendata/countries/history/SEN",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/opendata/pillars",
+      "resolved": "/opendata/pillars",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/opendata/pillars/{iso3}",
+      "resolved": "/opendata/pillars/SEN",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/opendata/opportunities",
+      "resolved": "/opendata/opportunities",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/opendata/opportunities/{iso3}",
+      "resolved": "/opendata/opportunities/SEN",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/opendata/alerts/amar",
+      "resolved": "/opendata/alerts/amar",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/opendata/alerts/amar/{iso3}",
+      "resolved": "/opendata/alerts/amar/SEN",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/opendata/trajectories",
+      "resolved": "/opendata/trajectories",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/opendata/trajectories/{iso3}",
+      "resolved": "/opendata/trajectories/SEN",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/opendata/methodology",
+      "resolved": "/opendata/methodology",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/consultation/topics",
+      "resolved": "/api/v1/consultation/topics",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/consultation/topics/{iso3}",
+      "resolved": "/api/v1/consultation/topics/SEN",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/consultation/topics/type/{consultation_type}",
+      "resolved": "/api/v1/consultation/topics/type/PRIORITY",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/consultation/queue",
+      "resolved": "/api/v1/consultation/queue",
+      "level": "STANDARD",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "401",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": "SKIP",
+          "expected": "200/204",
+          "passed": true,
+          "note": "Token STANDARD non disponible"
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/consultation/queue/{iso3}",
+      "resolved": "/api/v1/consultation/queue/SEN",
+      "level": "STANDARD",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "401",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": "SKIP",
+          "expected": "200/204",
+          "passed": true,
+          "note": "Token STANDARD non disponible"
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/consultation/priorities",
+      "resolved": "/api/v1/consultation/priorities",
+      "level": "STANDARD",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "401",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": "SKIP",
+          "expected": "200/204",
+          "passed": true,
+          "note": "Token STANDARD non disponible"
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/consultation/admin/pending",
+      "resolved": "/api/v1/consultation/admin/pending",
+      "level": "EXPERT",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "401",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "INSUFF_AUTH",
+          "status": "SKIP",
+          "expected": "403",
+          "passed": true,
+          "note": "Pas de token inferieur disponible"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 200,
+          "expected": "200/204",
+          "passed": true
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/affiliations",
+      "resolved": "/api/v1/admin/affiliations",
+      "level": "EXPERT",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "401",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "INSUFF_AUTH",
+          "status": "SKIP",
+          "expected": "403",
+          "passed": true,
+          "note": "Pas de token inferieur disponible"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 200,
+          "expected": "200/204",
+          "passed": true
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/affiliations/{affiliation_id}",
+      "resolved": "/api/v1/admin/affiliations/1",
+      "level": "EXPERT",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "401",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "INSUFF_AUTH",
+          "status": "SKIP",
+          "expected": "403",
+          "passed": true,
+          "note": "Pas de token inferieur disponible"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 200,
+          "expected": "200/204",
+          "passed": true
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/keys/{key_id}/status",
+      "resolved": "/api/v1/admin/keys/1/status",
+      "level": "EXPERT",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "401",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "INSUFF_AUTH",
+          "status": "SKIP",
+          "expected": "403",
+          "passed": true,
+          "note": "Pas de token inferieur disponible"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 200,
+          "expected": "200/204",
+          "passed": true
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/me",
+      "resolved": "/api/v1/me",
+      "level": "STANDARD",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "401",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": "SKIP",
+          "expected": "200/204",
+          "passed": true,
+          "note": "Token STANDARD non disponible"
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "POST",
+      "path": "/auth/token",
+      "resolved": "/auth/token",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "POST",
+      "path": "/auth/otp/request",
+      "resolved": "/auth/otp/request",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "POST",
+      "path": "/auth/refresh",
+      "resolved": "/auth/refresh",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 429,
+          "expected": "200/204",
+          "passed": false
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "POST",
+      "path": "/auth/revoke",
+      "resolved": "/auth/revoke",
+      "level": "STANDARD",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "401",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": "SKIP",
+          "expected": "200/204",
+          "passed": true,
+          "note": "Token STANDARD non disponible"
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/auth/me",
+      "resolved": "/auth/me",
+      "level": "STANDARD",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 429,
+          "expected": "401",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": "SKIP",
+          "expected": "200/204",
+          "passed": true,
+          "note": "Token STANDARD non disponible"
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "POST",
+      "path": "/auth/revoke-all/{target_affiliation_id}",
+      "resolved": "/auth/revoke-all/1",
+      "level": "EXPERT",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 401,
+          "expected": "401",
+          "passed": true,
+          "error_code": null
+        },
+        {
+          "ctrl": "INSUFF_AUTH",
+          "status": "SKIP",
+          "expected": "403",
+          "passed": true,
+          "note": "Pas de token inferieur disponible"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 500,
+          "expected": "200/204",
+          "passed": false
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "resolved": "/",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": null,
+          "expected": "N/A",
+          "passed": false,
+          "error": "('Connection aborted.', ConnectionResetError(10054, 'Une connexion existante a dû être fermée par l’hôte distant', None, 10054, None))"
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 200,
+          "expected": "200/204",
+          "passed": true
+        }
+      ],
+      "passed": false
+    },
+    {
+      "method": "GET",
+      "path": "/health",
+      "resolved": "/health",
+      "level": "PUBLIC",
+      "controls": [
+        {
+          "ctrl": "NO_AUTH",
+          "status": 503,
+          "expected": "200/204",
+          "passed": false,
+          "error_code": null
+        },
+        {
+          "ctrl": "VALID_AUTH",
+          "status": 503,
+          "expected": "200/204",
+          "passed": false
+        }
+      ],
+      "passed": false
+    }
+  ]
+}
