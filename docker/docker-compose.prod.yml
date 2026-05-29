@@ -1,0 +1,141 @@
+# =============================================================================
+# OSA Observatory -- Docker Compose production
+# Sprint 18 -- 29 mai 2026
+#
+# Architecture :
+#   osa-db     : PostgreSQL 17 -- données sur /mnt/data/postgres
+#   osa-api    : FastAPI python:3.12-slim -- port 8000 (interne)
+#   prometheus : Monitoring -- port 9090 (interne)
+#   grafana    : Dashboard  -- port 3000 (interne)
+#
+# Nginx tourne HORS Docker sur l'OS -- proxyfie vers osa-api:8000
+#
+# Usage :
+#   cd /mnt/data/osa-app/osa-observatory
+#   docker compose -f docker/docker-compose.prod.yml up -d
+#
+# Premier démarrage (migration base) :
+#   docker compose -f docker/docker-compose.prod.yml up -d osa-db
+#   # attendre 10s puis restaurer le dump
+#   docker compose -f docker/docker-compose.prod.yml up -d
+# =============================================================================
+
+services:
+
+  # -- PostgreSQL 17 ----------------------------------------------------------
+  osa-db:
+    image: postgres:17-alpine
+    container_name: osa-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       osa_db
+      POSTGRES_USER:     postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      PGDATA:            /var/lib/postgresql/data/pgdata
+    volumes:
+      - /mnt/data/postgres:/var/lib/postgresql/data
+    networks:
+      - osa-network
+    # PostgreSQL non exposé publiquement -- accessible uniquement via osa-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d osa_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # -- API FastAPI -------------------------------------------------------------
+  osa-api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    image: osa-api:latest
+    container_name: osa-api
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"   # Exposé uniquement sur loopback -- Nginx proxyfie
+    env_file:
+      - api/.env
+    environment:
+      DB_HOST: osa-db             # Nom du service Docker, pas localhost
+      DB_PORT: "5432"
+    depends_on:
+      osa-db:
+        condition: service_healthy
+    networks:
+      - osa-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # -- Prometheus -------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: osa-prometheus
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9090:9090"   # Interne uniquement
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - osa-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # -- Grafana ----------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:latest
+    container_name: osa-grafana
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"   # Interne uniquement
+    environment:
+      GF_SECURITY_ADMIN_USER:     admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP:     "false"
+      GF_SERVER_ROOT_URL:         "https://osa-observatory.africa/grafana"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    networks:
+      - osa-network
+
+# -- Réseaux -----------------------------------------------------------------
+networks:
+  osa-network:
+    name: osa-network
+    driver: bridge
+
+# -- Volumes persistants -----------------------------------------------------
+volumes:
+  prometheus-data:
+    name: osa-prometheus-data
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/data/prometheus
+
+  grafana-data:
+    name: osa-grafana-data
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/data/grafana

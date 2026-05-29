@@ -1,7 +1,24 @@
-fastapi==0.115.0
-uvicorn[standard]==0.30.6
-sqlalchemy==2.0.35
-psycopg2-binary==2.9.9
-pydantic==2.9.2
-pydantic-settings==2.5.2
+# OSA Observatory -- requirements.txt
+# Sprint 18 -- 29 mai 2026
+#
+# Versions alignées avec l'environnement local validé (G:/python-packages)
+# Ajouts Sprint 17 : PyJWT (auth JWT), prometheus-client (monitoring)
+
+# Framework API
+fastapi==0.136.3
+uvicorn[standard]==0.48.0
+
+# Base de données
+sqlalchemy==2.0.50
+psycopg2-binary==2.9.12
+
+# Validation et configuration
+pydantic==2.13.4
+pydantic-settings==2.14.1
 python-dotenv==1.0.1
+
+# Authentification JWT (Sprint 17 -- Chantier 2A)
+PyJWT==2.8.0
+
+# Monitoring Prometheus (Sprint 17 -- Chantier 2C)
+prometheus-client==0.25.0
