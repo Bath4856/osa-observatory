@@ -1,48 +1,14 @@
-# =============================================================================
-# OSA Observatory -- Prometheus configuration
-# Sprint 17 -- prometheus/prometheus.yml
-#
-# Usage Docker :
-#   docker run -d \
-#     -p 9090:9090 \
-#     -v G:/osa-observatory/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml \
-#     --name osa-prometheus \
-#     prom/prometheus
-#
-# Sur Windows avec Docker Desktop :
-#   host.docker.internal resout vers l'IP du host Windows
-#   L'API FastAPI tourne sur localhost:8000 cote host
-# =============================================================================
-
 global:
-  scrape_interval:     15s
-  evaluation_interval: 15s
-  external_labels:
-    project: 'osa-observatory'
-    sprint:  'sprint17'
-
-# Alertmanager -- desactive pour l'instant (Sprint 2C)
-# alerting:
-#   alertmanagers:
-#     - static_configs:
-#         - targets: ['alertmanager:9093']
+  scrape_interval: 30s
+  evaluation_interval: 30s
 
 scrape_configs:
-
-  # -- API OSA FastAPI -------------------------------------------------------
   - job_name: 'osa-api'
-    scrape_interval: 15s
-    scrape_timeout:  10s
-    metrics_path:    '/metrics'
-    scheme:          http
-    # Sur Windows Docker Desktop : host.docker.internal = IP du host
     static_configs:
-      - targets: ['host.docker.internal:8000']
-        labels:
-          service:     'osa-api'
-          environment: 'development'
+      - targets: ['osa-api:8000']
+    metrics_path: '/metrics'
+    scheme: http
 
-  # -- Prometheus lui-meme --------------------------------------------------
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
