@@ -47,7 +47,7 @@ services:
   # -- API FastAPI -------------------------------------------------------------
   osa-api:
     build:
-      context: .
+      context: ..
       dockerfile: api/Dockerfile
     image: osa-api:latest
     container_name: osa-api
@@ -55,7 +55,7 @@ services:
     ports:
       - "127.0.0.1:8000:8000"   # Exposé uniquement sur loopback -- Nginx proxyfie
     env_file:
-      - api/.env
+      - ../api/.env
     environment:
       DB_HOST: osa-db             # Nom du service Docker, pas localhost
       DB_PORT: "5432"
