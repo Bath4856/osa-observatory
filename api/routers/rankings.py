@@ -1,6 +1,6 @@
 """
-OSA Observatory -- Sprint 14
-Router rankings -- Classement ISA par pays
+OSA Observatory -- Sprint 19
+Router scores -- Positions ISA par pays
 Reecrit proprement depuis pub.mv_isa_country_rankings
 """
 
@@ -13,12 +13,13 @@ from typing import Optional
 from api.db import get_db
 import json
 
-router = APIRouter(prefix="/api/v2/rankings", tags=["Rankings"])
+router = APIRouter(prefix="/api/v2/scores", tags=["Scores"])
 
 _DISCLAIMER = (
     "OSA Observatory -- Observatoire de la Souverainete Africaine. "
     "ISA scores are computed from official international data sources. "
-    "Rankings are informational and do not constitute a political qualification."
+    "Positions are computed for reference purposes and do not constitute "
+    "a political qualification of sovereign states."
 )
 
 def _json(data) -> Response:
@@ -34,14 +35,14 @@ def _rows(db: Session, sql: str, params: dict = None) -> list:
 
 @router.get(
     "",
-    summary="ISA rankings -- all countries",
+    summary="ISA scores -- all countries",
     description=(
-        "Returns ISA rankings for all 54 African countries. "
-        "Includes global rank, regional rank, ISA scores and P7J trajectory. "
+        "Returns ISA scores and positions for all 54 African countries. "
+        "Includes global position, regional position, ISA scores and P7J trajectory. "
         "Defaults to latest available year."
     ),
 )
-async def get_rankings(
+async def get_scores(
     db:     Session       = Depends(get_db),
     year:   Optional[int] = Query(default=None, description="Year (2020-2024). Defaults to latest."),
     region: Optional[str] = Query(default=None, description="Region code (AFW, AFE, AFN, AFC, AFS)"),
@@ -53,13 +54,13 @@ async def get_rankings(
             country_iso3, year, region_code, region_label,
             isa_observed_score, sovereignty_score, vulnerability_score,
             resilience_score, data_confidence,
-            nb_pillars_observed, isa_rank, regional_rank,
+            nb_pillars_observed, isa_position, regional_position,
             avg_priority_score, nb_pillars_accelerating, nb_pillars_critical,
-            sovereign_momentum, publication_status
+            sovereign_trajectory, publication_status
         FROM pub.mv_isa_country_rankings
         WHERE year = :year
           AND (:region IS NULL OR region_code = :region)
-        ORDER BY isa_rank
+        ORDER BY isa_position
     """, {
         "year":   effective_year,
         "region": region.upper() if region else None,
@@ -70,16 +71,16 @@ async def get_rankings(
         "count":       len(data),
         "elapsed_ms":  elapsed,
         "disclaimer":  _DISCLAIMER,
-        "rankings":    data,
+        "scores":      data,
     })
 
 
 @router.get(
     "/{iso3}",
-    summary="ISA rankings history -- one country",
-    description="Returns ISA rankings history for a specific country (2020-2024).",
+    summary="ISA scores history -- one country",
+    description="Returns ISA scores history for a specific country (2020-2024).",
 )
-async def get_country_rankings(
+async def get_country_scores(
     iso3: str,
     db:   Session = Depends(get_db),
 ):
@@ -88,7 +89,7 @@ async def get_country_rankings(
             country_iso3, year, region_code, region_label,
             isa_observed_score, sovereignty_score, vulnerability_score,
             resilience_score, data_confidence,
-            isa_rank, regional_rank, sovereign_momentum,
+            isa_position, regional_position, sovereign_trajectory,
             nb_pillars_accelerating, nb_pillars_critical
         FROM pub.mv_isa_country_rankings
         WHERE country_iso3 = :iso3
@@ -107,9 +108,9 @@ async def get_country_rankings(
 
 @router.get(
     "/region/{region_code}",
-    summary="ISA rankings by region",
+    summary="ISA scores by region",
 )
-async def get_region_rankings(
+async def get_region_scores(
     region_code: str,
     db:          Session       = Depends(get_db),
     year:        Optional[int] = Query(default=None),
@@ -118,17 +119,17 @@ async def get_region_rankings(
     data = _rows(db, """
         SELECT
             country_iso3, year, region_code, region_label,
-            isa_observed_score, isa_rank, regional_rank,
-            sovereign_momentum, nb_pillars_accelerating, nb_pillars_critical
+            isa_observed_score, isa_position, regional_position,
+            sovereign_trajectory, nb_pillars_accelerating, nb_pillars_critical
         FROM pub.mv_isa_country_rankings
         WHERE region_code = :region
           AND year = :year
-        ORDER BY regional_rank
+        ORDER BY regional_position
     """, {"region": region_code.upper(), "year": effective_year})
     return _json({
         "region_code":  region_code.upper(),
         "year":         effective_year,
         "count":        len(data),
         "disclaimer":   _DISCLAIMER,
-        "rankings":     data,
+        "scores":       data,
     })

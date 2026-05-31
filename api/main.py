@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from api.config import settings
 from api.db import check_db_connection
 from api.routers import countries, rankings, predictive, release
+from fastapi.responses import RedirectResponse
 from api.routers.opportunities import opportunities_router, methodology_router
 from api.routers.early_warning import router as early_warning_router
 from api.routers.sovereignty import router as sovereignty_router
@@ -30,7 +31,7 @@ app = FastAPI(
     version=settings.APP_VERSION,
     description=(
         "Observatoire de la Souverainete Africaine -- Institutional Sovereign Intelligence API. "
-        "Provides ISA scores, country rankings, predictive execution signals (P7Z Phase 2), "
+        "Provides ISA scores, sovereign positions, predictive execution signals (P7Z Phase 2), "
         "sovereign fragility indices, civilian protection risk (P7I-AMAR), "
         "and conflict-economy exposure (P7I-AMAR-GENECO) for 54 African countries (2010-2024)."
     ),
@@ -116,6 +117,13 @@ app.include_router(eparticipation_router)
 app.include_router(tokens_router)
 app.include_router(tokens_public_router)
 app.include_router(auth_router)          # SPRINT17 -- JWT /auth/*
+
+# ── Redirection 301 -- compatibilite endpoint rankings (Sprint 19 -- suppression Sprint 21)
+@app.get("/api/v2/rankings", include_in_schema=False)
+@app.get("/api/v2/rankings/{path:path}", include_in_schema=False)
+async def redirect_rankings(path: str = ""):
+    target = "/api/v2/scores" + (f"/{path}" if path else "")
+    return RedirectResponse(url=target, status_code=301)
 
 # ── Health + Root ─────────────────────────────────────────────────────────────
 @app.get("/", tags=["Health"])

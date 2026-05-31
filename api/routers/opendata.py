@@ -1,7 +1,7 @@
 """
-OSA Observatory -- Sprint 13
+OSA Observatory -- Sprint 19
 Router Open Data -- Couche 0 publique
-CC-BY-4.0 -- open.osa-observatory.org
+CC-BY-NC-4.0 -- open.osa-observatory.org
 """
 
 import time
@@ -15,21 +15,21 @@ from api.db import get_db
 
 router = APIRouter(
     prefix="/opendata",
-    tags=["Open Data -- Couche 0 -- CC-BY-4.0"],
+    tags=["Open Data -- Couche 0 -- CC-BY-NC-4.0"],
 )
 
 _DISCLAIMER = (
     "OSA Observatory -- Observatoire de la Souverainete Africaine. "
-    "Published under CC-BY-4.0. "
+    "Published under CC-BY-NC-4.0. "
     "Early-warning analytical tool -- not a legal or diplomatic qualification. "
-    "Subscribe at open.osa-observatory.org for full scores and analytics."
+    "Request institutional access at open.osa-observatory.org for full scores and analytics."
 )
 
 def _wrap(data: list, dataset_code: str) -> Response:
     payload = {
         "dataset":    dataset_code,
-        "license":    "CC-BY-4.0",
-        "access":     "Couche 0 -- Open Data -- CC-BY-4.0",
+        "license":    "CC-BY-NC-4.0",
+        "access":     "Couche 0 -- Open Data -- CC-BY-NC-4.0",
         "disclaimer": _DISCLAIMER,
         "count":      len(data),
         "data":       data,
@@ -48,7 +48,7 @@ def _rows(db: Session, sql: str, params: dict = None) -> list:
 @router.get("/", summary="Catalogue datasets Open Data OSA")
 async def get_catalog(db: Session = Depends(get_db)):
     data = _rows(db, "SELECT * FROM pub.v_isa_open_data_catalog ORDER BY access_layer, dataset_code")
-    return {"platform": "OSA Observatory Open Data", "license": "CC-BY-4.0",
+    return {"platform": "OSA Observatory Open Data", "license": "CC-BY-NC-4.0",
             "disclaimer": _DISCLAIMER, "datasets": data}
 
 
@@ -62,9 +62,9 @@ async def get_countries_latest(
 ):
     data = _rows(db, """
         SELECT * FROM pub.mv_isa_country_latest
-        WHERE (:region   IS NULL OR region_code       = :region)
-          AND (:momentum IS NULL OR sovereign_momentum = :momentum)
-          AND (:amar     IS NULL OR amar_risk_band     = :amar)
+        WHERE (:region   IS NULL OR region_code          = :region)
+          AND (:momentum IS NULL OR sovereign_trajectory  = :momentum)
+          AND (:amar     IS NULL OR amar_risk_band        = :amar)
         ORDER BY nb_pillars_critical DESC, country_iso3
     """, {
         "region":   region.upper()   if region   else None,
@@ -277,5 +277,5 @@ async def get_country_trajectories(
 @router.get("/methodology", summary="Documentation methodologique ISA v2")
 async def get_methodology(db: Session = Depends(get_db)):
     data = _rows(db, "SELECT * FROM pub.v_isa_public_methodology LIMIT 1")
-    return {"dataset": "ISA_METHODOLOGY", "license": "CC-BY-4.0",
-            "access": "Couche 0 -- Open Data -- CC-BY-4.0", "disclaimer": _DISCLAIMER, "data": data}
+    return {"dataset": "ISA_METHODOLOGY", "license": "CC-BY-NC-4.0",
+            "access": "Couche 0 -- Open Data -- CC-BY-NC-4.0", "disclaimer": _DISCLAIMER, "data": data}
