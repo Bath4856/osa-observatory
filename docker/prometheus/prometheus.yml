@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+scrape_configs:
+  - job_name: 'osa-api'
+    static_configs:
+      - targets: ['osa-api:9091']
+    metrics_path: '/metrics'
+    scheme: http
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

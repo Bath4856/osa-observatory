@@ -25,8 +25,17 @@ from api.routers.auth import router as auth_router
 from api.middleware.rate_limiter import rate_limit_middleware
 # SPRINT17 -- Metriques Prometheus
 from api.middleware.metrics import metrics_middleware
+from api.metrics_server import start_internal_metrics_server
+
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app):
+    start_internal_metrics_server(host="0.0.0.0", port=9091)
+    yield
 
 app = FastAPI(
+    lifespan=lifespan,
     title="OSA ISA Public API",
     version=settings.APP_VERSION,
     description=(
