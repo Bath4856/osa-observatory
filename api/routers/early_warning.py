@@ -299,7 +299,7 @@ def get_composite_all(
             resource_capture_risk, logistics_enabling_risk,
             institutional_capture_risk, civilian_exploitation_risk,
             narrative_weaponization_risk, composite_recommended_action
-        FROM ma.v_p7i_amar_composite_dashboard
+        FROM ma.mv_p7i_amar_composite_dashboard
         WHERE 1=1
           {year_filter}
           {band_filter}
@@ -335,7 +335,7 @@ def get_composite_country(
                 resource_capture_risk, logistics_enabling_risk,
                 institutional_capture_risk, civilian_exploitation_risk,
                 narrative_weaponization_risk, composite_recommended_action
-            FROM ma.v_p7i_amar_composite_dashboard
+            FROM ma.mv_p7i_amar_composite_dashboard
             WHERE country_iso3 = :iso3
             ORDER BY year DESC
         """),
