@@ -6,7 +6,7 @@ from api.config import settings
 from api.db import check_db_connection
 from api.routers import countries, rankings, predictive, release
 from fastapi.responses import RedirectResponse
-from api.routers.opportunities import opportunities_router, methodology_router
+from api.routers.opportunities import opportunities_router, methodology_router, sovereign_router
 from api.routers.early_warning import router as early_warning_router
 from api.routers.sovereignty import router as sovereignty_router
 # SPRINT14 DEPRECATED -- from api.routers.early_warning_sprint7 import router as early_warning_sprint7_router
@@ -112,6 +112,7 @@ app.include_router(predictive.router)
 app.include_router(release.router)
 app.include_router(opportunities_router)
 app.include_router(methodology_router)
+app.include_router(sovereign_router)
 app.include_router(early_warning_router)
 app.include_router(sovereignty_router)
 # SPRINT14 DEPRECATED -- app.include_router(early_warning_sprint7_router)

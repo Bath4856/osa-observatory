@@ -22,17 +22,22 @@ opportunities_router = APIRouter(
 async def get_opportunities(
     iso3: str = Query(default=None, description="Filter by ISO3 country code"),
     pillar: str = Query(default=None, description="Filter by pillar code"),
-    min_prob: float = Query(default=0.40, description="Minimum execution probability [0–1]"),
     db: Session = Depends(get_db),
 ):
     t0 = time.time()
 
     base = """
-        SELECT *
-        FROM pub.v_isa_opportunity_catalog
-        WHERE (execution_probability >= :min_prob OR execution_probability IS NULL)
+        SELECT country_iso3, year, pillar_code,
+               intervention_family_code, intervention_family_label,
+               strategic_objective, consultation_theme,
+               opportunity_class, delta_potential_label,
+               trajectory_class, intervention_priority_class,
+               intervention_priority_score, region_code, region_label,
+               feasibility_call, source
+        FROM pub.mv_isa_opportunity_catalog
+        WHERE 1=1
     """
-    params: dict = {"min_prob": min_prob}
+    params: dict = {}
 
     if iso3:
         base += " AND country_iso3 = :iso3"
@@ -41,7 +46,7 @@ async def get_opportunities(
         base += " AND pillar_code = :pillar"
         params["pillar"] = pillar.upper()
 
-    base += " ORDER BY execution_probability DESC NULLS LAST LIMIT 500"
+    base += " ORDER BY intervention_priority_score DESC NULLS LAST LIMIT 500"
 
     rows = db.execute(text(base), params).mappings().all()
 
@@ -79,3 +84,119 @@ async def get_methodology(db: Session = Depends(get_db)):
         "PUBLIC", 200, elapsed, len(rows)
     )
     return {"count": len(rows), "data": [dict(r) for r in rows]}
+
+# ── Sovereign Projects ────────────────────────────────────────────────────────
+from fastapi.responses import Response
+import json
+
+sovereign_router = APIRouter(
+    prefix="/api/v2/sovereign-projects",
+    tags=["Sovereign Projects"]
+)
+
+def _json(data) -> Response:
+    return Response(
+        content=json.dumps(data, ensure_ascii=False, default=str),
+        media_type="application/json; charset=utf-8"
+    )
+
+@sovereign_router.get(
+    "",
+    summary="Catalogue projets souverains -- PUBLIC",
+    description="Catalogue des projets structurants souverains par pilier. "
+                "Filtrable par pilier, pays ou classe d opportunite. "
+                "Croise avec les opportunites ISA P7J."
+)
+async def get_sovereign_projects(
+    pillar:  str = Query(default=None, description="Code pilier (ex: PMIN, PECO)"),
+    iso3:    str = Query(default=None, description="ISO3 pays (projets specifiques ou generiques)"),
+    status:  str = Query(default=None, description="Statut projet (CONCEPT/FEASIBILITY/ACTIVE)"),
+    db: Session = Depends(get_db),
+):
+    t0 = time.time()
+    rows = db.execute(text("""
+        SELECT
+            sp.project_code, sp.project_acronym, sp.project_name,
+            sp.pillar_code, sp.country_iso3,
+            sp.project_description, sp.strategic_objective,
+            sp.deliverable_public, sp.opportunity_class,
+            sp.priority_score, sp.status, sp.tags,
+            spc.project_family_label, spc.strategic_objective AS family_objective,
+            -- Enrichissement ISA : score opportunité du pays/pilier
+            opp.trajectory_class, opp.intervention_priority_class,
+            opp.intervention_priority_score, opp.delta_potential_label,
+            opp.region_code, opp.region_label
+        FROM rf.sovereign_project_catalog sp
+        JOIN rf.structuring_project_catalog spc
+            ON spc.project_family_code = sp.project_family_code
+        LEFT JOIN pub.mv_isa_opportunity_catalog opp
+            ON opp.pillar_code = sp.pillar_code
+            AND (sp.country_iso3 IS NULL OR opp.country_iso3 = sp.country_iso3)
+            AND opp.opportunity_class IN ('HIGH_IMPACT_OPPORTUNITY','SIGNIFICANT_OPPORTUNITY')
+        WHERE sp.is_active = true
+          AND (:pillar IS NULL OR sp.pillar_code = :pillar)
+          AND (:iso3   IS NULL OR sp.country_iso3 = :iso3 OR sp.country_iso3 IS NULL)
+          AND (:status IS NULL OR sp.status = :status)
+        ORDER BY sp.priority_score DESC, sp.pillar_code
+        LIMIT 200
+    """), {
+        "pillar": pillar.upper() if pillar else None,
+        "iso3":   iso3.upper() if iso3 else None,
+        "status": status.upper() if status else None,
+    }).mappings().all()
+
+    elapsed = round((time.time() - t0) * 1000, 2)
+    await register_api_usage(
+        "V2_SOVEREIGN_PROJECTS", "/api/v2/sovereign-projects", "GET",
+        "PUBLIC", 200, elapsed, len(rows)
+    )
+    return _json({"count": len(rows), "elapsed_ms": elapsed, "data": [dict(r) for r in rows]})
+
+
+@sovereign_router.get(
+    "/country/{iso3}",
+    summary="Projets souverains prioritaires par pays -- PUBLIC",
+    description="Retourne les projets souverains prioritaires pour un pays donné, "
+                "croisés avec les scores ISA réels du pays."
+)
+async def get_country_sovereign_projects(
+    iso3: str,
+    db: Session = Depends(get_db),
+):
+    t0 = time.time()
+    rows = db.execute(text("""
+        SELECT
+            sp.project_code, sp.project_acronym, sp.project_name,
+            sp.pillar_code, sp.project_description, sp.strategic_objective,
+            sp.deliverable_public, sp.opportunity_class,
+            sp.priority_score, sp.status, sp.tags,
+            spc.project_family_label,
+            opp.trajectory_class, opp.intervention_priority_class,
+            opp.intervention_priority_score, opp.delta_potential_label,
+            opp.region_code, opp.region_label,
+            cs.isa_observed_score, cs.data_confidence
+        FROM rf.sovereign_project_catalog sp
+        JOIN rf.structuring_project_catalog spc
+            ON spc.project_family_code = sp.project_family_code
+        LEFT JOIN pub.mv_isa_opportunity_catalog opp
+            ON opp.pillar_code    = sp.pillar_code
+            AND opp.country_iso3  = :iso3
+        LEFT JOIN pub.mv_isa_country_scores cs
+            ON cs.country_iso3    = :iso3
+            AND cs.year           = opp.year
+        WHERE sp.is_active = true
+          AND (sp.country_iso3 = :iso3 OR sp.country_iso3 IS NULL)
+        ORDER BY sp.priority_score DESC, opp.intervention_priority_score DESC NULLS LAST
+    """), {"iso3": iso3.upper()}).mappings().all()
+
+    elapsed = round((time.time() - t0) * 1000, 2)
+    await register_api_usage(
+        "V2_SOVEREIGN_PROJECTS_COUNTRY", f"/api/v2/sovereign-projects/country/{iso3}", "GET",
+        "PUBLIC", 200, elapsed, len(rows)
+    )
+    return _json({
+        "country_iso3": iso3.upper(),
+        "count": len(rows),
+        "elapsed_ms": elapsed,
+        "data": [dict(r) for r in rows]
+    })

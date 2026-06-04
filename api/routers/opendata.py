@@ -160,7 +160,7 @@ async def get_opportunities(
     pillar:            Optional[str] = Query(default=None),
 ):
     data = _rows(db, """
-        SELECT * FROM pub.v_isa_opportunity_catalog
+        SELECT * FROM pub.mv_isa_opportunity_catalog
         WHERE (:opp    IS NULL OR opportunity_class = :opp)
           AND (:pillar IS NULL OR pillar_code       = :pillar)
         ORDER BY
@@ -180,7 +180,7 @@ async def get_opportunities(
 @router.get("/opportunities/{iso3}", summary="Opportunites projets structurants -- un pays")
 async def get_country_opportunities(iso3: str, db: Session = Depends(get_db)):
     data = _rows(db, """
-        SELECT * FROM pub.v_isa_opportunity_catalog
+        SELECT * FROM pub.mv_isa_opportunity_catalog
         WHERE country_iso3 = :iso3
         ORDER BY
             CASE opportunity_class
