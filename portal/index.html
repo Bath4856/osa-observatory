@@ -764,6 +764,95 @@ footer {
   color: var(--gold-lt);
 }
 
+/* ── WHY OSA ───────────────────────────────────────── */
+.why-section {
+  background: var(--ink); color: var(--paper);
+  padding: 100px 2.5rem; position: relative; overflow: hidden;
+}
+.why-inner {
+  max-width: 1280px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6rem; align-items: center;
+}
+.why-section .section-label { color: var(--gold-lt); }
+.why-section .section-label::before { background: var(--gold-lt); }
+.why-section h2 { color: var(--paper); margin-bottom: 1.5rem; }
+.why-critique { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem; }
+.why-critique-item {
+  display: flex; gap: 1rem; align-items: flex-start;
+  padding: 1rem 1.25rem; background: rgba(255,255,255,0.05);
+  border-left: 3px solid rgba(200,151,58,0.4); border-radius: 0 2px 2px 0;
+}
+.why-critique-item .critique-index {
+  font-family: 'Space Mono', monospace; font-size: 0.65rem;
+  color: var(--gold-lt); letter-spacing: 0.1em; flex-shrink: 0; padding-top: 0.1em;
+}
+.why-critique-item p { font-size: 0.88rem; color: rgba(245,242,235,0.65); line-height: 1.6; margin: 0; }
+.why-critique-item strong { color: rgba(245,242,235,0.9); font-weight: 600; }
+.why-doctrine { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 2rem; }
+.why-doctrine-text {
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.5rem;
+  line-height: 1.4; color: var(--paper); margin-bottom: 0.5rem;
+}
+.why-doctrine-sub { font-size: 0.9rem; color: var(--gold-lt); letter-spacing: 0.05em; }
+.why-approach {
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 4px; padding: 1.75rem 2rem; margin-bottom: 0;
+}
+.why-approach-label {
+  font-family: 'Space Mono', monospace; font-size: 0.68rem;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold-lt); margin-bottom: 1rem;
+}
+.why-approach-text { font-size: 1rem; color: rgba(245,242,235,0.85); line-height: 1.8; }
+.why-approach-text em { font-style: normal; color: var(--gold-lt); font-weight: 600; }
+.why-divider {
+  text-align: center; padding: 1rem;
+  font-family: 'Space Mono', monospace; font-size: 0.7rem;
+  color: rgba(255,255,255,0.2); letter-spacing: 0.2em;
+}
+
+/* ── TRAJECTOIRES ──────────────────────────────────── */
+.traj-section { padding: 100px 2.5rem; background: var(--paper); }
+.traj-inner { max-width: 1280px; margin: 0 auto; }
+.traj-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-top: 3rem; }
+.traj-card {
+  border-radius: 4px; padding: 1.75rem 1.5rem;
+  position: relative; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s;
+}
+.traj-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,0.12); }
+.traj-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; }
+.traj-card.critical  { background: #FFF0EE; }
+.traj-card.critical::before  { background: #C23B2A; }
+.traj-card.declining { background: #FFF5EC; }
+.traj-card.declining::before { background: #E07020; }
+.traj-card.stable    { background: #F5F5F5; }
+.traj-card.stable::before    { background: #888888; }
+.traj-card.progressing { background: #F0FAF5; }
+.traj-card.progressing::before { background: #2A9B6A; }
+.traj-card.accelerating { background: #EAF5FF; }
+.traj-card.accelerating::before { background: #1A6BB5; }
+.traj-arrow { font-size: 1.8rem; margin-bottom: 0.75rem; display: block; line-height: 1; }
+.traj-name { font-family: 'Space Mono', monospace; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.5rem; }
+.traj-card.critical .traj-name  { color: #C23B2A; }
+.traj-card.declining .traj-name { color: #E07020; }
+.traj-card.stable .traj-name    { color: #666666; }
+.traj-card.progressing .traj-name { color: #1A7A4A; }
+.traj-card.accelerating .traj-name { color: #1A5A9A; }
+.traj-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.6; margin-bottom: 1rem; }
+.traj-example {
+  font-family: 'Space Mono', monospace; font-size: 0.65rem; color: var(--muted);
+  letter-spacing: 0.08em; border-top: 1px solid rgba(0,0,0,0.08);
+  padding-top: 0.75rem; margin-top: 0.25rem;
+}
+.traj-example span { display: block; margin-top: 0.2rem; font-weight: 700; color: var(--ink); }
+@media (max-width: 1024px) {
+  .why-inner { grid-template-columns: 1fr; gap: 3rem; }
+  .traj-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 640px) {
+  .traj-grid { grid-template-columns: repeat(2, 1fr); }
+  .why-section, .traj-section { padding: 60px 1.25rem; }
+}
+
 /* ── ANIMATE IN ────────────────────────────────────── */
 .fade-in {
   opacity: 0;
@@ -819,9 +908,9 @@ footer {
     <div class="hero-label">Doctrine conséquentialiste — Faits comportementaux</div>
     <h1>Mesurer la<br><em>souveraineté</em><br>africaine.</h1>
     <p class="hero-sub">
-      L'ISA (Indice de Souveraineté Africaine) mesure 54 États africains 
-      à travers 10 piliers comportementaux vérifiables — pas des perceptions. 
-      2010–2024. Données libres CC-BY-NC-4.0.
+      L'ISA observe les trajectoires souveraines de 54 États africains 
+      à travers 10 piliers comportementaux vérifiables — pas des classements, 
+      des vecteurs de changement mesurables dans le temps. 2010–2024.
     </p>
     <div class="hero-actions">
       <a href="#data" class="btn-primary">Explorer les données →</a>
@@ -873,6 +962,97 @@ footer {
     <div class="pillar-card"><span class="pillar-icon">💻</span><div class="pillar-code">PNUM</div><div class="pillar-name">Souveraineté numérique</div></div>
     <div class="pillar-card"><span class="pillar-icon">⚡</span><div class="pillar-code">PRES</div><div class="pillar-name">Énergie & ressources</div></div>
     <div class="pillar-card"><span class="pillar-icon">🚢</span><div class="pillar-code">PTRA</div><div class="pillar-name">Transport & logistique</div></div>
+  </div>
+</section>
+
+
+<!-- WHY OSA -->
+<section class="why-section">
+  <div class="why-inner">
+    <div class="fade-in">
+      <div class="section-label">Pourquoi OSA ?</div>
+      <h2>Une approche différente</h2>
+      <div class="why-critique">
+        <div class="why-critique-item">
+          <span class="critique-index">WGI</span>
+          <p>Les indicateurs de gouvernance mondiale sont construits à <strong>60-70% sur des sondages d'experts occidentaux</strong>. Ils mesurent ce que les observateurs pensent — pas ce que les États font.</p>
+        </div>
+        <div class="why-critique-item">
+          <span class="critique-index">CPI</span>
+          <p>L'indice de perception de la corruption repose à <strong>80% sur des sondages du secteur privé</strong>. Deux États avec les mêmes pratiques peuvent obtenir des scores très différents selon qui est interrogé.</p>
+        </div>
+        <div class="why-critique-item">
+          <span class="critique-index">IDH</span>
+          <p>L'indice de développement humain capture des <strong>résultats agrégés à un instant T</strong>, sans distinguer les trajectoires — un État qui progresse rapidement peut sembler moins développé qu'un État stagnant.</p>
+        </div>
+      </div>
+      <div class="why-doctrine">
+        <div class="why-doctrine-text">La souveraineté n'est pas un classement.<br>C'est une trajectoire.</div>
+        <div class="why-doctrine-sub">DOCTRINE OSA — CONSÉQUENTIALISTE</div>
+      </div>
+    </div>
+    <div class="fade-in" style="transition-delay:0.15s">
+      <div class="why-approach">
+        <div class="why-approach-label">L'approche OSA</div>
+        <p class="why-approach-text">
+          Depuis plusieurs décennies, l'Afrique est évaluée à travers une multitude de classements, 
+          d'indices et d'évaluations construits sur des <em>perceptions</em>.<br><br>
+          OSA propose une approche différente : observer les <em>capacités réelles</em> des États africains 
+          à partir de données comportementales vérifiables, suivre leurs <em>trajectoires dans le temps</em> 
+          et éclairer les décisions publiques par des faits plutôt que par des perceptions.<br><br>
+          Chaque indicateur ISA est une <em>donnée primaire observable</em> — 
+          collectée depuis une source auditée, géolocalisée, datée. 
+          Jamais un sondage. Jamais une estimation d'expert.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRAJECTOIRES -->
+<section class="traj-section">
+  <div class="traj-inner">
+    <div class="fade-in">
+      <div class="section-label">Innovation doctrinale</div>
+      <h2>Observer les trajectoires</h2>
+      <p class="section-intro">
+        L'ISA ne produit pas un score statique. Il produit un <strong>vecteur de souveraineté</strong> — 
+        une direction, une vitesse, une accélération. 
+        C'est ce que le moteur P7J calcule pour chacun des 54 États africains.
+      </p>
+    </div>
+    <div class="traj-grid fade-in" style="transition-delay:0.1s">
+      <div class="traj-card critical">
+        <span class="traj-arrow">⬇</span>
+        <div class="traj-name">Critical</div>
+        <p class="traj-desc">Déficit souverain sévère avec risque de détérioration rapide. Intervention prioritaire nécessaire.</p>
+        <div class="traj-example">EXEMPLE 2024<span id="ex-critical">Chargement…</span></div>
+      </div>
+      <div class="traj-card declining">
+        <span class="traj-arrow">↘</span>
+        <div class="traj-name">Declining</div>
+        <p class="traj-desc">Trajectoire descendante observable sur plusieurs années. Signal d'alerte précoce.</p>
+        <div class="traj-example">EXEMPLE 2024<span id="ex-declining">Chargement…</span></div>
+      </div>
+      <div class="traj-card stable">
+        <span class="traj-arrow">→</span>
+        <div class="traj-name">Stable</div>
+        <p class="traj-desc">Position consolidée sans évolution significative. Opportunité de catalyse identifiée.</p>
+        <div class="traj-example">EXEMPLE 2024<span id="ex-stable">Chargement…</span></div>
+      </div>
+      <div class="traj-card progressing">
+        <span class="traj-arrow">↗</span>
+        <div class="traj-name">Progressing</div>
+        <p class="traj-desc">Amélioration mesurable et soutenue. Dynamique souveraine positive à consolider.</p>
+        <div class="traj-example">EXEMPLE 2024<span id="ex-progressing">Chargement…</span></div>
+      </div>
+      <div class="traj-card accelerating">
+        <span class="traj-arrow">⬆</span>
+        <div class="traj-name">Accelerating</div>
+        <p class="traj-desc">Croissance souveraine rapide et soutenue. Modèle de réplication pour la région.</p>
+        <div class="traj-example">EXEMPLE 2024<span id="ex-accelerating">Chargement…</span></div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -1184,10 +1364,45 @@ async function submitAccessRequest(e) {
   }
 }
 
+// ── Load trajectory examples ──────────────────────────────────────
+async function loadTrajectoryExamples() {
+  try {
+    const r = await fetch(`${API}/api/v2/sovereign-projects`);
+    const d = await r.json();
+    // Get trajectory data from opportunities
+    const r2 = await fetch(`${API}/opendata/opportunities`);
+    const d2 = await r2.json();
+    const opps = d2.data || d2 || [];
+    
+    const trajs = {
+      'CRITICAL': null, 'DECLINING': null, 
+      'STABLE': null, 'PROGRESSING': null, 'ACCELERATING': null
+    };
+    
+    opps.forEach(o => {
+      const t = o.trajectory_class || '';
+      if (t && trajs[t] === null) {
+        trajs[t] = (o.country_iso3 || '') + ' · ' + (o.pillar_code || '');
+      }
+    });
+    
+    Object.entries(trajs).forEach(([traj, val]) => {
+      const el = document.getElementById('ex-' + traj.toLowerCase());
+      if (el) el.textContent = val || 'Données disponibles via API';
+    });
+  } catch(e) {
+    ['critical','declining','stable','progressing','accelerating'].forEach(t => {
+      const el = document.getElementById('ex-' + t);
+      if (el) el.textContent = 'Données API';
+    });
+  }
+}
+
 // ── Init ───────────────────────────────────────────────────────
 loadLiveScores();
 loadOpportunitiesCount();
 loadProjects();
+loadTrajectoryExamples();
 </script>
 </body>
 </html>
