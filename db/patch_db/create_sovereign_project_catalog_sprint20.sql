@@ -42,7 +42,7 @@ CREATE INDEX idx_sovereign_project_active   ON rf.sovereign_project_catalog (is_
 -- PMIN — Chaîne de valeur minière
 INSERT INTO rf.sovereign_project_catalog VALUES
 ('SNCTM_GENERIC','MINING_VALUE_CHAIN','PMIN',NULL,
- 'Système National de Certification et Traçabilité des Minerais',
+ 'Système Numérique de Certification et Traçabilité des Minerais',
  'SNCTM',
  'Plateforme blockchain de certification et traçabilité des minerais critiques depuis l extraction jusqu à l exportation. Garantit la souveraineté sur la chaîne de valeur minière.',
  'Transformer l avantage physique en souveraineté économique et réduire la fuite de valeur minière.',
