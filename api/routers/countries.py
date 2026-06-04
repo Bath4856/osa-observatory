@@ -1,7 +1,7 @@
 """
 OSA Observatory -- Sprint 16
 Router countries -- Scores ISA complets -- Couche 1
-Reecrit depuis ma.v_isa_observed_scores_by_country_year
+Sprint 20 -- pub.mv_isa_country_scores + pub.mv_isa_pillar_breakdown (MV enrichies)
 Authentification : validate_standard_access (Couche 1)
 """
 
@@ -92,22 +92,12 @@ async def get_country_profile(
     validate_release_status()
     rows = _rows(db, """
         SELECT
-            s.country_iso3,
-            s.year,
-            ca.region_code,
-            rg.name_fr                                          AS region_label,
-            ROUND(s.isa_observed_score::numeric, 4)             AS isa_observed_score,
-            ROUND(s.sovereignty_observed_score::numeric, 4)     AS sovereignty_score,
-            ROUND(s.vulnerability_observed_score::numeric, 4)   AS vulnerability_score,
-            ROUND(s.resilience_observed_score::numeric, 4)      AS resilience_score,
-            ROUND(s.avg_observation_confidence::numeric, 4)     AS data_confidence,
-            s.nb_pillars_observed,
-            s.publication_status
-        FROM ma.v_isa_observed_scores_by_country_year s
-        LEFT JOIN rf.v_country_aliases ca ON ca.iso3 = s.country_iso3
-        LEFT JOIN rf.regions rg ON rg.code = ca.region_code
+            s.country_iso3, s.year, s.region_code, s.region_label,
+            s.isa_observed_score, s.sovereignty_score,
+            s.vulnerability_score, s.resilience_score,
+            s.data_confidence, s.nb_pillars_observed, s.publication_status
+        FROM pub.mv_isa_country_scores s
         WHERE s.country_iso3 = :iso3
-          AND s.publication_status = 'OFFICIAL_CONSOLIDATED'
           AND (:year IS NULL OR s.year = :year)
         ORDER BY s.year DESC
     """, {"iso3": iso3.upper(), "year": year})
@@ -143,29 +133,16 @@ async def get_country_pillars(
     effective_year = year or 2024
     rows = _rows(db, """
         SELECT
-            p.country_iso3,
-            p.year,
-            p.pillar_code,
-            ROUND(p.isa_observed_score::numeric, 4)           AS pillar_isa_score,
-            ROUND(p.sovereignty_observed_score::numeric, 4)   AS sovereignty_score,
-            ROUND(p.vulnerability_observed_score::numeric, 4) AS vulnerability_score,
-            ROUND(p.avg_observation_confidence::numeric, 4)   AS data_confidence,
-            p.nb_indicators_observed,
-            -- Trajectoire P7J Couche 1
-            r.trajectory_class,
-            ROUND(r.trend_slope::numeric, 5)                  AS trend_slope,
-            r.recommended_action,
-            r.intervention_family_label,
-            r.intervention_priority_class,
-            ROUND(r.intervention_priority_score::numeric, 4)  AS intervention_priority_score
-        FROM ma.v_isa_observed_scores_by_pillar p
-        LEFT JOIN ma.v_p7j_recommendation_engine r
-            ON  r.country_iso3 = p.country_iso3
-            AND r.year         = p.year
-            AND r.pillar_code  = p.pillar_code
-        WHERE p.country_iso3       = :iso3
-          AND p.year               = :year
-          AND p.publication_status = 'OFFICIAL_CONSOLIDATED'
+            p.country_iso3, p.year, p.pillar_code,
+            p.pillar_isa_score, p.sovereignty_score,
+            p.vulnerability_score, p.data_confidence,
+            p.nb_indicators_observed, p.trajectory_class,
+            p.trend_slope, p.recommended_action,
+            p.intervention_family_label, p.intervention_priority_class,
+            p.intervention_priority_score
+        FROM pub.mv_isa_pillar_breakdown p
+        WHERE p.country_iso3 = :iso3
+          AND p.year         = :year
         ORDER BY p.pillar_code
     """, {"iso3": iso3.upper(), "year": effective_year})
     elapsed = round((time.time() - t0) * 1000, 2)
@@ -199,21 +176,15 @@ async def get_country_history(
     validate_release_status()
     rows = _rows(db, """
         SELECT
-            s.country_iso3,
-            s.year,
-            ROUND(s.isa_observed_score::numeric, 4)           AS isa_observed_score,
-            ROUND(s.sovereignty_observed_score::numeric, 4)   AS sovereignty_score,
-            ROUND(s.vulnerability_observed_score::numeric, 4) AS vulnerability_score,
-            ROUND(s.resilience_observed_score::numeric, 4)    AS resilience_score,
-            ROUND(s.avg_observation_confidence::numeric, 4)   AS data_confidence,
-            s.nb_pillars_observed,
-            -- Delta annuel
+            s.country_iso3, s.year,
+            s.isa_observed_score, s.sovereignty_score,
+            s.vulnerability_score, s.resilience_score,
+            s.data_confidence, s.nb_pillars_observed,
             ROUND((s.isa_observed_score - LAG(s.isa_observed_score)
                 OVER (PARTITION BY s.country_iso3 ORDER BY s.year))::numeric, 4)
                 AS isa_annual_delta
-        FROM ma.v_isa_observed_scores_by_country_year s
-        WHERE s.country_iso3       = :iso3
-          AND s.publication_status = 'OFFICIAL_CONSOLIDATED'
+        FROM pub.mv_isa_country_scores s
+        WHERE s.country_iso3 = :iso3
         ORDER BY s.year DESC
     """, {"iso3": iso3.upper()})
     elapsed = round((time.time() - t0) * 1000, 2)
