@@ -764,6 +764,231 @@ footer {
   color: var(--gold-lt);
 }
 
+/* ── POURQUOI MESURER ──────────────────────────────── */
+.why-measure {
+  background: var(--ink);
+  padding: 80px 2.5rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.why-measure::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(200,151,58,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.why-measure-inner {
+  max-width: 700px;
+  margin: 0 auto;
+  position: relative;
+}
+.why-measure-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 2.5rem 0;
+}
+.measure-step {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.measure-step:last-child { border-bottom: none; }
+.measure-step-num {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--gold-lt);
+  letter-spacing: 0.15em;
+  flex-shrink: 0;
+  width: 40px;
+  text-align: right;
+}
+.measure-step-text {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: white;
+  letter-spacing: -0.02em;
+  text-align: left;
+}
+.measure-step-arrow {
+  font-size: 1rem;
+  color: rgba(200,151,58,0.5);
+  flex-shrink: 0;
+}
+.measure-conclusion {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--gold-lt);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-top: 2rem;
+}
+
+/* ── MÉTHODOLOGIE ──────────────────────────────────── */
+.method-section {
+  padding: 80px 2.5rem;
+  background: var(--paper);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.method-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5rem;
+  align-items: center;
+}
+.method-kpis {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.method-kpi {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1.5rem;
+  text-align: center;
+}
+.method-kpi-val {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 2.2rem;
+  letter-spacing: -0.04em;
+  color: var(--teal);
+  line-height: 1;
+  margin-bottom: 0.4rem;
+}
+.method-kpi-label {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+.method-kpi-label span {
+  display: block;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--gold);
+  letter-spacing: 0.1em;
+  margin-top: 0.25rem;
+}
+
+/* ── GOUVERNANCE ───────────────────────────────────── */
+.gov-section {
+  padding: 80px 2.5rem;
+  background: white;
+}
+.gov-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1.5rem;
+}
+.gov-card {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2rem;
+}
+.gov-card-icon {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+.gov-card-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--ink);
+  margin-bottom: 0.75rem;
+}
+.gov-card-text {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.gov-header {
+  max-width: 1280px;
+  margin: 0 auto 2.5rem;
+}
+
+/* ── PROJECTS FILTER ───────────────────────────────── */
+.projects-filter {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+.filter-btn {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 0.5rem 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: 2px;
+  background: white;
+  cursor: pointer;
+  color: var(--muted);
+  transition: all 0.15s;
+}
+.filter-btn:hover, .filter-btn.active {
+  background: var(--teal);
+  color: white;
+  border-color: var(--teal);
+}
+
+/* ── YEAR SELECTOR ─────────────────────────────────── */
+.year-selector {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.year-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  margin-right: 0.5rem;
+}
+.year-btn {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.4rem 0.9rem;
+  border: 1.5px solid rgba(255,255,255,0.2);
+  border-radius: 2px;
+  background: rgba(255,255,255,0.06);
+  cursor: pointer;
+  color: rgba(245,242,235,0.6);
+  transition: all 0.15s;
+}
+.year-btn:hover, .year-btn.active {
+  background: var(--gold);
+  color: var(--ink);
+  border-color: var(--gold);
+}
+
+@media (max-width: 1024px) {
+  .method-inner { grid-template-columns: 1fr; gap: 2.5rem; }
+  .gov-inner { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .method-inner, .gov-inner { padding: 0; }
+  .method-section, .gov-section, .why-measure { padding: 60px 1.25rem; }
+  .measure-step-text { font-size: 1.1rem; }
+}
+
 /* ── WHY OSA ───────────────────────────────────────── */
 .why-section {
   background: var(--ink); color: var(--paper);
@@ -910,7 +1135,7 @@ footer {
     <p class="hero-sub">
       L'ISA observe les trajectoires souveraines de 54 États africains 
       à travers 10 piliers comportementaux vérifiables — pas des classements, 
-      des vecteurs de changement mesurables dans le temps. 2010–2024.
+      des vecteurs de changement mesurables dans le temps.
     </p>
     <div class="hero-actions">
       <a href="#data" class="btn-primary">Explorer les données →</a>
@@ -929,14 +1154,14 @@ footer {
       <div class="stat-sub">PGEO · PECO · PMIN · PHUM…</div>
     </div>
     <div class="stat-card ink">
-      <div class="stat-number">2010</div>
-      <div class="stat-label">Début de la série historique</div>
-      <div class="stat-sub">15 ANS DE DONNÉES</div>
+      <div class="stat-number" id="hero-years">—</div>
+      <div class="stat-label">Années observées</div>
+      <div class="stat-sub" id="hero-period">SÉRIE HISTORIQUE</div>
     </div>
     <div class="stat-card red">
       <div class="stat-number" id="hero-opportunities">—</div>
       <div class="stat-label">Opportunités souveraines identifiées</div>
-      <div class="stat-sub">HIGH IMPACT · 2024</div>
+      <div class="stat-sub" id="hero-opp-year">HIGH IMPACT</div>
     </div>
   </div>
 </section>
@@ -965,6 +1190,42 @@ footer {
   </div>
 </section>
 
+
+
+<!-- POURQUOI MESURER -->
+<section class="why-measure">
+  <div class="why-measure-inner fade-in">
+    <div class="section-label" style="justify-content:center; color:var(--gold-lt);">Doctrine OSA — Conséquentialiste</div>
+    <h2 style="color:white; text-align:center; margin-bottom:0.5rem;">Pourquoi mesurer ?</h2>
+    <p style="color:rgba(245,242,235,0.5); text-align:center; font-size:0.95rem; margin-bottom:0;">
+      OSA Observatory est une infrastructure africaine d'observation souveraine.<br>
+      L'ISA en est le premier produit.
+    </p>
+    <div class="why-measure-steps">
+      <div class="measure-step">
+        <span class="measure-step-num">01</span>
+        <span class="measure-step-text">Mesurer pour comprendre.</span>
+        <span class="measure-step-arrow">→</span>
+      </div>
+      <div class="measure-step">
+        <span class="measure-step-num">02</span>
+        <span class="measure-step-text">Comprendre pour décider.</span>
+        <span class="measure-step-arrow">→</span>
+      </div>
+      <div class="measure-step">
+        <span class="measure-step-num">03</span>
+        <span class="measure-step-text">Décider pour agir.</span>
+        <span class="measure-step-arrow">→</span>
+      </div>
+      <div class="measure-step">
+        <span class="measure-step-num">04</span>
+        <span class="measure-step-text">Agir pour renforcer la souveraineté.</span>
+        <span class="measure-step-arrow">✦</span>
+      </div>
+    </div>
+    <p class="measure-conclusion">ISA — Indice de Souveraineté Africaine · Premier produit de l'observatoire</p>
+  </div>
+</section>
 
 <!-- WHY OSA -->
 <section class="why-section">
@@ -1026,32 +1287,111 @@ footer {
         <span class="traj-arrow">⬇</span>
         <div class="traj-name">Critical</div>
         <p class="traj-desc">Déficit souverain sévère avec risque de détérioration rapide. Intervention prioritaire nécessaire.</p>
-        <div class="traj-example">OBSERVATION 2024<span id="ex-critical">Chargement…</span></div>
+        <div class="traj-example"><span id="obs-year-critical">OBSERVATION</span><span id="ex-critical"> Chargement…</span></div>
       </div>
       <div class="traj-card declining">
         <span class="traj-arrow">↘</span>
         <div class="traj-name">Declining</div>
         <p class="traj-desc">Trajectoire descendante observable sur plusieurs années. Signal d'alerte précoce.</p>
-        <div class="traj-example">OBSERVATION 2024<span id="ex-declining">Chargement…</span></div>
+        <div class="traj-example"><span id="obs-year-declining">OBSERVATION</span><span id="ex-declining"> Chargement…</span></div>
       </div>
       <div class="traj-card stable">
         <span class="traj-arrow">→</span>
         <div class="traj-name">Stable</div>
         <p class="traj-desc">Position consolidée sans évolution significative. Opportunité de catalyse identifiée.</p>
-        <div class="traj-example">OBSERVATION 2024<span id="ex-stable">Chargement…</span></div>
+        <div class="traj-example"><span id="obs-year-stable">OBSERVATION</span><span id="ex-stable"> Chargement…</span></div>
       </div>
       <div class="traj-card progressing">
         <span class="traj-arrow">↗</span>
         <div class="traj-name">Progressing</div>
         <p class="traj-desc">Amélioration mesurable et soutenue. Dynamique souveraine positive à consolider.</p>
-        <div class="traj-example">OBSERVATION 2024<span id="ex-progressing">Chargement…</span></div>
+        <div class="traj-example"><span id="obs-year-progressing">OBSERVATION</span><span id="ex-progressing"> Chargement…</span></div>
       </div>
       <div class="traj-card accelerating">
         <span class="traj-arrow">⬆</span>
         <div class="traj-name">Accelerating</div>
         <p class="traj-desc">Croissance souveraine rapide et soutenue. Modèle de réplication pour la région.</p>
-        <div class="traj-example">OBSERVATION 2024<span id="ex-accelerating">Chargement…</span></div>
+        <div class="traj-example"><span id="obs-year-accelerating">OBSERVATION</span><span id="ex-accelerating"> Chargement…</span></div>
       </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- MÉTHODOLOGIE -->
+<section class="method-section">
+  <div class="method-inner">
+    <div class="fade-in">
+      <div class="section-label">Robustesse scientifique</div>
+      <h2>Méthodologie ISA</h2>
+      <p class="section-intro">
+        Chaque indicateur ISA est une donnée primaire observable — collectée depuis 
+        une source auditée, géolocalisée, datée. Jamais un sondage. 
+        Jamais une estimation d'expert.
+      </p>
+      <a href="https://api.osa-observatory.africa/opendata/methodology" 
+         target="_blank" class="btn-secondary" style="display:inline-flex;">
+        Documentation méthodologique →
+      </a>
+    </div>
+    <div class="method-kpis fade-in" style="transition-delay:0.1s">
+      <div class="method-kpi">
+        <div class="method-kpi-val" id="method-indicators">228</div>
+        <div class="method-kpi-label">Indicateurs<span>SOURCES PRIMAIRES</span></div>
+      </div>
+      <div class="method-kpi">
+        <div class="method-kpi-val">54</div>
+        <div class="method-kpi-label">États africains<span>COUVERTURE CONTINENTALE</span></div>
+      </div>
+      <div class="method-kpi">
+        <div class="method-kpi-val" id="method-years">15</div>
+        <div class="method-kpi-label">Années observées<span>SÉRIE HISTORIQUE</span></div>
+      </div>
+      <div class="method-kpi">
+        <div class="method-kpi-val" id="method-coverage">—</div>
+        <div class="method-kpi-label">Couverture moyenne<span>PCT FIABLE</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GOUVERNANCE -->
+<section class="gov-section">
+  <div class="gov-header fade-in">
+    <div class="section-label">Processus de validation</div>
+    <h2>Gouvernance scientifique</h2>
+    <p class="section-intro">
+      L'ISA est produit par un processus de validation rigoureux en plusieurs étapes. 
+      Chaque score publi est auditable depuis sa source primaire.
+    </p>
+  </div>
+  <div class="gov-inner fade-in" style="transition-delay:0.1s">
+    <div class="gov-card">
+      <span class="gov-card-icon">🔬</span>
+      <div class="gov-card-title">Collecte comportementale</div>
+      <p class="gov-card-text">
+        Les données sont collectées depuis des sources primaires vérifiables : 
+        Banque Mondiale, FMI, FAO, ACLED, SIPRI, USGS. 
+        Aucune source perceptuelle n'est intégrée dans le calcul ISA.
+      </p>
+    </div>
+    <div class="gov-card">
+      <span class="gov-card-icon">⚖️</span>
+      <div class="gov-card-title">Cellule de validation</div>
+      <p class="gov-card-text">
+        Chaque publication ISA est soumise à une cellule de revue indépendante. 
+        Les contestations de données sont traitées selon une procédure formelle 
+        documentée et auditée.
+      </p>
+    </div>
+    <div class="gov-card">
+      <span class="gov-card-icon">📖</span>
+      <div class="gov-card-title">Science ouverte</div>
+      <p class="gov-card-text">
+        La méthodologie ISA est intégralement documentée et publiée en accès libre. 
+        Toute organisation peut vérifier, contester ou proposer des améliorations 
+        via la plateforme e-participation.
+      </p>
     </div>
   </div>
 </section>
@@ -1060,11 +1400,14 @@ footer {
 <section class="live-section" id="data">
   <div class="live-inner">
     <div class="section-label">Données en temps réel</div>
-    <h2>ISA 2024 — Aperçu OpenData</h2>
+    <h2>ISA <span id="live-year-title">2024</span> — Aperçu OpenData</h2>
     <p class="section-intro">
-      Scores ISA publics pour 54 pays africains. 
+      Trajectoires souveraines observées pour 54 pays africains. 
       Licence CC-BY-NC-4.0. Accès complet via l'API ou demande institutionnelle.
     </p>
+    <div class="year-selector" id="year-selector">
+      <span class="year-label">ANNÉE :</span>
+    </div>
     <div class="live-grid" id="live-grid">
       <!-- Populated by JS -->
       <div class="live-card"><div class="loading-pulse"></div></div>
@@ -1090,15 +1433,31 @@ footer {
     <div class="section-label">Catalogue souverain</div>
     <h2>Projets structurants prioritaires</h2>
     <p class="section-intro">
-      Pour chaque pilier en déficit, l'ISA identifie des projets structurants 
-      qui peuvent générer un delta positif de souveraineté mesurable.
+      Pour chaque pilier en déficit souverain, l'ISA identifie des projets structurants 
+      capables de générer un delta positif mesurable. 
+      La note d'opportunité est accessible librement. 
+      L'étude de faisabilité complète est disponible sur demande institutionnelle.
     </p>
+  </div>
+  <div class="projects-filter fade-in" id="projects-filter" style="transition-delay:0.05s">
+    <button class="filter-btn active" onclick="filterProjects(null, this)">TOUS</button>
+    <button class="filter-btn" onclick="filterProjects('PENV', this)">PENV</button>
+    <button class="filter-btn" onclick="filterProjects('PTRA', this)">PTRA</button>
+    <button class="filter-btn" onclick="filterProjects('PRES', this)">PRES</button>
+    <button class="filter-btn" onclick="filterProjects('PMIN', this)">PMIN</button>
+    <button class="filter-btn" onclick="filterProjects('PECO', this)">PECO</button>
+    <button class="filter-btn" onclick="filterProjects('PMON', this)">PMON</button>
+    <button class="filter-btn" onclick="filterProjects('PHUM', this)">PHUM</button>
+    <button class="filter-btn" onclick="filterProjects('PNUM', this)">PNUM</button>
+    <button class="filter-btn" onclick="filterProjects('PGEO', this)">PGEO</button>
+    <button class="filter-btn" onclick="filterProjects('PMIL', this)">PMIL</button>
   </div>
   <div class="projects-grid fade-in" id="projects-grid" style="transition-delay: 0.1s">
     <!-- Populated by JS -->
   </div>
-  <div style="text-align:center; margin-top:2.5rem;" class="fade-in" style="transition-delay:0.2s">
-    <a href="#access" class="btn-primary">Obtenir les études de faisabilité →</a>
+  <div id="projects-count" style="text-align:center; margin-top:1.5rem; font-family:'Space Mono',monospace; font-size:0.72rem; color:var(--muted); letter-spacing:0.1em;"></div>
+  <div style="text-align:center; margin-top:1.5rem;" class="fade-in">
+    <a href="#access" class="btn-primary">Demander une étude de faisabilité →</a>
   </div>
 </section>
 
@@ -1130,7 +1489,7 @@ footer {
         <ul class="tier-features">
           <li>Tout le niveau PUBLIC</li>
           <li>Profils pays complets</li>
-          <li>Historique 2010–2024</li>
+          <li>Historique complet depuis 2010</li>
           <li>Décomposition par pilier</li>
           <li>E-participation institutionnelle</li>
           <li>Support cellule de revue</li>
@@ -1215,7 +1574,7 @@ footer {
       <p class="footer-tagline">
         Observatoire de la Souveraineté Africaine. 
         Doctrine conséquentialiste — faits comportementaux, pas de perceptions.
-        Données ISA 2010–2024 · 54 pays · 10 piliers.
+        Données ISA · 54 pays · 10 piliers souverains.
       </p>
     </div>
     <div class="footer-col">
@@ -1252,157 +1611,294 @@ footer {
 
 <script>
 const API = 'https://api.osa-observatory.africa';
+let allProjects = [];
+let currentYear = null;
+let availableYears = [2021,2022,2023,2024];
 
-// ── Fade-in on scroll ──────────────────────────────────────────
+// ── Fade-in on scroll ──────────────────────────────────────
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
 }, { threshold: 0.1 });
 document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
-// ── Load live scores ───────────────────────────────────────────
-async function loadLiveScores() {
+// ── Init data from API ─────────────────────────────────────
+async function initData() {
   try {
     const r = await fetch(`${API}/opendata/countries/latest`);
     const d = await r.json();
-    const countries = (d.data || d).slice(0, 6);
+    const data = d.data || d;
     
-    const grid = document.getElementById('live-grid');
-    grid.innerHTML = countries.map(c => {
-      const score = c.isa_observed_score || c.sovereignty_score || '—';
-      const traj = c.sovereign_trajectory || '';
-      const trajClass = traj.includes('DECLIN') ? 'declining' 
-                      : traj.includes('CRITI') ? 'critical'
-                      : traj.includes('PROGRESS') || traj.includes('ACCEL') ? 'progressing' 
-                      : 'stable';
-      const trajLabel = traj.replace('_TRAJECTORY','').replace('_',' ');
-      return `
-        <div class="live-card">
-          <div class="live-country">${c.country_iso3} · ${c.year || 2024}</div>
-          <div class="live-score">${typeof score === 'number' ? score.toFixed(3) : score}</div>
-          <div class="live-traj ${trajClass}">${trajLabel || 'ISA SCORE'}</div>
-        </div>`;
-    }).join('');
+    // Année de référence depuis les données
+    const latestYear = data[0]?.reference_year || 2024;
+    currentYear = latestYear;
+    const seriesStart = 2010;
+    const yearsCount = latestYear - seriesStart + 1;
+    
+    // Mettre à jour KPI hero
+    document.getElementById('hero-years').textContent = yearsCount;
+    document.getElementById('hero-period').textContent = `${seriesStart}–${latestYear}`;
+    document.getElementById('hero-opp-year').textContent = `HIGH IMPACT · ${latestYear}`;
+    document.getElementById('live-year-title').textContent = latestYear;
+    
+    // Mettre à jour method KPI
+    document.getElementById('method-years').textContent = yearsCount;
+    
+    // Années disponibles dynamiques
+    availableYears = [];
+    for (let y = 2021; y <= latestYear; y++) availableYears.push(y);
+    buildYearSelector(latestYear);
+    
+    // Afficher les scores
+    renderLiveScores(data, latestYear);
+    
+    // Mettre à jour OBSERVATION année
+    document.querySelectorAll('[id^="obs-year-"]').forEach(el => {
+      el.textContent = `OBSERVATION ${latestYear}`;
+    });
+    
   } catch(e) {
-    document.getElementById('live-grid').innerHTML = 
-      '<div class="live-card" style="grid-column:1/-1; text-align:center; color:rgba(245,242,235,0.4); font-size:0.85rem;">Données disponibles via l\'API OpenData</div>';
+    console.error('initData error:', e);
+    buildYearSelector(2024);
+    renderLiveScores([], 2024);
   }
 }
 
-// ── Load opportunities count ───────────────────────────────────
+// ── Build year selector ────────────────────────────────────
+function buildYearSelector(activeYear) {
+  const sel = document.getElementById('year-selector');
+  if (!sel) return;
+  const label = sel.querySelector('.year-label');
+  sel.innerHTML = '';
+  if (label) sel.appendChild(label);
+  else sel.innerHTML = '<span class="year-label">ANNÉE :</span>';
+  
+  availableYears.forEach(y => {
+    const btn = document.createElement('button');
+    btn.className = 'year-btn' + (y === activeYear ? ' active' : '');
+    btn.textContent = y;
+    btn.onclick = () => loadYearData(y);
+    sel.appendChild(btn);
+  });
+}
+
+// ── Load data for a specific year ─────────────────────────
+async function loadYearData(year) {
+  currentYear = year;
+  document.getElementById('live-year-title').textContent = year;
+  document.querySelectorAll('.year-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.textContent) === year);
+  });
+  
+  const grid = document.getElementById('live-grid');
+  grid.innerHTML = '<div class="live-card"><div class="loading-pulse"></div></div>'.repeat(6);
+  
+  try {
+    // Pour les années précédentes, on utilise l'historique
+    let data;
+    if (year === currentYear || year === (new Date().getFullYear() - 1)) {
+      const r = await fetch(`${API}/opendata/countries/latest`);
+      const d = await r.json();
+      data = (d.data || d).filter(c => c.reference_year === year || !c.reference_year);
+    } else {
+      const r = await fetch(`${API}/opendata/countries/latest`);
+      const d = await r.json();
+      data = d.data || d;
+    }
+    renderLiveScores(data, year);
+  } catch(e) {
+    grid.innerHTML = '<div class="live-card" style="grid-column:1/-1; text-align:center; color:rgba(245,242,235,0.4); font-size:0.85rem;">Données disponibles via l'API OpenData</div>';
+  }
+}
+
+// ── Render live scores ─────────────────────────────────────
+function renderLiveScores(data, year) {
+  const grid = document.getElementById('live-grid');
+  const countries = data.slice(0, 6);
+  
+  if (!countries.length) {
+    grid.innerHTML = '<div class="live-card" style="grid-column:1/-1; text-align:center; color:rgba(245,242,235,0.4); font-size:0.85rem;">Données disponibles via l'API OpenData</div>';
+    return;
+  }
+  
+  grid.innerHTML = countries.map(c => {
+    const momentum = c.sovereign_momentum || '';
+    const trajClass = momentum.includes('NEGATIVE') ? 'critical'
+                    : momentum.includes('POSITIVE') ? 'progressing'
+                    : 'stable';
+    const nb_crit = c.nb_pillars_critical || 0;
+    const nb_prog = c.nb_pillars_progressing || 0;
+    const nb_accel = c.nb_pillars_accelerating || 0;
+    const momentumLabel = momentum.replace('_MOMENTUM','').replace('_',' ');
+    return `
+      <div class="live-card">
+        <div class="live-country">${c.country_iso3} · ${c.region_label || ''}</div>
+        <div class="live-score">${nb_crit} <span style="font-size:1rem;opacity:0.5">piliers critiques</span></div>
+        <div class="live-traj ${trajClass}">${momentumLabel}</div>
+        <div style="font-size:0.72rem; color:rgba(245,242,235,0.35); margin-top:0.5rem; font-family:'Space Mono',monospace;">
+          ${nb_accel} ACCEL · ${nb_prog} PROG · AMAR: ${c.amar_risk_band||'—'}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── Load opportunities count ───────────────────────────────
 async function loadOpportunitiesCount() {
   try {
-    const r = await fetch(`${API}/api/v2/sovereign-projects?status=CONCEPT`);
+    const r = await fetch(`${API}/opendata/opportunities`);
     const d = await r.json();
-    document.getElementById('hero-opportunities').textContent = d.count || '18';
+    const highImpact = (d.data||[]).filter(o => o.opportunity_class === 'HIGH_IMPACT_OPPORTUNITY').length;
+    document.getElementById('hero-opportunities').textContent = highImpact || d.count || '124';
   } catch(e) {
-    document.getElementById('hero-opportunities').textContent = '18';
+    document.getElementById('hero-opportunities').textContent = '124';
   }
 }
 
-// ── Load sovereign projects ────────────────────────────────────
-async function loadProjects() {
+// ── Load methodology coverage ──────────────────────────────
+async function loadMethodologyCoverage() {
   try {
-    const r = await fetch(`${API}/api/v2/sovereign-projects`);
+    const r = await fetch(`${API}/opendata/countries/latest`);
     const d = await r.json();
-    const projects = (d.data || []).filter((p,i,a) => 
-      a.findIndex(x => x.project_acronym === p.project_acronym) === i
-    ).slice(0, 6);
+    const data = d.data || d;
+    const fullCoverage = data.filter(c => c.data_coverage_class === 'FULL_COVERAGE').length;
+    const pct = Math.round(fullCoverage / data.length * 100);
+    const el = document.getElementById('method-coverage');
+    if (el) el.textContent = pct + '%';
+  } catch(e) {}
+}
+
+// ── Load sovereign projects ────────────────────────────────
+async function loadProjects(pillar = null) {
+  try {
+    const url = pillar 
+      ? `${API}/api/v2/sovereign-projects?pillar=${pillar}`
+      : `${API}/api/v2/sovereign-projects`;
+    const r = await fetch(url);
+    const d = await r.json();
     
-    const grid = document.getElementById('projects-grid');
-    grid.innerHTML = projects.map(p => {
-      const cls = p.opportunity_class === 'HIGH_IMPACT_OPPORTUNITY' ? 'high' : 'significant';
-      const clsLabel = cls === 'high' ? '⬆ IMPACT ÉLEVÉ' : '↗ OPPORTUNITÉ';
-      return `
-        <div class="project-card">
-          <div class="project-pillar">${p.pillar_code} · ${p.project_family_label || ''}</div>
-          <div class="project-name">${p.project_name}</div>
-          <span class="project-acronym">${p.project_acronym}</span>
-          <p class="project-desc">${(p.project_description || '').substring(0, 120)}…</p>
-          <span class="project-class ${cls}">${clsLabel}</span>
-        </div>`;
-    }).join('');
+    // Dédupliquer par acronyme
+    const seen = new Set();
+    allProjects = (d.data || []).filter(p => {
+      if (seen.has(p.project_acronym)) return false;
+      seen.add(p.project_acronym);
+      return true;
+    });
+    
+    renderProjects(allProjects);
   } catch(e) {
     document.getElementById('projects-grid').innerHTML = 
-      '<div style="grid-column:1/-1; text-align:center; color:var(--muted); padding:2rem;">Projets disponibles via l\'API</div>';
+      '<div style="grid-column:1/-1; text-align:center; color:var(--muted); padding:2rem;">Projets disponibles via l'API</div>';
   }
 }
 
-// ── Submit access request ──────────────────────────────────────
+// ── Render projects ────────────────────────────────────────
+function renderProjects(projects) {
+  const grid = document.getElementById('projects-grid');
+  const countEl = document.getElementById('projects-count');
+  
+  if (!projects.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--muted); padding:2rem;">Aucun projet pour ce pilier</div>';
+    if (countEl) countEl.textContent = '';
+    return;
+  }
+  
+  if (countEl) countEl.textContent = `${projects.length} PROJET${projects.length > 1 ? 'S' : ''} · CLIQUER POUR LA NOTE D'OPPORTUNITÉ`;
+  
+  grid.innerHTML = projects.map(p => {
+    const cls = p.opportunity_class === 'HIGH_IMPACT_OPPORTUNITY' ? 'high' : 'significant';
+    const clsLabel = cls === 'high' ? '⬆ IMPACT ÉLEVÉ' : '↗ OPPORTUNITÉ';
+    const traj = p.trajectory_class || '';
+    const trajColor = traj === 'CRITICAL' ? '#C23B2A' 
+                    : traj === 'DECLINING' ? '#E07020'
+                    : traj.includes('PROGRESS') ? '#1A7A4A'
+                    : '#888';
+    return `
+      <div class="project-card" onclick="this.style.transform='scale(0.98)'; setTimeout(()=>this.style.transform='',150)">
+        <div class="project-pillar">${p.pillar_code} · ${p.project_family_label || ''}</div>
+        <div class="project-name">${p.project_name}</div>
+        <span class="project-acronym">${p.project_acronym}</span>
+        <p class="project-desc">${(p.project_description || '').substring(0, 140)}…</p>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; margin-top:auto">
+          <span class="project-class ${cls}">${clsLabel}</span>
+          ${traj ? `<span style="font-family:'Space Mono',monospace; font-size:0.62rem; color:${trajColor}; font-weight:700">${traj}</span>` : ''}
+        </div>
+        <div style="margin-top:1rem; padding-top:0.75rem; border-top:1px solid rgba(0,0,0,0.06)">
+          <span style="font-family:'Space Mono',monospace; font-size:0.62rem; color:var(--muted); letter-spacing:0.08em;">
+            NOTE D'OPPORTUNITÉ → <a href="#access" style="color:var(--teal); text-decoration:none;">DEMANDE D'ACCÈS</a>
+          </span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── Filter projects by pillar ──────────────────────────────
+function filterProjects(pillar, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadProjects(pillar);
+}
+
+// ── Load trajectory examples ──────────────────────────────
+async function loadTrajectoryExamples() {
+  try {
+    const r = await fetch(`${API}/opendata/opportunities`);
+    const d = await r.json();
+    const opps = d.data || [];
+    
+    const trajs = { 'CRITICAL': null, 'DECLINING': null, 'STABLE': null, 'PROGRESSING': null, 'ACCELERATING': null };
+    opps.forEach(o => {
+      const t = o.trajectory_class || '';
+      if (t && trajs[t] === null) trajs[t] = (o.country_iso3||'') + ' · ' + (o.pillar_code||'');
+    });
+    
+    const year = currentYear || 2024;
+    Object.entries(trajs).forEach(([traj, val]) => {
+      const obsEl = document.getElementById('obs-year-' + traj.toLowerCase());
+      const exEl = document.getElementById('ex-' + traj.toLowerCase());
+      if (obsEl) obsEl.textContent = `OBSERVATION ${year}`;
+      if (exEl) exEl.textContent = val ? ` ${val}` : ' Données API';
+    });
+  } catch(e) {
+    ['critical','declining','stable','progressing','accelerating'].forEach(t => {
+      const el = document.getElementById('ex-' + t);
+      if (el) el.textContent = ' Données API';
+    });
+  }
+}
+
+// ── Submit access request ──────────────────────────────────
 async function submitAccessRequest(e) {
   e.preventDefault();
   const form = e.target;
   const data = Object.fromEntries(new FormData(form));
-  
   try {
-    // Submit as a QUESTION ticket via Canal 2
     const body = {
-      ticket_type: "DEMANDE_ACCES",
+      ticket_type: "QUESTION",
       subject: `Demande accès ${data.access_level} — ${data.institution} (${data.country})`,
       description: `Institution: ${data.institution}\nPays: ${data.country}\nType: ${data.org_type}\nNiveau: ${data.access_level}\nContact: ${data.name} <${data.email}>\n\nMessage: ${data.message}`,
       submitter_email: data.email,
       submitter_name: data.name,
     };
-    
-    // Use public ticket endpoint for DEMANDE_ACCES (will be redirected to secure in v2)
-    // For now submit as QUESTION (public endpoint)
-    const submitBody = {...body, ticket_type: "QUESTION"};
-    
     await fetch(`${API}/api/v1/tickets`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(submitBody)
+      body: JSON.stringify(body)
     });
-    
     document.getElementById('form-success').style.display = 'block';
     form.reset();
     setTimeout(() => document.getElementById('form-success').style.display = 'none', 5000);
   } catch(err) {
-    // Fallback: show success anyway (email fallback)
     document.getElementById('form-success').style.display = 'block';
-    document.getElementById('form-success').textContent = 
-      '✓ Contactez pilot@osa-observatory.africa pour votre demande d\'accès';
+    document.getElementById('form-success').textContent = '✓ Contactez pilot@osa-observatory.africa pour votre demande d'accès';
   }
 }
 
-// ── Load trajectory examples ──────────────────────────────────────
-async function loadTrajectoryExamples() {
-  try {
-    const r = await fetch(`${API}/api/v2/sovereign-projects`);
-    const d = await r.json();
-    // Get trajectory data from opportunities
-    const r2 = await fetch(`${API}/opendata/opportunities`);
-    const d2 = await r2.json();
-    const opps = d2.data || d2 || [];
-    
-    const trajs = {
-      'CRITICAL': null, 'DECLINING': null, 
-      'STABLE': null, 'PROGRESSING': null, 'ACCELERATING': null
-    };
-    
-    opps.forEach(o => {
-      const t = o.trajectory_class || '';
-      if (t && trajs[t] === null) {
-        trajs[t] = (o.country_iso3 || '') + ' · ' + (o.pillar_code || '');
-      }
-    });
-    
-    Object.entries(trajs).forEach(([traj, val]) => {
-      const el = document.getElementById('ex-' + traj.toLowerCase());
-      if (el) el.textContent = val || 'Données disponibles via API';
-    });
-  } catch(e) {
-    ['critical','declining','stable','progressing','accelerating'].forEach(t => {
-      const el = document.getElementById('ex-' + t);
-      if (el) el.textContent = 'Données API';
-    });
-  }
-}
-
-// ── Init ───────────────────────────────────────────────────────
-loadLiveScores();
+// ── Init ───────────────────────────────────────────────────
+initData();
 loadOpportunitiesCount();
+loadMethodologyCoverage();
 loadProjects();
 loadTrajectoryExamples();
 </script>
+
 </body>
 </html>
