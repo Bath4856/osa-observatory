@@ -1455,7 +1455,7 @@ footer {
   <div class="projects-grid fade-in" id="projects-grid" style="transition-delay: 0.1s">
     <!-- Populated by JS -->
   </div>
-  <div id="projects-count" style="text-align:center; margin-top:1.5rem; font-family:'Space Mono',monospace; font-size:0.72rem; color:var(--muted); letter-spacing:0.1em;"></div>
+  <div id="projects-count" style="text-align:center; margin-top:1.5rem; font-family:Space Mono,monospace; font-size:0.72rem; color:var(--muted); letter-spacing:0.1em;"></div>
   <div style="text-align:center; margin-top:1.5rem;" class="fade-in">
     <a href="#access" class="btn-primary">Demander une étude de faisabilité →</a>
   </div>
@@ -1731,11 +1731,11 @@ function renderLiveScores(data, year) {
     const momentumLabel = momentum.replace('_MOMENTUM','').replace('_',' ');
     return `
       <div class="live-card">
-        <div class="live-country">${c.country_iso3} · ${c.region_label || ''}</div>
+        <div class="live-country">${c.country_iso3} · ${c.region_label || ""}</div>
         <div class="live-score">${nb_crit} <span style="font-size:1rem;opacity:0.5">piliers critiques</span></div>
         <div class="live-traj ${trajClass}">${momentumLabel}</div>
-        <div style="font-size:0.72rem; color:rgba(245,242,235,0.35); margin-top:0.5rem; font-family:'Space Mono',monospace;">
-          ${nb_accel} ACCEL · ${nb_prog} PROG · AMAR: ${c.amar_risk_band||'—'}
+        <div style="font-size:0.72rem; color:rgba(245,242,235,0.35); margin-top:0.5rem; font-family:Space Mono,monospace;">
+          ${nb_accel} ACCEL · ${nb_prog} PROG · AMAR: ${c.amar_risk_band||"—"}
         </div>
       </div>`;
   }).join('');
@@ -1812,17 +1812,17 @@ function renderProjects(projects) {
                     : traj.includes('PROGRESS') ? '#1A7A4A'
                     : '#888';
     return `
-      <div class="project-card" onclick="this.style.transform='scale(0.98)'; setTimeout(()=>this.style.transform='',150)">
-        <div class="project-pillar">${p.pillar_code} · ${p.project_family_label || ''}</div>
+      <div class="project-card">
         <div class="project-name">${p.project_name}</div>
+        <div class="project-pillar">${p.pillar_code} · ${p.project_family_label || ""}</div>
         <span class="project-acronym">${p.project_acronym}</span>
-        <p class="project-desc">${(p.project_description || '').substring(0, 140)}…</p>
+        <p class="project-desc">${(p.project_description || "").substring(0, 140)}…</p>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; margin-top:auto">
           <span class="project-class ${cls}">${clsLabel}</span>
-          ${traj ? `<span style="font-family:'Space Mono',monospace; font-size:0.62rem; color:${trajColor}; font-weight:700">${traj}</span>` : ''}
+          ${traj ? ("<span style=\"font-family:Space Mono,monospace; font-size:0.62rem; color:\"+trajColor+"; font-weight:700\">"+traj+"</span>") : ""}
         </div>
         <div style="margin-top:1rem; padding-top:0.75rem; border-top:1px solid rgba(0,0,0,0.06)">
-          <span style="font-family:'Space Mono',monospace; font-size:0.62rem; color:var(--muted); letter-spacing:0.08em;">
+          <span style="font-family:Space Mono,monospace; font-size:0.62rem; color:var(--muted); letter-spacing:0.08em;">
             NOTE D&#39;OPPORTUNIT&#xE9; → <a href="#access" style="color:var(--teal); text-decoration:none;">DEMANDE D&#39;ACC&#xE8;S</a>
           </span>
         </div>
