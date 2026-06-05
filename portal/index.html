@@ -1,1166 +1,313 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en" id="html-root">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OSA Observatory — Observatoire de la Souveraineté Africaine</title>
-<meta name="description" content="L'OSA Observatory mesure la souveraineté des 54 États africains à travers 10 piliers comportementaux. Données factuelles, non perceptuelles.">
+<title>OSA Observatory — African Sovereignty Observatory</title>
+<meta name="description" content="OSA Observatory measures the sovereignty of 54 African states across 10 behavioural pillars. Fact-based, not perception-based.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --ink:       #0A0E17;
-  --paper:     #F5F2EB;
-  --gold:      #C8973A;
-  --gold-lt:   #E8C97A;
-  --teal:      #1A6B5A;
-  --teal-lt:   #2A9B82;
-  --red:       #C23B2A;
-  --muted:     #6B7080;
-  --border:    rgba(10,14,23,0.12);
-  --card-bg:   rgba(255,255,255,0.7);
-}
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-html { scroll-behavior: smooth; }
-
-body {
-  font-family: 'Inter', sans-serif;
-  background: var(--paper);
-  color: var(--ink);
-  font-size: 16px;
-  line-height: 1.6;
-  overflow-x: hidden;
-}
-
-/* ── GRAIN OVERLAY ─────────────────────────────────── */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 1000;
-  opacity: 0.4;
-}
-
-/* ── HEADER ────────────────────────────────────────── */
-header {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  z-index: 100;
-  padding: 0 2.5rem;
-  height: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: rgba(245,242,235,0.88);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
-}
-
-.logo {
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
-  font-size: 1.1rem;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.logo-dot {
-  width: 8px; height: 8px;
-  background: var(--gold);
-  border-radius: 50%;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%,100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.4); opacity: 0.7; }
-}
-
-nav { display: flex; gap: 2rem; align-items: center; }
-
-nav a {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--muted);
-  text-decoration: none;
-  letter-spacing: 0.02em;
-  transition: color 0.2s;
-}
-nav a:hover { color: var(--ink); }
-
-.btn-access {
-  background: var(--ink);
-  color: var(--paper) !important;
-  padding: 0.5rem 1.25rem;
-  border-radius: 2px;
-  font-size: 0.8rem !important;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-.btn-access:hover { background: var(--teal) !important; color: var(--paper) !important; }
-
-/* ── HERO ──────────────────────────────────────────── */
-.hero {
-  min-height: 100vh;
-  padding: 120px 2.5rem 80px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
-  align-items: center;
-  position: relative;
-}
-
-.hero::after {
-  content: '';
-  position: absolute;
-  top: 60px; right: -80px;
-  width: 600px; height: 600px;
-  background: radial-gradient(circle, rgba(200,151,58,0.08) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-.hero-label {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.72rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--gold);
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-.hero-label::before {
-  content: '';
-  width: 24px; height: 1px;
-  background: var(--gold);
-}
-
-h1 {
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
-  font-size: clamp(2.8rem, 5vw, 4.5rem);
-  line-height: 1.05;
-  letter-spacing: -0.03em;
-  margin-bottom: 1.5rem;
-}
-
-h1 em {
-  font-style: normal;
-  color: var(--teal);
-}
-
-.hero-sub {
-  font-size: 1.05rem;
-  color: var(--muted);
-  max-width: 480px;
-  line-height: 1.8;
-  margin-bottom: 2.5rem;
-}
-
-.hero-actions {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.btn-primary {
-  background: var(--teal);
-  color: white;
-  padding: 0.85rem 2rem;
-  font-family: 'Syne', sans-serif;
-  font-weight: 600;
-  font-size: 0.9rem;
-  letter-spacing: 0.03em;
-  border: none;
-  border-radius: 2px;
-  cursor: pointer;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.2s;
-}
-.btn-primary:hover { background: var(--teal-lt); transform: translateY(-1px); }
-
-.btn-secondary {
-  background: transparent;
-  color: var(--ink);
-  padding: 0.85rem 2rem;
-  font-family: 'Syne', sans-serif;
-  font-weight: 600;
-  font-size: 0.9rem;
-  letter-spacing: 0.03em;
-  border: 1.5px solid var(--ink);
-  border-radius: 2px;
-  cursor: pointer;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.2s;
-}
-.btn-secondary:hover { background: var(--ink); color: var(--paper); }
-
-/* ── HERO STATS ────────────────────────────────────── */
-.hero-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-}
-
-.stat-card {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 1.75rem;
-  position: relative;
-  overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-.stat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,0.08); }
-
-.stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: var(--gold);
-}
-
-.stat-card.teal::before { background: var(--teal); }
-.stat-card.red::before  { background: var(--red); }
-.stat-card.ink::before  { background: var(--ink); }
-
-.stat-number {
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
-  font-size: 2.8rem;
-  line-height: 1;
-  letter-spacing: -0.04em;
-  margin-bottom: 0.4rem;
-}
-
-.stat-label {
-  font-size: 0.8rem;
-  color: var(--muted);
-  font-weight: 500;
-  letter-spacing: 0.02em;
-}
-
-.stat-sub {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.65rem;
-  color: var(--gold);
-  margin-top: 0.5rem;
-  letter-spacing: 0.08em;
-}
-
-/* ── SECTION TITLES ────────────────────────────────── */
-.section {
-  padding: 100px 2.5rem;
-  max-width: 1280px;
-  margin: 0 auto;
-}
-
-.section-label {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.72rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--gold);
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-.section-label::before {
-  content: '';
-  width: 24px; height: 1px;
-  background: var(--gold);
-}
-
-h2 {
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
-  font-size: clamp(2rem, 3.5vw, 3rem);
-  letter-spacing: -0.03em;
-  line-height: 1.1;
-  margin-bottom: 1rem;
-}
-
-.section-intro {
-  font-size: 1.05rem;
-  color: var(--muted);
-  max-width: 600px;
-  line-height: 1.8;
-  margin-bottom: 3rem;
-}
-
-/* ── PILLARS ───────────────────────────────────────── */
-.pillars-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 1rem;
-}
-
-.pillar-card {
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 1.5rem 1.25rem;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.25s;
-  position: relative;
-  overflow: hidden;
-}
-
-.pillar-card:hover {
-  border-color: var(--teal);
-  transform: translateY(-4px);
-  box-shadow: 0 16px 48px rgba(26,107,90,0.12);
-}
-
-.pillar-code {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--teal);
-  letter-spacing: 0.1em;
-  margin-bottom: 0.5rem;
-}
-
-.pillar-name {
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 0.85rem;
-  line-height: 1.3;
-  color: var(--ink);
-}
-
-.pillar-icon {
-  font-size: 1.6rem;
-  margin-bottom: 0.75rem;
-  display: block;
-}
-
-/* ── LIVE DATA ─────────────────────────────────────── */
-.live-section {
-  background: var(--ink);
-  color: var(--paper);
-  padding: 100px 2.5rem;
-}
-
-.live-inner {
-  max-width: 1280px;
-  margin: 0 auto;
-}
-
-.live-section .section-label { color: var(--gold-lt); }
-.live-section .section-label::before { background: var(--gold-lt); }
-.live-section h2 { color: var(--paper); }
-.live-section .section-intro { color: rgba(245,242,235,0.6); }
-
-.live-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.25rem;
-  margin-top: 3rem;
-}
-
-.live-card {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 4px;
-  padding: 1.75rem;
-  transition: background 0.2s;
-}
-.live-card:hover { background: rgba(255,255,255,0.08); }
-
-.live-country {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.72rem;
-  color: var(--gold-lt);
-  letter-spacing: 0.1em;
-  margin-bottom: 0.5rem;
-}
-
-.live-score {
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
-  font-size: 2.4rem;
-  letter-spacing: -0.04em;
-  margin-bottom: 0.25rem;
-}
-
-.live-traj {
-  font-size: 0.78rem;
-  color: rgba(245,242,235,0.5);
-}
-
-.live-traj.critical { color: #FF6B6B; }
-.live-traj.declining { color: #FFA94D; }
-.live-traj.progressing { color: #69DB7C; }
-.live-traj.stable { color: rgba(245,242,235,0.6); }
-
-.loading-pulse {
-  display: inline-block;
-  width: 60px; height: 16px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 2px;
-  animation: shimmer 1.5s ease-in-out infinite;
-}
-
-@keyframes shimmer {
-  0% { opacity: 0.4; }
-  50% { opacity: 0.8; }
-  100% { opacity: 0.4; }
-}
-
-/* ── PROJECTS ──────────────────────────────────────── */
-.projects-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
-}
-
-.project-card {
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 2rem;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.25s;
-}
-.project-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 60px rgba(0,0,0,0.1);
-}
-
-.project-pillar {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: var(--teal);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  margin-bottom: 0.75rem;
-}
-
-.project-name {
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 1.1rem;
-  line-height: 1.3;
-  margin-bottom: 0.75rem;
-  color: var(--ink);
-}
-
-.project-acronym {
-  display: inline-block;
-  background: var(--ink);
-  color: var(--paper);
-  font-family: 'Space Mono', monospace;
-  font-size: 0.7rem;
-  padding: 0.2rem 0.6rem;
-  border-radius: 2px;
-  margin-bottom: 1rem;
-  letter-spacing: 0.08em;
-}
-
-.project-desc {
-  font-size: 0.85rem;
-  color: var(--muted);
-  line-height: 1.7;
-  margin-bottom: 1.25rem;
-}
-
-.project-class {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  padding: 0.3rem 0.75rem;
-  border-radius: 2px;
-}
-
-.project-class.high { background: rgba(26,107,90,0.1); color: var(--teal); }
-.project-class.significant { background: rgba(200,151,58,0.1); color: var(--gold); }
-
-/* ── ACCESS SECTION ────────────────────────────────── */
-.access-section {
-  background: linear-gradient(135deg, var(--teal) 0%, #0D3D31 100%);
-  padding: 100px 2.5rem;
-  position: relative;
-  overflow: hidden;
-}
-
-.access-section::before {
-  content: 'SOUVERAINETÉ';
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%) rotate(-15deg);
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
-  font-size: 12rem;
-  color: rgba(255,255,255,0.03);
-  white-space: nowrap;
-  pointer-events: none;
-  letter-spacing: -0.05em;
-}
-
-.access-inner {
-  max-width: 800px;
-  margin: 0 auto;
-  text-align: center;
-  position: relative;
-}
-
-.access-section h2 {
-  color: white;
-  margin-bottom: 1rem;
-}
-
-.access-section .section-intro {
-  color: rgba(255,255,255,0.7);
-  margin: 0 auto 3rem;
-}
-
-.access-tiers {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.25rem;
-  margin-bottom: 3rem;
-  text-align: left;
-}
-
-.tier-card {
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 4px;
-  padding: 1.75rem;
-  transition: background 0.2s;
-}
-.tier-card:hover { background: rgba(255,255,255,0.12); }
-.tier-card.featured {
-  background: rgba(200,151,58,0.15);
-  border-color: var(--gold-lt);
-}
-
-.tier-name {
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 1rem;
-  color: white;
-  margin-bottom: 0.25rem;
-}
-
-.tier-price {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.75rem;
-  color: var(--gold-lt);
-  margin-bottom: 1rem;
-  letter-spacing: 0.05em;
-}
-
-.tier-features {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.tier-features li {
-  font-size: 0.82rem;
-  color: rgba(255,255,255,0.7);
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-}
-
-.tier-features li::before {
-  content: '→';
-  color: var(--gold-lt);
-  flex-shrink: 0;
-  margin-top: 0.05em;
-}
-
-/* ── FORM ──────────────────────────────────────────── */
-.access-form {
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 4px;
-  padding: 2.5rem;
-  text-align: left;
-}
-
-.form-title {
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 1.1rem;
-  color: white;
-  margin-bottom: 1.5rem;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.form-group.full { grid-column: 1 / -1; }
-
-label {
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: rgba(255,255,255,0.6);
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-
-input, select, textarea {
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 2px;
-  padding: 0.75rem 1rem;
-  color: white;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.9rem;
-  outline: none;
-  transition: border-color 0.2s;
-  width: 100%;
-}
-
-input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.3); }
-input:focus, select:focus, textarea:focus { border-color: var(--gold-lt); }
-
-select option { background: var(--ink); color: white; }
-
-textarea { resize: vertical; min-height: 100px; }
-
-.form-note {
-  font-size: 0.78rem;
-  color: rgba(255,255,255,0.4);
-  margin-top: 0.75rem;
-  line-height: 1.6;
-}
-
-.form-submit {
-  margin-top: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.btn-form {
-  background: var(--gold);
-  color: var(--ink);
-  padding: 0.85rem 2rem;
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 0.9rem;
-  border: none;
-  border-radius: 2px;
-  cursor: pointer;
-  letter-spacing: 0.03em;
-  transition: all 0.2s;
-}
-.btn-form:hover { background: var(--gold-lt); transform: translateY(-1px); }
-
-.form-success {
-  display: none;
-  color: #69DB7C;
-  font-size: 0.85rem;
-  font-weight: 500;
-}
-
-/* ── FOOTER ────────────────────────────────────────── */
-footer {
-  background: var(--ink);
-  color: rgba(245,242,235,0.5);
-  padding: 3rem 2.5rem;
-}
-
-.footer-inner {
-  max-width: 1280px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
-  gap: 3rem;
-}
-
-.footer-brand {
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
-  font-size: 1.1rem;
-  color: var(--paper);
-  margin-bottom: 1rem;
-}
-
-.footer-tagline {
-  font-size: 0.82rem;
-  line-height: 1.7;
-  max-width: 280px;
-}
-
-.footer-col h4 {
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 0.82rem;
-  color: var(--paper);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  margin-bottom: 1rem;
-}
-
-.footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
-
-.footer-col a {
-  font-size: 0.82rem;
-  color: rgba(245,242,235,0.5);
-  text-decoration: none;
-  transition: color 0.2s;
-}
-.footer-col a:hover { color: var(--gold-lt); }
-
-.footer-bottom {
-  max-width: 1280px;
-  margin: 2rem auto 0;
-  padding-top: 1.5rem;
-  border-top: 1px solid rgba(255,255,255,0.08);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.75rem;
-}
-
-.license-badge {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.65rem;
-  background: rgba(255,255,255,0.08);
-  padding: 0.3rem 0.75rem;
-  border-radius: 2px;
-  letter-spacing: 0.08em;
-  color: var(--gold-lt);
-}
-
-/* ── POURQUOI MESURER ──────────────────────────────── */
-.why-measure {
-  background: var(--ink);
-  padding: 80px 2.5rem;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-}
-.why-measure::before {
-  content: '';
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%,-50%);
-  width: 600px; height: 600px;
-  background: radial-gradient(circle, rgba(200,151,58,0.06) 0%, transparent 70%);
-  pointer-events: none;
-}
-.why-measure-inner {
-  max-width: 700px;
-  margin: 0 auto;
-  position: relative;
-}
-.why-measure-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  margin: 2.5rem 0;
-}
-.measure-step {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  padding: 1.25rem 0;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-.measure-step:last-child { border-bottom: none; }
-.measure-step-num {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.65rem;
-  color: var(--gold-lt);
-  letter-spacing: 0.15em;
-  flex-shrink: 0;
-  width: 40px;
-  text-align: right;
-}
-.measure-step-text {
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 1.4rem;
-  color: white;
-  letter-spacing: -0.02em;
-  text-align: left;
-}
-.measure-step-arrow {
-  font-size: 1rem;
-  color: rgba(200,151,58,0.5);
-  flex-shrink: 0;
-}
-.measure-conclusion {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.72rem;
-  color: var(--gold-lt);
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  margin-top: 2rem;
-}
-
-/* ── MÉTHODOLOGIE ──────────────────────────────────── */
-.method-section {
-  padding: 80px 2.5rem;
-  background: var(--paper);
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-}
-.method-inner {
-  max-width: 1280px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 5rem;
-  align-items: center;
-}
-.method-kpis {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-.method-kpi {
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 1.5rem;
-  text-align: center;
-}
-.method-kpi-val {
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
-  font-size: 2.2rem;
-  letter-spacing: -0.04em;
-  color: var(--teal);
-  line-height: 1;
-  margin-bottom: 0.4rem;
-}
-.method-kpi-label {
-  font-size: 0.78rem;
-  color: var(--muted);
-  font-weight: 500;
-}
-.method-kpi-label span {
-  display: block;
-  font-family: 'Space Mono', monospace;
-  font-size: 0.62rem;
-  color: var(--gold);
-  letter-spacing: 0.1em;
-  margin-top: 0.25rem;
-}
-
-/* ── GOUVERNANCE ───────────────────────────────────── */
-.gov-section {
-  padding: 80px 2.5rem;
-  background: white;
-}
-.gov-inner {
-  max-width: 1280px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 1.5rem;
-}
-.gov-card {
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 2rem;
-}
-.gov-card-icon {
-  font-size: 1.8rem;
-  margin-bottom: 1rem;
-  display: block;
-}
-.gov-card-title {
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 1rem;
-  color: var(--ink);
-  margin-bottom: 0.75rem;
-}
-.gov-card-text {
-  font-size: 0.85rem;
-  color: var(--muted);
-  line-height: 1.7;
-}
-.gov-header {
-  max-width: 1280px;
-  margin: 0 auto 2.5rem;
-}
-
-/* ── PROJECTS FILTER ───────────────────────────────── */
-.projects-filter {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  margin-bottom: 2rem;
-}
-.filter-btn {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  padding: 0.5rem 1rem;
-  border: 1.5px solid var(--border);
-  border-radius: 2px;
-  background: white;
-  cursor: pointer;
-  color: var(--muted);
-  transition: all 0.15s;
-}
-.filter-btn:hover, .filter-btn.active {
-  background: var(--teal);
-  color: white;
-  border-color: var(--teal);
-}
-
-/* ── YEAR SELECTOR ─────────────────────────────────── */
-.year-selector {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-  align-items: center;
-}
-.year-label {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.68rem;
-  color: var(--muted);
-  letter-spacing: 0.1em;
-  margin-right: 0.5rem;
-}
-.year-btn {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.68rem;
-  font-weight: 700;
-  padding: 0.4rem 0.9rem;
-  border: 1.5px solid rgba(255,255,255,0.2);
-  border-radius: 2px;
-  background: rgba(255,255,255,0.06);
-  cursor: pointer;
-  color: rgba(245,242,235,0.6);
-  transition: all 0.15s;
-}
-.year-btn:hover, .year-btn.active {
-  background: var(--gold);
-  color: var(--ink);
-  border-color: var(--gold);
-}
-
-@media (max-width: 1024px) {
-  .method-inner { grid-template-columns: 1fr; gap: 2.5rem; }
-  .gov-inner { grid-template-columns: 1fr; }
-}
-@media (max-width: 640px) {
-  .method-inner, .gov-inner { padding: 0; }
-  .method-section, .gov-section, .why-measure { padding: 60px 1.25rem; }
-  .measure-step-text { font-size: 1.1rem; }
-}
-
-/* ── WHY OSA ───────────────────────────────────────── */
-.why-section {
-  background: var(--ink); color: var(--paper);
-  padding: 100px 2.5rem; position: relative; overflow: hidden;
-}
-.why-inner {
-  max-width: 1280px; margin: 0 auto;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 6rem; align-items: center;
-}
-.why-section .section-label { color: var(--gold-lt); }
-.why-section .section-label::before { background: var(--gold-lt); }
-.why-section h2 { color: var(--paper); margin-bottom: 1.5rem; }
-.why-critique { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem; }
-.why-critique-item {
-  display: flex; gap: 1rem; align-items: flex-start;
-  padding: 1rem 1.25rem; background: rgba(255,255,255,0.05);
-  border-left: 3px solid rgba(200,151,58,0.4); border-radius: 0 2px 2px 0;
-}
-.why-critique-item .critique-index {
-  font-family: 'Space Mono', monospace; font-size: 0.65rem;
-  color: var(--gold-lt); letter-spacing: 0.1em; flex-shrink: 0; padding-top: 0.1em;
-}
-.why-critique-item p { font-size: 0.88rem; color: rgba(245,242,235,0.65); line-height: 1.6; margin: 0; }
-.why-critique-item strong { color: rgba(245,242,235,0.9); font-weight: 600; }
-.why-doctrine { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 2rem; }
-.why-doctrine-text {
-  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.5rem;
-  line-height: 1.4; color: var(--paper); margin-bottom: 0.5rem;
-}
-.why-doctrine-sub { font-size: 0.9rem; color: var(--gold-lt); letter-spacing: 0.05em; }
-.why-approach {
-  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 4px; padding: 1.75rem 2rem; margin-bottom: 0;
-}
-.why-approach-label {
-  font-family: 'Space Mono', monospace; font-size: 0.68rem;
-  letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold-lt); margin-bottom: 1rem;
-}
-.why-approach-text { font-size: 1rem; color: rgba(245,242,235,0.85); line-height: 1.8; }
-.why-approach-text em { font-style: normal; color: var(--gold-lt); font-weight: 600; }
-.why-divider {
-  text-align: center; padding: 1rem;
-  font-family: 'Space Mono', monospace; font-size: 0.7rem;
-  color: rgba(255,255,255,0.2); letter-spacing: 0.2em;
-}
-
-/* ── TRAJECTOIRES ──────────────────────────────────── */
-.traj-section { padding: 100px 2.5rem; background: var(--paper); }
-.traj-inner { max-width: 1280px; margin: 0 auto; }
-.traj-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-top: 3rem; }
-.traj-card {
-  border-radius: 4px; padding: 1.75rem 1.5rem;
-  position: relative; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s;
-}
-.traj-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,0.12); }
-.traj-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; }
-.traj-card.critical  { background: #FFF0EE; }
-.traj-card.critical::before  { background: #C23B2A; }
-.traj-card.declining { background: #FFF5EC; }
-.traj-card.declining::before { background: #E07020; }
-.traj-card.stable    { background: #F5F5F5; }
-.traj-card.stable::before    { background: #888888; }
-.traj-card.progressing { background: #F0FAF5; }
-.traj-card.progressing::before { background: #2A9B6A; }
-.traj-card.accelerating { background: #EAF5FF; }
-.traj-card.accelerating::before { background: #1A6BB5; }
-.traj-arrow { font-size: 1.8rem; margin-bottom: 0.75rem; display: block; line-height: 1; }
-.traj-name { font-family: 'Space Mono', monospace; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.5rem; }
-.traj-card.critical .traj-name  { color: #C23B2A; }
-.traj-card.declining .traj-name { color: #E07020; }
-.traj-card.stable .traj-name    { color: #666666; }
-.traj-card.progressing .traj-name { color: #1A7A4A; }
-.traj-card.accelerating .traj-name { color: #1A5A9A; }
-.traj-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.6; margin-bottom: 1rem; }
-.traj-example {
-  font-family: 'Space Mono', monospace; font-size: 0.65rem; color: var(--muted);
-  letter-spacing: 0.08em; border-top: 1px solid rgba(0,0,0,0.08);
-  padding-top: 0.75rem; margin-top: 0.25rem;
-}
-.traj-example span { display: block; margin-top: 0.2rem; font-weight: 700; color: var(--ink); }
-@media (max-width: 1024px) {
-  .why-inner { grid-template-columns: 1fr; gap: 3rem; }
-  .traj-grid { grid-template-columns: repeat(3, 1fr); }
-}
-@media (max-width: 640px) {
-  .traj-grid { grid-template-columns: repeat(2, 1fr); }
-  .why-section, .traj-section { padding: 60px 1.25rem; }
-}
-
-/* ── ANIMATE IN ────────────────────────────────────── */
-.fade-in {
-  opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
-}
-.fade-in.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* ── RESPONSIVE ────────────────────────────────────── */
-@media (max-width: 1024px) {
-  .hero { grid-template-columns: 1fr; padding-top: 100px; }
-  .pillars-grid { grid-template-columns: repeat(3, 1fr); }
-  .live-grid, .projects-grid { grid-template-columns: 1fr 1fr; }
-  .access-tiers { grid-template-columns: 1fr; }
-  .footer-inner { grid-template-columns: 1fr 1fr; }
-}
-
-@media (max-width: 640px) {
-  header { padding: 0 1.25rem; }
-  nav { display: none; }
-  .hero { padding: 100px 1.25rem 60px; }
-  .section { padding: 60px 1.25rem; }
-  .pillars-grid { grid-template-columns: repeat(2, 1fr); }
-  .live-grid, .projects-grid { grid-template-columns: 1fr; }
-  .form-grid { grid-template-columns: 1fr; }
-  .footer-inner { grid-template-columns: 1fr; }
-  h1 { font-size: 2.4rem; }
+  --ink:#0A0E17; --paper:#F5F2EB; --gold:#C8973A; --gold-lt:#E8C97A;
+  --teal:#1A6B5A; --teal-lt:#2A9B82; --red:#C23B2A; --muted:#6B7080;
+  --border:rgba(10,14,23,0.12); --card-bg:rgba(255,255,255,0.7);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);font-size:16px;line-height:1.6;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:1000;opacity:0.4;}
+
+/* HEADER */
+header{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 2.5rem;height:64px;display:flex;align-items:center;justify-content:space-between;background:rgba(245,242,235,0.88);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;letter-spacing:-0.02em;color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:0.75rem;}
+.logo-dot{width:8px;height:8px;background:var(--gold);border-radius:50%;animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.4);opacity:0.7;}}
+nav{display:flex;gap:2rem;align-items:center;}
+nav a{font-size:0.85rem;font-weight:500;color:var(--muted);text-decoration:none;letter-spacing:0.02em;transition:color 0.2s;}
+nav a:hover{color:var(--ink);}
+.lang-switcher{display:flex;gap:0;border:1.5px solid var(--border);border-radius:2px;overflow:hidden;}
+.lang-btn{font-family:'Space Mono',monospace;font-size:0.65rem;font-weight:700;letter-spacing:0.1em;padding:0.35rem 0.7rem;background:transparent;border:none;cursor:pointer;color:var(--muted);transition:all 0.15s;}
+.lang-btn.active{background:var(--ink);color:var(--paper);}
+.btn-access{background:var(--ink);color:var(--paper)!important;padding:0.5rem 1.25rem;border-radius:2px;font-size:0.8rem!important;letter-spacing:0.05em;text-transform:uppercase;}
+.btn-access:hover{background:var(--teal)!important;color:var(--paper)!important;}
+
+/* HERO */
+.hero{min-height:100vh;padding:120px 2.5rem 80px;display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;position:relative;max-width:1280px;margin:0 auto;}
+.hero::after{content:'';position:absolute;top:60px;right:-80px;width:600px;height:600px;background:radial-gradient(circle,rgba(200,151,58,0.08) 0%,transparent 70%);pointer-events:none;}
+.hero-label{font-family:'Space Mono',monospace;font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold);margin-bottom:1.5rem;display:flex;align-items:center;gap:0.75rem;}
+.hero-label::before{content:'';width:24px;height:1px;background:var(--gold);}
+h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(2.8rem,5vw,4.5rem);line-height:1.05;letter-spacing:-0.03em;margin-bottom:1.5rem;}
+h1 em{font-style:normal;color:var(--teal);}
+.hero-sub{font-size:1.05rem;color:var(--muted);max-width:480px;line-height:1.8;margin-bottom:2.5rem;}
+.hero-actions{display:flex;gap:1rem;flex-wrap:wrap;}
+.btn-primary{background:var(--teal);color:white;padding:0.85rem 2rem;font-family:'Syne',sans-serif;font-weight:600;font-size:0.9rem;letter-spacing:0.03em;border:none;border-radius:2px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;transition:all 0.2s;}
+.btn-primary:hover{background:var(--teal-lt);transform:translateY(-1px);}
+.btn-secondary{background:transparent;color:var(--ink);padding:0.85rem 2rem;font-family:'Syne',sans-serif;font-weight:600;font-size:0.9rem;letter-spacing:0.03em;border:1.5px solid var(--ink);border-radius:2px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;transition:all 0.2s;}
+.btn-secondary:hover{background:var(--ink);color:var(--paper);}
+
+/* HERO STATS */
+.hero-stats{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
+.stat-card{background:var(--card-bg);border:1px solid var(--border);border-radius:4px;padding:1.75rem;position:relative;overflow:hidden;transition:transform 0.2s,box-shadow 0.2s;}
+.stat-card:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,0.08);}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold);}
+.stat-card.teal::before{background:var(--teal);}
+.stat-card.red::before{background:var(--red);}
+.stat-card.ink::before{background:var(--ink);}
+.stat-number{font-family:'Syne',sans-serif;font-weight:800;font-size:2.8rem;line-height:1;letter-spacing:-0.04em;margin-bottom:0.4rem;}
+.stat-label{font-size:0.8rem;color:var(--muted);font-weight:500;letter-spacing:0.02em;}
+.stat-sub{font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--gold);margin-top:0.5rem;letter-spacing:0.08em;}
+
+/* SECTIONS */
+.section{padding:100px 2.5rem;max-width:1280px;margin:0 auto;}
+.section-label{font-family:'Space Mono',monospace;font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;display:flex;align-items:center;gap:0.75rem;}
+.section-label::before{content:'';width:24px;height:1px;background:var(--gold);}
+h2{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(2rem,3.5vw,3rem);letter-spacing:-0.03em;line-height:1.1;margin-bottom:1rem;}
+.section-intro{font-size:1.05rem;color:var(--muted);max-width:600px;line-height:1.8;margin-bottom:3rem;}
+
+/* PILLARS */
+.pillars-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;}
+.pillar-card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.5rem 1.25rem;text-align:center;cursor:pointer;transition:all 0.25s;}
+.pillar-card:hover{border-color:var(--teal);transform:translateY(-4px);box-shadow:0 16px 48px rgba(26,107,90,0.12);}
+.pillar-code{font-family:'Space Mono',monospace;font-size:0.75rem;font-weight:700;color:var(--teal);letter-spacing:0.1em;margin-bottom:0.5rem;}
+.pillar-name{font-family:'Syne',sans-serif;font-weight:700;font-size:0.85rem;line-height:1.3;color:var(--ink);}
+.pillar-icon{font-size:1.6rem;margin-bottom:0.75rem;display:block;}
+
+/* WHY MEASURE */
+.why-measure{background:var(--ink);padding:80px 2.5rem;text-align:center;position:relative;overflow:hidden;}
+.why-measure::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(200,151,58,0.06) 0%,transparent 70%);pointer-events:none;}
+.why-measure-inner{max-width:700px;margin:0 auto;position:relative;}
+.why-measure-steps{display:flex;flex-direction:column;gap:0;margin:2.5rem 0;}
+.measure-step{display:flex;align-items:center;gap:1.5rem;padding:1.25rem 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+.measure-step:last-child{border-bottom:none;}
+.measure-step-num{font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--gold-lt);letter-spacing:0.15em;flex-shrink:0;width:40px;text-align:right;}
+.measure-step-text{font-family:'Syne',sans-serif;font-weight:700;font-size:1.4rem;color:white;letter-spacing:-0.02em;text-align:left;}
+.measure-step-arrow{font-size:1rem;color:rgba(200,151,58,0.5);flex-shrink:0;}
+.measure-conclusion{font-family:'Space Mono',monospace;font-size:0.72rem;color:var(--gold-lt);letter-spacing:0.15em;text-transform:uppercase;margin-top:2rem;}
+
+/* WHY OSA */
+.why-section{background:var(--ink);color:var(--paper);padding:100px 2.5rem;position:relative;overflow:hidden;}
+.why-inner{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:6rem;align-items:center;}
+.why-section .section-label{color:var(--gold-lt);}
+.why-section .section-label::before{background:var(--gold-lt);}
+.why-section h2{color:var(--paper);margin-bottom:1.5rem;}
+.why-critique{display:flex;flex-direction:column;gap:1rem;margin-bottom:2rem;}
+.why-critique-item{display:flex;gap:1rem;align-items:flex-start;padding:1rem 1.25rem;background:rgba(255,255,255,0.05);border-left:3px solid rgba(200,151,58,0.4);border-radius:0 2px 2px 0;}
+.critique-index{font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--gold-lt);letter-spacing:0.1em;flex-shrink:0;padding-top:0.1em;}
+.why-critique-item p{font-size:0.88rem;color:rgba(245,242,235,0.65);line-height:1.6;margin:0;}
+.why-critique-item strong{color:rgba(245,242,235,0.9);font-weight:600;}
+.why-doctrine{border-top:1px solid rgba(255,255,255,0.1);padding-top:2rem;}
+.why-doctrine-text{font-family:'Syne',sans-serif;font-weight:700;font-size:1.5rem;line-height:1.4;color:var(--paper);margin-bottom:0.5rem;}
+.why-doctrine-sub{font-size:0.9rem;color:var(--gold-lt);letter-spacing:0.05em;}
+.why-approach{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:1.75rem 2rem;}
+.why-approach-label{font-family:'Space Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold-lt);margin-bottom:1rem;}
+.why-approach-text{font-size:1rem;color:rgba(245,242,235,0.85);line-height:1.8;}
+.why-approach-text em{font-style:normal;color:var(--gold-lt);font-weight:600;}
+
+/* TRAJECTORIES */
+.traj-section{padding:100px 2.5rem;background:var(--paper);}
+.traj-inner{max-width:1280px;margin:0 auto;}
+.traj-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-top:3rem;}
+.traj-card{border-radius:4px;padding:1.75rem 1.5rem;position:relative;overflow:hidden;transition:transform 0.2s,box-shadow 0.2s;}
+.traj-card:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,0.12);}
+.traj-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;}
+.traj-card.critical{background:#FFF0EE;}.traj-card.critical::before{background:#C23B2A;}
+.traj-card.declining{background:#FFF5EC;}.traj-card.declining::before{background:#E07020;}
+.traj-card.stable{background:#F5F5F5;}.traj-card.stable::before{background:#888888;}
+.traj-card.progressing{background:#F0FAF5;}.traj-card.progressing::before{background:#2A9B6A;}
+.traj-card.accelerating{background:#EAF5FF;}.traj-card.accelerating::before{background:#1A6BB5;}
+.traj-arrow{font-size:1.8rem;margin-bottom:0.75rem;display:block;line-height:1;}
+.traj-name{font-family:'Space Mono',monospace;font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.5rem;}
+.traj-card.critical .traj-name{color:#C23B2A;}
+.traj-card.declining .traj-name{color:#E07020;}
+.traj-card.stable .traj-name{color:#666666;}
+.traj-card.progressing .traj-name{color:#1A7A4A;}
+.traj-card.accelerating .traj-name{color:#1A5A9A;}
+.traj-desc{font-size:0.82rem;color:var(--muted);line-height:1.6;margin-bottom:1rem;}
+.traj-example{font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--muted);letter-spacing:0.08em;border-top:1px solid rgba(0,0,0,0.08);padding-top:0.75rem;margin-top:0.25rem;}
+.traj-example span{display:block;margin-top:0.2rem;font-weight:700;color:var(--ink);}
+
+/* METHODOLOGY */
+.method-section{padding:80px 2.5rem;background:var(--paper);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+.method-inner{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center;}
+.method-kpis{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.method-kpi{background:white;border:1px solid var(--border);border-radius:4px;padding:1.5rem;text-align:center;}
+.method-kpi-val{font-family:'Syne',sans-serif;font-weight:800;font-size:2.2rem;letter-spacing:-0.04em;color:var(--teal);line-height:1;margin-bottom:0.4rem;}
+.method-kpi-label{font-size:0.78rem;color:var(--muted);font-weight:500;}
+.method-kpi-label span{display:block;font-family:'Space Mono',monospace;font-size:0.62rem;color:var(--gold);letter-spacing:0.1em;margin-top:0.25rem;}
+
+/* GOVERNANCE */
+.gov-section{padding:80px 2.5rem;background:white;}
+.gov-header{max-width:1280px;margin:0 auto 2.5rem;}
+.gov-inner{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;}
+.gov-card{border:1px solid var(--border);border-radius:4px;padding:2rem;}
+.gov-card-icon{font-size:1.8rem;margin-bottom:1rem;display:block;}
+.gov-card-title{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;color:var(--ink);margin-bottom:0.75rem;}
+.gov-card-text{font-size:0.85rem;color:var(--muted);line-height:1.7;}
+
+/* LIVE DATA */
+.live-section{background:var(--ink);color:var(--paper);padding:100px 2.5rem;}
+.live-inner{max-width:1280px;margin:0 auto;}
+.live-section .section-label{color:var(--gold-lt);}
+.live-section .section-label::before{background:var(--gold-lt);}
+.live-section h2{color:var(--paper);}
+.live-section .section-intro{color:rgba(245,242,235,0.6);}
+.year-selector{display:flex;gap:0.5rem;margin-bottom:2rem;flex-wrap:wrap;align-items:center;}
+.year-label{font-family:'Space Mono',monospace;font-size:0.68rem;color:rgba(245,242,235,0.5);letter-spacing:0.1em;margin-right:0.5rem;}
+.year-btn{font-family:'Space Mono',monospace;font-size:0.68rem;font-weight:700;padding:0.4rem 0.9rem;border:1.5px solid rgba(255,255,255,0.2);border-radius:2px;background:rgba(255,255,255,0.06);cursor:pointer;color:rgba(245,242,235,0.6);transition:all 0.15s;}
+.year-btn:hover,.year-btn.active{background:var(--gold);color:var(--ink);border-color:var(--gold);}
+.live-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-top:2rem;}
+.live-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:1.75rem;transition:background 0.2s;}
+.live-card:hover{background:rgba(255,255,255,0.08);}
+.live-country{font-family:'Space Mono',monospace;font-size:0.72rem;color:var(--gold-lt);letter-spacing:0.1em;margin-bottom:0.5rem;}
+.live-score{font-family:'Syne',sans-serif;font-weight:800;font-size:2.4rem;letter-spacing:-0.04em;margin-bottom:0.25rem;}
+.live-traj{font-size:0.78rem;color:rgba(245,242,235,0.5);}
+.live-traj.critical{color:#FF6B6B;}
+.live-traj.declining{color:#FFA94D;}
+.live-traj.progressing{color:#69DB7C;}
+.live-traj.stable{color:rgba(245,242,235,0.6);}
+.loading-pulse{display:inline-block;width:60px;height:16px;background:rgba(255,255,255,0.1);border-radius:2px;animation:shimmer 1.5s ease-in-out infinite;}
+@keyframes shimmer{0%{opacity:0.4;}50%{opacity:0.8;}100%{opacity:0.4;}}
+
+/* PROJECTS */
+.projects-filter{display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:2rem;}
+.filter-btn{font-family:'Space Mono',monospace;font-size:0.68rem;font-weight:700;letter-spacing:0.08em;padding:0.5rem 1rem;border:1.5px solid var(--border);border-radius:2px;background:white;cursor:pointer;color:var(--muted);transition:all 0.15s;}
+.filter-btn:hover,.filter-btn.active{background:var(--teal);color:white;border-color:var(--teal);}
+.projects-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;}
+.project-card{background:white;border:1px solid var(--border);border-radius:4px;padding:2rem;display:flex;flex-direction:column;transition:all 0.25s;}
+.project-card:hover{transform:translateY(-4px);box-shadow:0 20px 60px rgba(0,0,0,0.1);}
+.project-pillar{font-family:'Space Mono',monospace;font-size:0.68rem;font-weight:700;color:var(--teal);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.75rem;}
+.project-name{font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;line-height:1.3;margin-bottom:0.75rem;color:var(--ink);}
+.project-acronym{display:inline-block;background:var(--ink);color:var(--paper);font-family:'Space Mono',monospace;font-size:0.7rem;padding:0.2rem 0.6rem;border-radius:2px;margin-bottom:1rem;letter-spacing:0.08em;}
+.project-desc{font-size:0.85rem;color:var(--muted);line-height:1.7;margin-bottom:1.25rem;flex-grow:1;}
+.project-class{display:inline-flex;align-items:center;gap:0.4rem;font-size:0.72rem;font-weight:600;letter-spacing:0.05em;padding:0.3rem 0.75rem;border-radius:2px;}
+.project-class.high{background:rgba(26,107,90,0.1);color:var(--teal);}
+.project-class.significant{background:rgba(200,151,58,0.1);color:var(--gold);}
+.project-deliverable{margin-top:1rem;padding-top:0.75rem;border-top:1px solid rgba(0,0,0,0.06);font-family:'Space Mono',monospace;font-size:0.62rem;color:var(--muted);}
+.project-deliverable a{color:var(--teal);text-decoration:none;}
+
+/* ACCESS */
+.access-section{background:linear-gradient(135deg,var(--teal) 0%,#0D3D31 100%);padding:100px 2.5rem;position:relative;overflow:hidden;}
+.access-section::before{content:'SOVEREIGNTY';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-15deg);font-family:'Syne',sans-serif;font-weight:800;font-size:12rem;color:rgba(255,255,255,0.03);white-space:nowrap;pointer-events:none;letter-spacing:-0.05em;}
+.access-inner{max-width:900px;margin:0 auto;position:relative;}
+.access-section h2{color:white;}
+.access-section .section-intro{color:rgba(255,255,255,0.7);margin:0 auto 3rem;}
+.access-tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-bottom:3rem;}
+.tier-card{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:4px;padding:1.75rem;transition:background 0.2s;}
+.tier-card:hover{background:rgba(255,255,255,0.12);}
+.tier-card.featured{background:rgba(200,151,58,0.15);border-color:var(--gold-lt);}
+.tier-name{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;color:white;margin-bottom:0.25rem;}
+.tier-price{font-family:'Space Mono',monospace;font-size:0.75rem;color:var(--gold-lt);margin-bottom:1rem;letter-spacing:0.05em;}
+.tier-features{list-style:none;display:flex;flex-direction:column;gap:0.5rem;}
+.tier-features li{font-size:0.82rem;color:rgba(255,255,255,0.7);display:flex;align-items:flex-start;gap:0.5rem;}
+.tier-features li::before{content:"→";color:var(--gold-lt);flex-shrink:0;margin-top:0.05em;}
+.access-form{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:4px;padding:2.5rem;}
+.form-title{font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;color:white;margin-bottom:1.5rem;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+.form-group{display:flex;flex-direction:column;gap:0.4rem;}
+.form-group.full{grid-column:1/-1;}
+label{font-size:0.78rem;font-weight:500;color:rgba(255,255,255,0.6);letter-spacing:0.03em;text-transform:uppercase;}
+input,select,textarea{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:2px;padding:0.75rem 1rem;color:white;font-family:'Inter',sans-serif;font-size:0.9rem;outline:none;transition:border-color 0.2s;width:100%;}
+input::placeholder,textarea::placeholder{color:rgba(255,255,255,0.3);}
+input:focus,select:focus,textarea:focus{border-color:var(--gold-lt);}
+select option{background:var(--ink);color:white;}
+textarea{resize:vertical;min-height:100px;}
+.form-note{font-size:0.78rem;color:rgba(255,255,255,0.4);margin-top:0.75rem;line-height:1.6;}
+.form-submit{margin-top:1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;}
+.btn-form{background:var(--gold);color:var(--ink);padding:0.85rem 2rem;font-family:'Syne',sans-serif;font-weight:700;font-size:0.9rem;border:none;border-radius:2px;cursor:pointer;letter-spacing:0.03em;transition:all 0.2s;}
+.btn-form:hover{background:var(--gold-lt);transform:translateY(-1px);}
+.form-success{display:none;color:#69DB7C;font-size:0.85rem;font-weight:500;}
+
+/* FOOTER */
+footer{background:var(--ink);color:rgba(245,242,235,0.5);padding:3rem 2.5rem;}
+.footer-inner{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:3rem;}
+.footer-brand{font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;color:var(--paper);margin-bottom:1rem;}
+.footer-tagline{font-size:0.82rem;line-height:1.7;max-width:280px;}
+.footer-col h4{font-family:'Syne',sans-serif;font-weight:700;font-size:0.82rem;color:var(--paper);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:1rem;}
+.footer-col ul{list-style:none;display:flex;flex-direction:column;gap:0.5rem;}
+.footer-col a{font-size:0.82rem;color:rgba(245,242,235,0.5);text-decoration:none;transition:color 0.2s;}
+.footer-col a:hover{color:var(--gold-lt);}
+.footer-bottom{max-width:1280px;margin:2rem auto 0;padding-top:1.5rem;border-top:1px solid rgba(255,255,255,0.08);display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;}
+.license-badge{font-family:'Space Mono',monospace;font-size:0.65rem;background:rgba(255,255,255,0.08);padding:0.3rem 0.75rem;border-radius:2px;letter-spacing:0.08em;color:var(--gold-lt);}
+
+/* ANIMATE */
+.fade-in{opacity:0;transform:translateY(24px);transition:opacity 0.6s ease,transform 0.6s ease;}
+.fade-in.visible{opacity:1;transform:translateY(0);}
+
+/* RESPONSIVE */
+@media(max-width:1024px){
+  .hero,.why-inner,.method-inner{grid-template-columns:1fr;}
+  .pillars-grid{grid-template-columns:repeat(3,1fr);}
+  .live-grid,.projects-grid{grid-template-columns:1fr 1fr;}
+  .access-tiers{grid-template-columns:1fr;}
+  .footer-inner{grid-template-columns:1fr 1fr;}
+  .gov-inner{grid-template-columns:1fr;}
+  .traj-grid{grid-template-columns:repeat(3,1fr);}
+}
+@media(max-width:640px){
+  header{padding:0 1.25rem;}
+  nav{display:none;}
+  .hero{padding:100px 1.25rem 60px;}
+  .section,.why-measure,.why-section,.traj-section,.method-section,.gov-section,.live-section{padding:60px 1.25rem;}
+  .pillars-grid,.traj-grid{grid-template-columns:repeat(2,1fr);}
+  .live-grid,.projects-grid{grid-template-columns:1fr;}
+  .form-grid{grid-template-columns:1fr;}
+  .footer-inner{grid-template-columns:1fr;}
+  h1{font-size:2.4rem;}
 }
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
 <header>
   <a class="logo" href="/">
     <span class="logo-dot"></span>
     OSA OBSERVATORY
   </a>
   <nav>
-    <a href="#data">OpenData</a>
-    <a href="#pillars">Piliers ISA</a>
-    <a href="#projects">Projets</a>
-    <a href="#access" class="btn-access">Demande d'accès</a>
+    <a href="#data" data-en="OpenData" data-fr="OpenData">OpenData</a>
+    <a href="#pillars" data-en="ISA Pillars" data-fr="Piliers ISA">ISA Pillars</a>
+    <a href="#projects" data-en="Projects" data-fr="Projets">Projects</a>
+    <div class="lang-switcher">
+      <button class="lang-btn active" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    </div>
+    <a href="#access" class="btn-access" data-en="Request Access" data-fr="Demande d&#39;acc&egrave;s">Request Access</a>
   </nav>
 </header>
 
 <!-- HERO -->
 <section class="hero">
   <div class="hero-content fade-in">
-    <div class="hero-label">Doctrine conséquentialiste — Faits comportementaux</div>
-    <h1>Mesurer la<br><em>souveraineté</em><br>africaine.</h1>
-    <p class="hero-sub">
-      L'ISA observe les trajectoires souveraines de 54 États africains 
-      à travers 10 piliers comportementaux vérifiables — pas des classements, 
-      des vecteurs de changement mesurables dans le temps.
+    <div class="hero-label" data-en="Consequentialist Doctrine &mdash; Behavioural Facts" data-fr="Doctrine cons&eacute;quentialiste &mdash; Faits comportementaux">Consequentialist Doctrine &mdash; Behavioural Facts</div>
+    <h1 data-en="Measuring African<br><em>sovereignty</em>." data-fr="Mesurer la<br><em>souverainet&eacute;</em><br>africaine.">Measuring African<br><em>sovereignty</em>.</h1>
+    <p class="hero-sub" data-en="The ISA tracks the sovereign trajectories of 54 African states across 10 verifiable behavioural pillars &mdash; not rankings, but measurable vectors of change over time." data-fr="L&#39;ISA observe les trajectoires souveraines de 54 &Eacute;tats africains &agrave; travers 10 piliers comportementaux v&eacute;rifiables &mdash; pas des classements, des vecteurs de changement mesurables dans le temps.">
+      The ISA tracks the sovereign trajectories of 54 African states across 10 verifiable behavioural pillars &mdash; not rankings, but measurable vectors of change over time.
     </p>
     <div class="hero-actions">
-      <a href="#data" class="btn-primary">Explorer les données →</a>
-      <a href="#access" class="btn-secondary">Accès institutionnel</a>
+      <a href="#data" class="btn-primary" data-en="Explore the data &rarr;" data-fr="Explorer les donn&eacute;es &rarr;">Explore the data &rarr;</a>
+      <a href="#access" class="btn-secondary" data-en="Institutional access" data-fr="Acc&egrave;s institutionnel">Institutional access</a>
     </div>
   </div>
-  <div class="hero-stats fade-in" style="transition-delay: 0.15s">
+  <div class="hero-stats fade-in" style="transition-delay:0.15s">
     <div class="stat-card">
       <div class="stat-number">54</div>
-      <div class="stat-label">États africains mesurés</div>
-      <div class="stat-sub">COUVERTURE CONTINENTALE</div>
+      <div class="stat-label" data-en="African states measured" data-fr="&Eacute;tats africains mesur&eacute;s">African states measured</div>
+      <div class="stat-sub" data-en="CONTINENTAL COVERAGE" data-fr="COUVERTURE CONTINENTALE">CONTINENTAL COVERAGE</div>
     </div>
     <div class="stat-card teal">
       <div class="stat-number">10</div>
-      <div class="stat-label">Piliers souverains</div>
-      <div class="stat-sub">PGEO · PECO · PMIN · PHUM…</div>
+      <div class="stat-label" data-en="Sovereign pillars" data-fr="Piliers souverains">Sovereign pillars</div>
+      <div class="stat-sub">PGEO &middot; PECO &middot; PMIN &middot; PHUM&hellip;</div>
     </div>
     <div class="stat-card ink">
-      <div class="stat-number" id="hero-years">—</div>
-      <div class="stat-label">Années observées</div>
-      <div class="stat-sub" id="hero-period">SÉRIE HISTORIQUE</div>
+      <div class="stat-number" id="hero-years">&mdash;</div>
+      <div class="stat-label" data-en="Published editions" data-fr="&Eacute;ditions publi&eacute;es">Published editions</div>
+      <div class="stat-sub" id="hero-period" data-en="ANNUAL PUBLICATION" data-fr="PUBLICATION ANNUELLE">ANNUAL PUBLICATION</div>
     </div>
     <div class="stat-card red">
-      <div class="stat-number" id="hero-opportunities">—</div>
-      <div class="stat-label">Opportunités souveraines identifiées</div>
+      <div class="stat-number" id="hero-opportunities">&mdash;</div>
+      <div class="stat-label" data-en="Sovereign opportunities identified" data-fr="Opportunit&eacute;s souveraines identifi&eacute;es">Sovereign opportunities identified</div>
       <div class="stat-sub" id="hero-opp-year">HIGH IMPACT</div>
     </div>
   </div>
@@ -1169,61 +316,55 @@ footer {
 <!-- PILLARS -->
 <section class="section" id="pillars">
   <div class="fade-in">
-    <div class="section-label">Architecture ISA</div>
-    <h2>10 piliers de souveraineté</h2>
-    <p class="section-intro">
-      Chaque pilier mesure une dimension comportementale de la souveraineté africaine. 
-      Les sources sont primaires, auditables et non perceptuelles.
-    </p>
+    <div class="section-label" data-en="ISA Architecture" data-fr="Architecture ISA">ISA Architecture</div>
+    <h2 data-en="10 pillars of sovereignty" data-fr="10 piliers de souverainet&eacute;">10 pillars of sovereignty</h2>
+    <p class="section-intro" data-en="Each pillar measures a behavioural dimension of African sovereignty. Sources are primary, auditable and non-perceptual." data-fr="Chaque pilier mesure une dimension comportementale de la souverainet&eacute; africaine. Les sources sont primaires, auditables et non perceptuelles.">Each pillar measures a behavioural dimension of African sovereignty. Sources are primary, auditable and non-perceptual.</p>
   </div>
-  <div class="pillars-grid fade-in" style="transition-delay: 0.1s">
-    <div class="pillar-card"><span class="pillar-icon">🏛️</span><div class="pillar-code">PGEO</div><div class="pillar-name">Gouvernance géopolitique</div></div>
-    <div class="pillar-card"><span class="pillar-icon">💰</span><div class="pillar-code">PECO</div><div class="pillar-name">Souveraineté économique</div></div>
-    <div class="pillar-card"><span class="pillar-icon">⛏️</span><div class="pillar-code">PMIN</div><div class="pillar-name">Ressources minières</div></div>
-    <div class="pillar-card"><span class="pillar-icon">👥</span><div class="pillar-code">PHUM</div><div class="pillar-name">Capital humain</div></div>
-    <div class="pillar-card"><span class="pillar-icon">🌿</span><div class="pillar-code">PENV</div><div class="pillar-name">Résilience environnementale</div></div>
-    <div class="pillar-card"><span class="pillar-icon">🔒</span><div class="pillar-code">PMIL</div><div class="pillar-name">Résilience sécuritaire</div></div>
-    <div class="pillar-card"><span class="pillar-icon">💵</span><div class="pillar-code">PMON</div><div class="pillar-name">Résilience monétaire</div></div>
-    <div class="pillar-card"><span class="pillar-icon">💻</span><div class="pillar-code">PNUM</div><div class="pillar-name">Souveraineté numérique</div></div>
-    <div class="pillar-card"><span class="pillar-icon">⚡</span><div class="pillar-code">PRES</div><div class="pillar-name">Énergie & ressources</div></div>
-    <div class="pillar-card"><span class="pillar-icon">🚢</span><div class="pillar-code">PTRA</div><div class="pillar-name">Transport & logistique</div></div>
+  <div class="pillars-grid fade-in" style="transition-delay:0.1s">
+    <div class="pillar-card"><span class="pillar-icon">&#127963;</span><div class="pillar-code">PGEO</div><div class="pillar-name" data-en="Geopolitical governance" data-fr="Gouvernance g&eacute;opolitique">Geopolitical governance</div></div>
+    <div class="pillar-card"><span class="pillar-icon">&#128176;</span><div class="pillar-code">PECO</div><div class="pillar-name" data-en="Economic sovereignty" data-fr="Souverainet&eacute; &eacute;conomique">Economic sovereignty</div></div>
+    <div class="pillar-card"><span class="pillar-icon">&#9935;</span><div class="pillar-code">PMIN</div><div class="pillar-name" data-en="Mining resources" data-fr="Ressources mini&egrave;res">Mining resources</div></div>
+    <div class="pillar-card"><span class="pillar-icon">&#128101;</span><div class="pillar-code">PHUM</div><div class="pillar-name" data-en="Human capital" data-fr="Capital humain">Human capital</div></div>
+    <div class="pillar-card"><span class="pillar-icon">&#127807;</span><div class="pillar-code">PENV</div><div class="pillar-name" data-en="Environmental resilience" data-fr="R&eacute;silience environnementale">Environmental resilience</div></div>
+    <div class="pillar-card"><span class="pillar-icon">&#128274;</span><div class="pillar-code">PMIL</div><div class="pillar-name" data-en="Security resilience" data-fr="R&eacute;silience s&eacute;curitaire">Security resilience</div></div>
+    <div class="pillar-card"><span class="pillar-icon">&#128181;</span><div class="pillar-code">PMON</div><div class="pillar-name" data-en="Monetary resilience" data-fr="R&eacute;silience mon&eacute;taire">Monetary resilience</div></div>
+    <div class="pillar-card"><span class="pillar-icon">&#128187;</span><div class="pillar-code">PNUM</div><div class="pillar-name" data-en="Digital sovereignty" data-fr="Souverainet&eacute; num&eacute;rique">Digital sovereignty</div></div>
+    <div class="pillar-card"><span class="pillar-icon">&#9889;</span><div class="pillar-code">PRES</div><div class="pillar-name" data-en="Energy &amp; resources" data-fr="&Eacute;nergie &amp; ressources">Energy &amp; resources</div></div>
+    <div class="pillar-card"><span class="pillar-icon">&#128674;</span><div class="pillar-code">PTRA</div><div class="pillar-name" data-en="Transport &amp; logistics" data-fr="Transport &amp; logistique">Transport &amp; logistics</div></div>
   </div>
 </section>
 
-
-
-<!-- POURQUOI MESURER -->
+<!-- WHY MEASURE -->
 <section class="why-measure">
   <div class="why-measure-inner fade-in">
-    <div class="section-label" style="justify-content:center; color:var(--gold-lt);">Doctrine OSA — Conséquentialiste</div>
-    <h2 style="color:white; text-align:center; margin-bottom:0.5rem;">Pourquoi mesurer ?</h2>
-    <p style="color:rgba(245,242,235,0.5); text-align:center; font-size:0.95rem; margin-bottom:0;">
-      OSA Observatory est une infrastructure africaine d'observation souveraine.<br>
-      L'ISA en est le premier produit.
+    <div class="section-label" style="justify-content:center;color:var(--gold-lt);" data-en="OSA Doctrine &mdash; Consequentialist" data-fr="Doctrine OSA &mdash; Cons&eacute;quentialiste">OSA Doctrine &mdash; Consequentialist</div>
+    <h2 style="color:white;text-align:center;margin-bottom:0.5rem;" data-en="Why measure?" data-fr="Pourquoi mesurer ?">Why measure?</h2>
+    <p style="color:rgba(245,242,235,0.5);text-align:center;font-size:0.95rem;margin-bottom:0;" data-en="OSA Observatory is an African infrastructure for sovereign observation. The ISA is its first product." data-fr="OSA Observatory est une infrastructure africaine d&#39;observation souveraine. L&#39;ISA en est le premier produit.">
+      OSA Observatory is an African infrastructure for sovereign observation. The ISA is its first product.
     </p>
     <div class="why-measure-steps">
       <div class="measure-step">
         <span class="measure-step-num">01</span>
-        <span class="measure-step-text">Mesurer pour comprendre.</span>
-        <span class="measure-step-arrow">→</span>
+        <span class="measure-step-text" data-en="Measure to understand." data-fr="Mesurer pour comprendre.">Measure to understand.</span>
+        <span class="measure-step-arrow">&rarr;</span>
       </div>
       <div class="measure-step">
         <span class="measure-step-num">02</span>
-        <span class="measure-step-text">Comprendre pour décider.</span>
-        <span class="measure-step-arrow">→</span>
+        <span class="measure-step-text" data-en="Understand to decide." data-fr="Comprendre pour d&eacute;cider.">Understand to decide.</span>
+        <span class="measure-step-arrow">&rarr;</span>
       </div>
       <div class="measure-step">
         <span class="measure-step-num">03</span>
-        <span class="measure-step-text">Décider pour agir.</span>
-        <span class="measure-step-arrow">→</span>
+        <span class="measure-step-text" data-en="Decide to act." data-fr="D&eacute;cider pour agir.">Decide to act.</span>
+        <span class="measure-step-arrow">&rarr;</span>
       </div>
       <div class="measure-step">
         <span class="measure-step-num">04</span>
-        <span class="measure-step-text">Agir pour renforcer la souveraineté.</span>
-        <span class="measure-step-arrow">✦</span>
+        <span class="measure-step-text" data-en="Act to strengthen sovereignty." data-fr="Agir pour renforcer la souverainet&eacute;.">Act to strengthen sovereignty.</span>
+        <span class="measure-step-arrow">&#10022;</span>
       </div>
     </div>
-    <p class="measure-conclusion">ISA — Indice de Souveraineté Africaine · Premier produit de l'observatoire</p>
+    <p class="measure-conclusion" data-en="ISA &mdash; Index of African Sovereignty &middot; First product of the observatory" data-fr="ISA &mdash; Indice de Souverainet&eacute; Africaine &middot; Premier produit de l&#39;observatoire">ISA &mdash; Index of African Sovereignty &middot; First product of the observatory</p>
   </div>
 </section>
 
@@ -1231,167 +372,135 @@ footer {
 <section class="why-section">
   <div class="why-inner">
     <div class="fade-in">
-      <div class="section-label">Pourquoi OSA ?</div>
-      <h2>Une approche différente</h2>
+      <div class="section-label" data-en="Why OSA?" data-fr="Pourquoi OSA ?">Why OSA?</div>
+      <h2 data-en="A different approach" data-fr="Une approche diff&eacute;rente">A different approach</h2>
       <div class="why-critique">
         <div class="why-critique-item">
           <span class="critique-index">WGI</span>
-          <p>Les indicateurs de gouvernance mondiale sont construits à <strong>60-70% sur des sondages d'experts occidentaux</strong>. Ils mesurent ce que les observateurs pensent — pas ce que les États font.</p>
+          <p data-en="World governance indicators are built <strong>60-70% on surveys of Western experts</strong>. They measure what observers think &mdash; not what states do." data-fr="Les indicateurs de gouvernance mondiale sont construits &agrave; <strong>60-70% sur des sondages d&#39;experts occidentaux</strong>. Ils mesurent ce que les observateurs pensent &mdash; pas ce que les &Eacute;tats font.">World governance indicators are built <strong>60-70% on surveys of Western experts</strong>. They measure what observers think &mdash; not what states do.</p>
         </div>
         <div class="why-critique-item">
           <span class="critique-index">CPI</span>
-          <p>L'indice de perception de la corruption repose à <strong>80% sur des sondages du secteur privé</strong>. Deux États avec les mêmes pratiques peuvent obtenir des scores très différents selon qui est interrogé.</p>
+          <p data-en="The corruption perception index relies <strong>80% on private sector surveys</strong>. Two states with identical practices can score very differently depending on who is asked." data-fr="L&#39;indice de perception de la corruption repose &agrave; <strong>80% sur des sondages du secteur priv&eacute;</strong>. Deux &Eacute;tats avec les m&ecirc;mes pratiques peuvent obtenir des scores tr&egrave;s diff&eacute;rents selon qui est interrog&eacute;.">The corruption perception index relies <strong>80% on private sector surveys</strong>. Two states with identical practices can score very differently depending on who is asked.</p>
         </div>
         <div class="why-critique-item">
-          <span class="critique-index">IDH</span>
-          <p>L'indice de développement humain capture des <strong>résultats agrégés à un instant T</strong>, sans distinguer les trajectoires — un État qui progresse rapidement peut sembler moins développé qu'un État stagnant.</p>
+          <span class="critique-index">HDI</span>
+          <p data-en="The human development index captures <strong>aggregate outcomes at a single point in time</strong>, without distinguishing trajectories &mdash; a rapidly improving state may appear less developed than a stagnating one." data-fr="L&#39;indice de d&eacute;veloppement humain capture des <strong>r&eacute;sultats agr&eacute;g&eacute;s &agrave; un instant T</strong>, sans distinguer les trajectoires &mdash; un &Eacute;tat qui progresse rapidement peut sembler moins d&eacute;velopp&eacute; qu&#39;un &Eacute;tat stagnant.">The human development index captures <strong>aggregate outcomes at a single point in time</strong>, without distinguishing trajectories &mdash; a rapidly improving state may appear less developed than a stagnating one.</p>
         </div>
       </div>
       <div class="why-doctrine">
-        <div class="why-doctrine-text">La souveraineté n'est pas un classement.<br>C'est une trajectoire.</div>
-        <div class="why-doctrine-sub">DOCTRINE OSA — CONSÉQUENTIALISTE</div>
+        <div class="why-doctrine-text" data-en="Sovereignty is not a ranking.<br>It is a trajectory." data-fr="La souverainet&eacute; n&#39;est pas un classement.<br>C&#39;est une trajectoire.">Sovereignty is not a ranking.<br>It is a trajectory.</div>
+        <div class="why-doctrine-sub" data-en="OSA DOCTRINE &mdash; CONSEQUENTIALIST" data-fr="DOCTRINE OSA &mdash; CONS&Eacute;QUENTIALISTE">OSA DOCTRINE &mdash; CONSEQUENTIALIST</div>
       </div>
     </div>
     <div class="fade-in" style="transition-delay:0.15s">
       <div class="why-approach">
-        <div class="why-approach-label">L'approche OSA</div>
-        <p class="why-approach-text">
-          Depuis plusieurs décennies, l'Afrique est évaluée à travers une multitude de classements, 
-          d'indices et d'évaluations construits sur des <em>perceptions</em>.<br><br>
-          OSA propose une approche différente : observer les <em>capacités réelles</em> des États africains 
-          à partir de données comportementales vérifiables, suivre leurs <em>trajectoires dans le temps</em> 
-          et éclairer les décisions publiques par des faits plutôt que par des perceptions.<br><br>
-          Chaque indicateur ISA est une <em>donnée primaire observable</em> — 
-          collectée depuis une source auditée, géolocalisée, datée. 
-          Jamais un sondage. Jamais une estimation d'expert.
+        <div class="why-approach-label" data-en="The OSA approach" data-fr="L&#39;approche OSA">The OSA approach</div>
+        <p class="why-approach-text" data-en="For decades, Africa has been evaluated through indices built on <em>perceptions</em>.<br><br>OSA proposes a different approach: observing the <em>real capabilities</em> of African states from verifiable behavioural data, tracking their <em>trajectories over time</em> and informing public decisions with facts rather than perceptions.<br><br>Every ISA indicator is a <em>primary observable datum</em> &mdash; collected from an audited, geolocated, dated source. Never a survey. Never an expert estimate." data-fr="Depuis plusieurs d&eacute;cennies, l&#39;Afrique est &eacute;valu&eacute;e &agrave; travers des indices construits sur des <em>perceptions</em>.<br><br>OSA propose une approche diff&eacute;rente : observer les <em>capacit&eacute;s r&eacute;elles</em> des &Eacute;tats africains &agrave; partir de donn&eacute;es comportementales v&eacute;rifiables, suivre leurs <em>trajectoires dans le temps</em> et &eacute;clairer les d&eacute;cisions publiques par des faits plut&ocirc;t que par des perceptions.<br><br>Chaque indicateur ISA est une <em>donn&eacute;e primaire observable</em> &mdash; collect&eacute;e depuis une source audit&eacute;e, g&eacute;olis&eacute;e, dat&eacute;e. Jamais un sondage. Jamais une estimation d&#39;expert.">
+          For decades, Africa has been evaluated through indices built on <em>perceptions</em>.<br><br>OSA proposes a different approach: observing the <em>real capabilities</em> of African states from verifiable behavioural data, tracking their <em>trajectories over time</em> and informing public decisions with facts rather than perceptions.<br><br>Every ISA indicator is a <em>primary observable datum</em> &mdash; collected from an audited, geolocated, dated source. Never a survey. Never an expert estimate.
         </p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- TRAJECTOIRES -->
+<!-- TRAJECTORIES -->
 <section class="traj-section">
   <div class="traj-inner">
     <div class="fade-in">
-      <div class="section-label">Innovation doctrinale</div>
-      <h2>Observer les trajectoires</h2>
-      <p class="section-intro">
-        L'ISA ne produit pas un score statique. Il produit un <strong>vecteur de souveraineté</strong> — 
-        une direction, une vitesse, une accélération. 
-        C'est ce que l'ISA mesure et publie pour chacun des 54 États africains, année après année depuis 2010.
+      <div class="section-label" data-en="Doctrinal innovation" data-fr="Innovation doctrinale">Doctrinal innovation</div>
+      <h2 data-en="Observing trajectories" data-fr="Observer les trajectoires">Observing trajectories</h2>
+      <p class="section-intro" data-en="The ISA does not produce a static score. It produces a <strong>sovereignty vector</strong> &mdash; a direction, a velocity, an acceleration. This is what the ISA measures and publishes for each of the 54 African states, year after year." data-fr="L&#39;ISA ne produit pas un score statique. Il produit un <strong>vecteur de souverainet&eacute;</strong> &mdash; une direction, une vitesse, une acc&eacute;l&eacute;ration. C&#39;est ce que l&#39;ISA mesure et publie pour chacun des 54 &Eacute;tats africains, ann&eacute;e apr&egrave;s ann&eacute;e.">
+        The ISA does not produce a static score. It produces a <strong>sovereignty vector</strong> &mdash; a direction, a velocity, an acceleration. This is what the ISA measures and publishes for each of the 54 African states, year after year.
       </p>
     </div>
     <div class="traj-grid fade-in" style="transition-delay:0.1s">
       <div class="traj-card critical">
-        <span class="traj-arrow">⬇</span>
-        <div class="traj-name">Critical</div>
-        <p class="traj-desc">Déficit souverain sévère avec risque de détérioration rapide. Intervention prioritaire nécessaire.</p>
-        <div class="traj-example"><span id="obs-year-critical">OBSERVATION</span><span id="ex-critical"> Chargement…</span></div>
+        <span class="traj-arrow">&#11015;</span>
+        <div class="traj-name">CRITICAL</div>
+        <p class="traj-desc" data-en="Severe sovereign deficit with rapid deterioration risk. Priority intervention required." data-fr="D&eacute;ficit souverain s&eacute;v&egrave;re avec risque de d&eacute;t&eacute;rioration rapide. Intervention prioritaire n&eacute;cessaire.">Severe sovereign deficit with rapid deterioration risk. Priority intervention required.</p>
+        <div class="traj-example"><span id="obs-year-critical">OBSERVATION</span><span id="ex-critical"> Loading&hellip;</span></div>
       </div>
       <div class="traj-card declining">
-        <span class="traj-arrow">↘</span>
-        <div class="traj-name">Declining</div>
-        <p class="traj-desc">Trajectoire descendante observable sur plusieurs années. Signal d'alerte précoce.</p>
-        <div class="traj-example"><span id="obs-year-declining">OBSERVATION</span><span id="ex-declining"> Chargement…</span></div>
+        <span class="traj-arrow">&#8600;</span>
+        <div class="traj-name">DECLINING</div>
+        <p class="traj-desc" data-en="Observable downward trajectory over several years. Early warning signal." data-fr="Trajectoire descendante observable sur plusieurs ann&eacute;es. Signal d&#39;alerte pr&eacute;coce.">Observable downward trajectory over several years. Early warning signal.</p>
+        <div class="traj-example"><span id="obs-year-declining">OBSERVATION</span><span id="ex-declining"> Loading&hellip;</span></div>
       </div>
       <div class="traj-card stable">
-        <span class="traj-arrow">→</span>
-        <div class="traj-name">Stable</div>
-        <p class="traj-desc">Position consolidée sans évolution significative. Opportunité de catalyse identifiée.</p>
-        <div class="traj-example"><span id="obs-year-stable">OBSERVATION</span><span id="ex-stable"> Chargement…</span></div>
+        <span class="traj-arrow">&rarr;</span>
+        <div class="traj-name">STABLE</div>
+        <p class="traj-desc" data-en="Consolidated position without significant evolution. Progression potential identified." data-fr="Position consolid&eacute;e sans &eacute;volution significative. Potentiel de progression identifi&eacute;.">Consolidated position without significant evolution. Progression potential identified.</p>
+        <div class="traj-example"><span id="obs-year-stable">OBSERVATION</span><span id="ex-stable"> Loading&hellip;</span></div>
       </div>
       <div class="traj-card progressing">
-        <span class="traj-arrow">↗</span>
-        <div class="traj-name">Progressing</div>
-        <p class="traj-desc">Amélioration mesurable et soutenue. Dynamique souveraine positive à consolider.</p>
-        <div class="traj-example"><span id="obs-year-progressing">OBSERVATION</span><span id="ex-progressing"> Chargement…</span></div>
+        <span class="traj-arrow">&#8599;</span>
+        <div class="traj-name">PROGRESSING</div>
+        <p class="traj-desc" data-en="Measurable and sustained improvement. Positive sovereign dynamic to consolidate." data-fr="Am&eacute;lioration mesurable et soutenue. Dynamique souveraine positive &agrave; consolider.">Measurable and sustained improvement. Positive sovereign dynamic to consolidate.</p>
+        <div class="traj-example"><span id="obs-year-progressing">OBSERVATION</span><span id="ex-progressing"> Loading&hellip;</span></div>
       </div>
       <div class="traj-card accelerating">
-        <span class="traj-arrow">⬆</span>
-        <div class="traj-name">Accelerating</div>
-        <p class="traj-desc">Croissance souveraine rapide et soutenue. Modèle de réplication pour la région.</p>
-        <div class="traj-example"><span id="obs-year-accelerating">OBSERVATION</span><span id="ex-accelerating"> Chargement…</span></div>
+        <span class="traj-arrow">&#11014;</span>
+        <div class="traj-name">ACCELERATING</div>
+        <p class="traj-desc" data-en="Rapid and sustained sovereign growth. Replication model for the region." data-fr="Croissance souveraine rapide et soutenue. Mod&egrave;le de r&eacute;plication pour la r&eacute;gion.">Rapid and sustained sovereign growth. Replication model for the region.</p>
+        <div class="traj-example"><span id="obs-year-accelerating">OBSERVATION</span><span id="ex-accelerating"> Loading&hellip;</span></div>
       </div>
     </div>
   </div>
 </section>
 
-
-<!-- MÉTHODOLOGIE -->
+<!-- METHODOLOGY -->
 <section class="method-section">
   <div class="method-inner">
     <div class="fade-in">
-      <div class="section-label">Robustesse scientifique</div>
-      <h2>Méthodologie ISA</h2>
-      <p class="section-intro">
-        Chaque indicateur ISA est une donnée primaire observable — collectée depuis 
-        une source auditée, géolocalisée, datée. Jamais un sondage. 
-        Jamais une estimation d'expert.
-      </p>
-      <a href="https://api.osa-observatory.africa/opendata/methodology" 
-         target="_blank" class="btn-secondary" style="display:inline-flex;">
-        Documentation méthodologique →
-      </a>
+      <div class="section-label" data-en="Scientific rigour" data-fr="Rigueur scientifique">Scientific rigour</div>
+      <h2 data-en="ISA Methodology" data-fr="M&eacute;thodologie ISA">ISA Methodology</h2>
+      <p class="section-intro" data-en="Every ISA indicator is a primary observable datum &mdash; collected from an audited, geolocated, dated source. Never a survey. Never an expert estimate." data-fr="Chaque indicateur ISA est une donn&eacute;e primaire observable &mdash; collect&eacute;e depuis une source audit&eacute;e, g&eacute;olis&eacute;e, dat&eacute;e. Jamais un sondage. Jamais une estimation d&#39;expert.">Every ISA indicator is a primary observable datum &mdash; collected from an audited, geolocated, dated source. Never a survey. Never an expert estimate.</p>
+      <a href="https://api.osa-observatory.africa/opendata/methodology" target="_blank" class="btn-secondary" style="display:inline-flex;" data-en="Methodological documentation &rarr;" data-fr="Documentation m&eacute;thodologique &rarr;">Methodological documentation &rarr;</a>
     </div>
     <div class="method-kpis fade-in" style="transition-delay:0.1s">
       <div class="method-kpi">
         <div class="method-kpi-val" id="method-indicators">228</div>
-        <div class="method-kpi-label">Indicateurs<span>SOURCES PRIMAIRES</span></div>
+        <div class="method-kpi-label" data-en="Indicators<span>PRIMARY SOURCES</span>" data-fr="Indicateurs<span>SOURCES PRIMAIRES</span>">Indicators<span>PRIMARY SOURCES</span></div>
       </div>
       <div class="method-kpi">
         <div class="method-kpi-val">54</div>
-        <div class="method-kpi-label">États africains<span>COUVERTURE CONTINENTALE</span></div>
+        <div class="method-kpi-label" data-en="African states<span>CONTINENTAL COVERAGE</span>" data-fr="&Eacute;tats africains<span>COUVERTURE CONTINENTALE</span>">African states<span>CONTINENTAL COVERAGE</span></div>
       </div>
       <div class="method-kpi">
-        <div class="method-kpi-val" id="method-years">15</div>
-        <div class="method-kpi-label">Années observées<span>SÉRIE HISTORIQUE</span></div>
+        <div class="method-kpi-val" id="method-editions">4</div>
+        <div class="method-kpi-label" data-en="Published editions<span>ANNUAL SINCE 2021</span>" data-fr="&Eacute;ditions publi&eacute;es<span>ANNUEL DEPUIS 2021</span>">Published editions<span>ANNUAL SINCE 2021</span></div>
       </div>
       <div class="method-kpi">
-        <div class="method-kpi-val" id="method-coverage">—</div>
-        <div class="method-kpi-label">Couverture moyenne<span>PCT FIABLE</span></div>
+        <div class="method-kpi-val" id="method-coverage">&mdash;</div>
+        <div class="method-kpi-label" data-en="Average coverage<span>VERIFIED DATA</span>" data-fr="Couverture moyenne<span>DONN&Eacute;ES V&Eacute;RIFI&Eacute;ES</span>">Average coverage<span>VERIFIED DATA</span></div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- GOUVERNANCE -->
+<!-- GOVERNANCE -->
 <section class="gov-section">
   <div class="gov-header fade-in">
-    <div class="section-label">Processus de validation</div>
-    <h2>Gouvernance scientifique</h2>
-    <p class="section-intro">
-      L'ISA est produit par un processus de validation rigoureux en plusieurs étapes. 
-      Chaque score publi est auditable depuis sa source primaire.
-    </p>
+    <div class="section-label" data-en="Validation process" data-fr="Processus de validation">Validation process</div>
+    <h2 data-en="Scientific governance" data-fr="Gouvernance scientifique">Scientific governance</h2>
+    <p class="section-intro" data-en="The ISA is produced through a rigorous multi-step validation process. Every published score is auditable from its primary source." data-fr="L&#39;ISA est produit par un processus de validation rigoureux en plusieurs &eacute;tapes. Chaque score publi&eacute; est auditable depuis sa source primaire.">The ISA is produced through a rigorous multi-step validation process. Every published score is auditable from its primary source.</p>
   </div>
   <div class="gov-inner fade-in" style="transition-delay:0.1s">
     <div class="gov-card">
-      <span class="gov-card-icon">🔬</span>
-      <div class="gov-card-title">Collecte comportementale</div>
-      <p class="gov-card-text">
-        Les données sont collectées depuis des sources primaires vérifiables : 
-        Banque Mondiale, FMI, FAO, ACLED, SIPRI, USGS. 
-        Aucune source perceptuelle n'est intégrée dans le calcul ISA.
-      </p>
+      <span class="gov-card-icon">&#128300;</span>
+      <div class="gov-card-title" data-en="Behavioural collection" data-fr="Collecte comportementale">Behavioural collection</div>
+      <p class="gov-card-text" data-en="Data is collected from verifiable primary sources: World Bank, IMF, FAO, ACLED, SIPRI, USGS. No perceptual source is integrated in the ISA calculation." data-fr="Les donn&eacute;es sont collect&eacute;es depuis des sources primaires v&eacute;rifiables : Banque Mondiale, FMI, FAO, ACLED, SIPRI, USGS. Aucune source perceptuelle n&#39;est int&eacute;gr&eacute;e dans le calcul ISA.">Data is collected from verifiable primary sources: World Bank, IMF, FAO, ACLED, SIPRI, USGS. No perceptual source is integrated in the ISA calculation.</p>
     </div>
     <div class="gov-card">
-      <span class="gov-card-icon">⚖️</span>
-      <div class="gov-card-title">Cellule de validation</div>
-      <p class="gov-card-text">
-        Chaque publication ISA est soumise à une cellule de revue indépendante. 
-        Les contestations de données sont traitées selon une procédure formelle 
-        documentée et auditée.
-      </p>
+      <span class="gov-card-icon">&#9878;</span>
+      <div class="gov-card-title" data-en="Review cell" data-fr="Cellule de validation">Review cell</div>
+      <p class="gov-card-text" data-en="Every ISA publication is submitted to an independent review cell. Data contestations are handled according to a formal documented procedure open to all institutional partners." data-fr="Chaque publication ISA est soumise &agrave; une cellule de revue ind&eacute;pendante. Les contestations de donn&eacute;es sont trait&eacute;es selon une proc&eacute;dure formelle document&eacute;e et ouverte &agrave; tous les partenaires institutionnels.">Every ISA publication is submitted to an independent review cell. Data contestations are handled according to a formal documented procedure open to all institutional partners.</p>
     </div>
     <div class="gov-card">
-      <span class="gov-card-icon">📖</span>
-      <div class="gov-card-title">Science ouverte</div>
-      <p class="gov-card-text">
-        La méthodologie ISA est intégralement documentée et publiée en accès libre. 
-        Toute organisation peut vérifier, contester ou proposer des améliorations 
-        via la plateforme e-participation.
-      </p>
+      <span class="gov-card-icon">&#128218;</span>
+      <div class="gov-card-title" data-en="Open science" data-fr="Science ouverte">Open science</div>
+      <p class="gov-card-text" data-en="The ISA methodology is fully documented and published in open access. Any organisation &mdash; academic, institutional or civil society &mdash; can verify, contest or propose improvements via the e-participation platform." data-fr="La m&eacute;thodologie ISA est int&eacute;gralement document&eacute;e et publi&eacute;e en acc&egrave;s libre. Toute organisation &mdash; acad&eacute;mique, institutionnelle ou soci&eacute;t&eacute; civile &mdash; peut v&eacute;rifier, contester ou proposer des am&eacute;liorations via la plateforme e-participation.">The ISA methodology is fully documented and published in open access. Any organisation &mdash; academic, institutional or civil society &mdash; can verify, contest or propose improvements via the e-participation platform.</p>
     </div>
   </div>
 </section>
@@ -1399,17 +508,13 @@ footer {
 <!-- LIVE DATA -->
 <section class="live-section" id="data">
   <div class="live-inner">
-    <div class="section-label">Données en temps réel</div>
-    <h2>ISA <span id="live-year-title">2024</span> — Aperçu OpenData</h2>
-    <p class="section-intro">
-      Trajectoires souveraines observées pour 54 pays africains. 
-      Licence CC-BY-NC-4.0. Accès complet via l'API ou demande institutionnelle.
-    </p>
+    <div class="section-label" data-en="Real-time data" data-fr="Donn&eacute;es en temps r&eacute;el">Real-time data</div>
+    <h2 data-en="ISA <span id='live-year-title'>2024</span> &mdash; OpenData overview" data-fr="ISA <span id='live-year-title'>2024</span> &mdash; Aper&ccedil;u OpenData">ISA <span id="live-year-title">2024</span> &mdash; OpenData overview</h2>
+    <p class="section-intro" data-en="Sovereign trajectories observed for 54 African states. Licence CC-BY-NC-4.0. Full access via the API or institutional request." data-fr="Trajectoires souveraines observ&eacute;es pour 54 pays africains. Licence CC-BY-NC-4.0. Acc&egrave;s complet via l&#39;API ou demande institutionnelle.">Sovereign trajectories observed for 54 African states. Licence CC-BY-NC-4.0. Full access via the API or institutional request.</p>
     <div class="year-selector" id="year-selector">
-      <span class="year-label">ANNÉE :</span>
+      <span class="year-label" data-en="YEAR:" data-fr="ANN&Eacute;E :">YEAR:</span>
     </div>
     <div class="live-grid" id="live-grid">
-      <!-- Populated by JS -->
       <div class="live-card"><div class="loading-pulse"></div></div>
       <div class="live-card"><div class="loading-pulse"></div></div>
       <div class="live-card"><div class="loading-pulse"></div></div>
@@ -1417,12 +522,8 @@ footer {
       <div class="live-card"><div class="loading-pulse"></div></div>
       <div class="live-card"><div class="loading-pulse"></div></div>
     </div>
-    <div style="text-align:center; margin-top:2.5rem;">
-      <a href="https://api.osa-observatory.africa/opendata/countries/latest" 
-         target="_blank" class="btn-secondary" 
-         style="border-color:rgba(255,255,255,0.3); color:white;">
-        Accéder à l'API OpenData →
-      </a>
+    <div style="text-align:center;margin-top:2.5rem;">
+      <a href="https://api.osa-observatory.africa/opendata/countries/latest" target="_blank" class="btn-secondary" style="border-color:rgba(255,255,255,0.3);color:white;" data-en="Access the OpenData API &rarr;" data-fr="Acc&eacute;der &agrave; l&#39;API OpenData &rarr;">Access the OpenData API &rarr;</a>
     </div>
   </div>
 </section>
@@ -1430,475 +531,465 @@ footer {
 <!-- PROJECTS -->
 <section class="section" id="projects">
   <div class="fade-in">
-    <div class="section-label">Catalogue souverain</div>
-    <h2>Projets structurants prioritaires</h2>
-    <p class="section-intro">
-      Pour chaque pilier en déficit souverain, l'ISA identifie des projets structurants 
-      capables de générer un delta positif mesurable. 
-      La note d'opportunité est accessible librement. 
-      L'étude de faisabilité complète est disponible sur demande institutionnelle.
-    </p>
+    <div class="section-label" data-en="Sovereign catalogue" data-fr="Catalogue souverain">Sovereign catalogue</div>
+    <h2 data-en="Priority structuring projects" data-fr="Projets structurants prioritaires">Priority structuring projects</h2>
+    <p class="section-intro" data-en="For each pillar in sovereign deficit, the ISA identifies structuring projects capable of generating a measurable positive sovereignty delta. The opportunity note is freely accessible. The full feasibility study is available on institutional request." data-fr="Pour chaque pilier en d&eacute;ficit souverain, l&#39;ISA identifie des projets structurants capables de g&eacute;n&eacute;rer un delta positif mesurable. La note d&#39;opportunit&eacute; est accessible librement. L&#39;&eacute;tude de faisabilit&eacute; compl&egrave;te est disponible sur demande institutionnelle.">For each pillar in sovereign deficit, the ISA identifies structuring projects capable of generating a measurable positive sovereignty delta. The opportunity note is freely accessible. The full feasibility study is available on institutional request.</p>
   </div>
   <div class="projects-filter fade-in" id="projects-filter" style="transition-delay:0.05s">
-    <button class="filter-btn active" onclick="filterProjects(null, this)">TOUS</button>
-    <button class="filter-btn" onclick="filterProjects('PENV', this)">PENV</button>
-    <button class="filter-btn" onclick="filterProjects('PTRA', this)">PTRA</button>
-    <button class="filter-btn" onclick="filterProjects('PRES', this)">PRES</button>
-    <button class="filter-btn" onclick="filterProjects('PMIN', this)">PMIN</button>
-    <button class="filter-btn" onclick="filterProjects('PECO', this)">PECO</button>
-    <button class="filter-btn" onclick="filterProjects('PMON', this)">PMON</button>
-    <button class="filter-btn" onclick="filterProjects('PHUM', this)">PHUM</button>
-    <button class="filter-btn" onclick="filterProjects('PNUM', this)">PNUM</button>
-    <button class="filter-btn" onclick="filterProjects('PGEO', this)">PGEO</button>
-    <button class="filter-btn" onclick="filterProjects('PMIL', this)">PMIL</button>
+    <button class="filter-btn active" onclick="filterProjects(null,this)" data-en="ALL" data-fr="TOUS">ALL</button>
+    <button class="filter-btn" onclick="filterProjects('PENV',this)">PENV</button>
+    <button class="filter-btn" onclick="filterProjects('PTRA',this)">PTRA</button>
+    <button class="filter-btn" onclick="filterProjects('PRES',this)">PRES</button>
+    <button class="filter-btn" onclick="filterProjects('PMIN',this)">PMIN</button>
+    <button class="filter-btn" onclick="filterProjects('PECO',this)">PECO</button>
+    <button class="filter-btn" onclick="filterProjects('PMON',this)">PMON</button>
+    <button class="filter-btn" onclick="filterProjects('PHUM',this)">PHUM</button>
+    <button class="filter-btn" onclick="filterProjects('PNUM',this)">PNUM</button>
+    <button class="filter-btn" onclick="filterProjects('PGEO',this)">PGEO</button>
+    <button class="filter-btn" onclick="filterProjects('PMIL',this)">PMIL</button>
   </div>
-  <div class="projects-grid fade-in" id="projects-grid" style="transition-delay: 0.1s">
-    <!-- Populated by JS -->
-  </div>
-  <div id="projects-count" style="text-align:center; margin-top:1.5rem; font-family:Space Mono,monospace; font-size:0.72rem; color:var(--muted); letter-spacing:0.1em;"></div>
-  <div style="text-align:center; margin-top:1.5rem;" class="fade-in">
-    <a href="#access" class="btn-primary">Demander une étude de faisabilité →</a>
+  <div class="projects-grid fade-in" id="projects-grid" style="transition-delay:0.1s"></div>
+  <div id="projects-count" style="text-align:center;margin-top:1.5rem;font-family:'Space Mono',monospace;font-size:0.72rem;color:var(--muted);letter-spacing:0.1em;"></div>
+  <div style="text-align:center;margin-top:1.5rem;" class="fade-in">
+    <a href="#access" class="btn-primary" data-en="Request a feasibility study &rarr;" data-fr="Demander une &eacute;tude de faisabilit&eacute; &rarr;">Request a feasibility study &rarr;</a>
   </div>
 </section>
 
 <!-- ACCESS -->
 <section class="access-section" id="access">
   <div class="access-inner">
-    <div class="section-label" style="justify-content:center;">Accès institutionnel</div>
-    <h2>Rejoindre le pilote OSA</h2>
-    <p class="section-intro">
-      Le pilote institutionnel 2026 est ouvert aux organisations africaines et partenaires 
-      du développement. Accès gratuit pendant la phase pilote.
+    <div class="section-label" style="justify-content:center;" data-en="Institutional access" data-fr="Acc&egrave;s institutionnel">Institutional access</div>
+    <h2 style="text-align:center;" data-en="Join OSA Observatory" data-fr="Rejoindre OSA Observatory">Join OSA Observatory</h2>
+    <p class="section-intro" style="text-align:center;" data-en="OSA Observatory is open to African organisations, development partners, researchers and academics. Registration is free. The annual ISA publication will be available from 2027. Early warnings are published free of charge. Feasibility studies and proofs of concept are available to subscribers." data-fr="OSA Observatory est ouvert aux organisations africaines, partenaires du d&eacute;veloppement, chercheurs et acad&eacute;miciens. Les inscriptions sont libres. La publication annuelle ISA sera disponible d&egrave;s 2027. Les alertes pr&eacute;coces sont publi&eacute;es gratuitement. Les &eacute;tudes de faisabilit&eacute; et POC sont accessibles aux abonn&eacute;s.">
+      OSA Observatory is open to African organisations, development partners, researchers and academics. Registration is free. The annual ISA publication will be available from 2027. Early warnings are published free of charge. Feasibility studies and proofs of concept are available to subscribers.
     </p>
-
     <div class="access-tiers">
       <div class="tier-card">
-        <div class="tier-name">PUBLIC</div>
-        <div class="tier-price">GRATUIT · CC-BY-NC-4.0</div>
+        <div class="tier-name" data-en="PUBLIC" data-fr="PUBLIC">PUBLIC</div>
+        <div class="tier-price" data-en="FREE &middot; CC-BY-NC-4.0" data-fr="GRATUIT &middot; CC-BY-NC-4.0">FREE &middot; CC-BY-NC-4.0</div>
         <ul class="tier-features">
-          <li>Scores ISA 54 pays</li>
-          <li>Trajectoires piliers</li>
-          <li>Catalogue opportunités</li>
-          <li>Projets souverains</li>
-          <li>Documentation méthodologique</li>
+          <li data-en="ISA scores &mdash; 54 countries" data-fr="Scores ISA &mdash; 54 pays">ISA scores &mdash; 54 countries</li>
+          <li data-en="Sovereign trajectories" data-fr="Trajectoires souveraines">Sovereign trajectories</li>
+          <li data-en="Early warning alerts" data-fr="Alertes pr&eacute;coces">Early warning alerts</li>
+          <li data-en="Opportunity catalogue" data-fr="Catalogue opportunit&eacute;s">Opportunity catalogue</li>
+          <li data-en="Methodological documentation" data-fr="Documentation m&eacute;thodologique">Methodological documentation</li>
+          <li data-en="E-participation platform" data-fr="Plateforme e-participation">E-participation platform</li>
         </ul>
       </div>
       <div class="tier-card featured">
-        <div class="tier-name">ESSENTIEL</div>
-        <div class="tier-price">GRATUIT · PHASE PILOTE 2026</div>
+        <div class="tier-name" data-en="SUBSCRIBER" data-fr="ABONN&Eacute;">SUBSCRIBER</div>
+        <div class="tier-price" data-en="FROM 2027 &middot; ON SUBSCRIPTION" data-fr="D&Egrave;S 2027 &middot; SUR ABONNEMENT">FROM 2027 &middot; ON SUBSCRIPTION</div>
         <ul class="tier-features">
-          <li>Tout le niveau PUBLIC</li>
-          <li>Profils pays complets</li>
-          <li>Historique complet depuis 2010</li>
-          <li>Décomposition par pilier</li>
-          <li>E-participation institutionnelle</li>
-          <li>Support cellule de revue</li>
+          <li data-en="Everything in PUBLIC" data-fr="Tout le niveau PUBLIC">Everything in PUBLIC</li>
+          <li data-en="Complete country profiles" data-fr="Profils pays complets">Complete country profiles</li>
+          <li data-en="Pillar decomposition" data-fr="D&eacute;composition par pilier">Pillar decomposition</li>
+          <li data-en="Feasibility studies" data-fr="&Eacute;tudes de faisabilit&eacute;">Feasibility studies</li>
+          <li data-en="Proofs of concept" data-fr="Preuves de concept (POC)">Proofs of concept</li>
+          <li data-en="Review cell support" data-fr="Support cellule de revue">Review cell support</li>
         </ul>
       </div>
       <div class="tier-card">
-        <div class="tier-name">AVANCÉ</div>
-        <div class="tier-price">SUR DEVIS · PHASE SUIVANTE</div>
+        <div class="tier-name" data-en="ADVANCED" data-fr="AVANC&Eacute;">ADVANCED</div>
+        <div class="tier-price" data-en="ON QUOTE" data-fr="SUR DEVIS">ON QUOTE</div>
         <ul class="tier-features">
-          <li>Tout le niveau ESSENTIEL</li>
-          <li>Analyses prédictives souveraines</li>
-          <li>Alertes précoces sur les risques</li>
-          <li>Études de faisabilité</li>
-          <li>API haute fréquence</li>
-          <li>Personnalisation pays</li>
+          <li data-en="Everything in SUBSCRIBER" data-fr="Tout le niveau ABONN&Eacute;">Everything in SUBSCRIBER</li>
+          <li data-en="Sovereign predictive analysis" data-fr="Analyses pr&eacute;dictives souveraines">Sovereign predictive analysis</li>
+          <li data-en="Alert response solutions" data-fr="Solutions de r&eacute;ponse aux alertes">Alert response solutions</li>
+          <li data-en="High-frequency API" data-fr="API haute fr&eacute;quence">High-frequency API</li>
+          <li data-en="Country customisation" data-fr="Personnalisation pays">Country customisation</li>
         </ul>
       </div>
     </div>
-
     <div class="access-form">
-      <div class="form-title">Demande d'accès institutionnel</div>
+      <div class="form-title" data-en="Institutional registration" data-fr="Inscription institutionnelle">Institutional registration</div>
       <form id="access-form" onsubmit="submitAccessRequest(event)">
         <div class="form-grid">
           <div class="form-group">
-            <label>Institution</label>
-            <input type="text" name="institution" placeholder="Union Africaine, Ministère des Finances…" required>
+            <label data-en="Institution" data-fr="Institution">Institution</label>
+            <input type="text" name="institution" placeholder="African Union, Ministry of Finance&hellip;" required>
           </div>
           <div class="form-group">
-            <label>Pays</label>
-            <input type="text" name="country" placeholder="SEN, NGA, ZAF…" required>
+            <label data-en="Country" data-fr="Pays">Country</label>
+            <input type="text" name="country" placeholder="SEN, NGA, ZAF&hellip;" required>
           </div>
           <div class="form-group">
-            <label>Nom & Prénom</label>
-            <input type="text" name="name" placeholder="Votre nom complet" required>
+            <label data-en="Full name" data-fr="Nom &amp; Pr&eacute;nom">Full name</label>
+            <input type="text" name="name" placeholder="Your full name" required>
           </div>
           <div class="form-group">
-            <label>Email institutionnel</label>
+            <label data-en="Institutional email" data-fr="Email institutionnel">Institutional email</label>
             <input type="email" name="email" placeholder="contact@institution.org" required>
           </div>
           <div class="form-group">
-            <label>Niveau d'accès souhaité</label>
+            <label data-en="Desired access level" data-fr="Niveau d&#39;acc&egrave;s souhait&eacute;">Desired access level</label>
             <select name="access_level">
-              <option value="STANDARD">Accès Essentiel — Pilote gratuit</option>
-              <option value="PREMIUM">Accès Avancé — Sur devis</option>
+              <option value="STANDARD" data-en="SUBSCRIBER &mdash; from 2027" data-fr="ABONN&Eacute; &mdash; d&egrave;s 2027">SUBSCRIBER &mdash; from 2027</option>
+              <option value="PREMIUM" data-en="ADVANCED &mdash; on quote" data-fr="AVANC&Eacute; &mdash; sur devis">ADVANCED &mdash; on quote</option>
             </select>
           </div>
           <div class="form-group">
-            <label>Type d'organisation</label>
+            <label data-en="Organisation type" data-fr="Type d&#39;organisation">Organisation type</label>
             <select name="org_type">
-              <option value="GOUVERNEMENT">Gouvernement / Ministère</option>
-              <option value="INSTITUTION_INTERNATIONALE">Institution internationale</option>
-              <option value="BANQUE_DEVELOPPEMENT">Banque de développement</option>
-              <option value="UNIVERSITE">Université / Think tank</option>
-              <option value="SECTEUR_PRIVE">Secteur privé</option>
-              <option value="ONG">ONG / Société civile</option>
+              <option value="GOUVERNEMENT" data-en="Government / Ministry" data-fr="Gouvernement / Minist&egrave;re">Government / Ministry</option>
+              <option value="INSTITUTION_INTERNATIONALE" data-en="International institution" data-fr="Institution internationale">International institution</option>
+              <option value="BANQUE_DEVELOPPEMENT" data-en="Development bank" data-fr="Banque de d&eacute;veloppement">Development bank</option>
+              <option value="UNIVERSITE" data-en="University / Research / Think tank" data-fr="Universit&eacute; / Recherche / Think tank">University / Research / Think tank</option>
+              <option value="SECTEUR_PRIVE" data-en="Private sector" data-fr="Secteur priv&eacute;">Private sector</option>
+              <option value="ONG" data-en="NGO / Civil society" data-fr="ONG / Soci&eacute;t&eacute; civile">NGO / Civil society</option>
             </select>
           </div>
           <div class="form-group full">
-            <label>Message (usage prévu, périmètre géographique…)</label>
-            <textarea name="message" placeholder="Décrivez brièvement votre usage prévu des données ISA…"></textarea>
+            <label data-en="Message (intended use, geographic scope&hellip;)" data-fr="Message (usage pr&eacute;vu, p&eacute;rim&egrave;tre g&eacute;ographique&hellip;)">Message (intended use, geographic scope&hellip;)</label>
+            <textarea name="message" placeholder="Briefly describe your intended use of ISA data&hellip;"></textarea>
           </div>
         </div>
-        <p class="form-note">
-          Vos données sont traitées conformément à la politique de confidentialité OSA. 
-          Réponse sous 72h. Phase pilote institutionnelle — septembre 2026.
-          L'accès Avancé fera l'objet d'une proposition commerciale personnalisée.
+        <p class="form-note" data-en="Your data is processed in accordance with the OSA privacy policy. Response within 72 hours. Registration is open now. Subscriptions start from 2027 publication." data-fr="Vos donn&eacute;es sont trait&eacute;es conform&eacute;ment &agrave; la politique de confidentialit&eacute; OSA. R&eacute;ponse sous 72h. Les inscriptions sont ouvertes d&egrave;s maintenant. Les abonnements d&eacute;marrent d&egrave;s la publication 2027.">
+          Your data is processed in accordance with the OSA privacy policy. Response within 72 hours. Registration is open now. Subscriptions start from 2027 publication.
         </p>
         <div class="form-submit">
-          <button type="submit" class="btn-form">Soumettre la demande →</button>
-          <span class="form-success" id="form-success">✓ Demande envoyée — réponse sous 72h</span>
+          <button type="submit" class="btn-form" data-en="Submit registration &rarr;" data-fr="Soumettre l&#39;inscription &rarr;">Submit registration &rarr;</button>
+          <span class="form-success" id="form-success" data-en="&#10003; Registration received &mdash; response within 72h" data-fr="&#10003; Inscription re&ccedil;ue &mdash; r&eacute;ponse sous 72h">&#10003; Registration received &mdash; response within 72h</span>
         </div>
       </form>
     </div>
   </div>
 </section>
 
-<!-- FOOTER -->
 <footer>
   <div class="footer-inner">
     <div>
       <div class="footer-brand">OSA OBSERVATORY</div>
-      <p class="footer-tagline">
-        Observatoire de la Souveraineté Africaine. 
-        Doctrine conséquentialiste — faits comportementaux, pas de perceptions.
-        Données ISA · 54 pays · 10 piliers souverains.
-      </p>
+      <p class="footer-tagline" data-en="African Sovereignty Observatory. Consequentialist doctrine &mdash; behavioural facts, not perceptions. ISA data &middot; 54 countries &middot; 10 sovereign pillars." data-fr="Observatoire de la Souverainet&eacute; Africaine. Doctrine cons&eacute;quentialiste &mdash; faits comportementaux, pas de perceptions. Donn&eacute;es ISA &middot; 54 pays &middot; 10 piliers souverains.">African Sovereignty Observatory. Consequentialist doctrine &mdash; behavioural facts, not perceptions. ISA data &middot; 54 countries &middot; 10 sovereign pillars.</p>
     </div>
     <div class="footer-col">
-      <h4>OpenData</h4>
+      <h4 data-en="OpenData" data-fr="OpenData">OpenData</h4>
       <ul>
-        <li><a href="https://api.osa-observatory.africa/opendata/" target="_blank">API OpenData</a></li>
-        <li><a href="https://api.osa-observatory.africa/opendata/methodology" target="_blank">Méthodologie ISA</a></li>
-        <li><a href="https://api.osa-observatory.africa/opendata/countries/latest" target="_blank">Scores 2024</a></li>
-        <li><a href="https://api.osa-observatory.africa/opendata/opportunities" target="_blank">Opportunités</a></li>
+        <li><a href="https://api.osa-observatory.africa/opendata/" target="_blank" data-en="OpenData API" data-fr="API OpenData">OpenData API</a></li>
+        <li><a href="https://api.osa-observatory.africa/opendata/methodology" target="_blank" data-en="ISA Methodology" data-fr="M&eacute;thodologie ISA">ISA Methodology</a></li>
+        <li><a href="https://api.osa-observatory.africa/opendata/countries/latest" target="_blank" data-en="Latest scores" data-fr="Scores r&eacute;cents">Latest scores</a></li>
+        <li><a href="https://api.osa-observatory.africa/opendata/opportunities" target="_blank" data-en="Opportunities" data-fr="Opportunit&eacute;s">Opportunities</a></li>
       </ul>
     </div>
     <div class="footer-col">
-      <h4>Ressources</h4>
+      <h4 data-en="Resources" data-fr="Ressources">Resources</h4>
       <ul>
-        <li><a href="https://api.osa-observatory.africa/docs" target="_blank">Documentation API</a></li>
-        <li><a href="https://api.osa-observatory.africa/health" target="_blank">Statut API</a></li>
-        <li><a href="#access">Demande d'accès</a></li>
-        <li><a href="#pillars">Piliers ISA</a></li>
+        <li><a href="https://api.osa-observatory.africa/docs" target="_blank" data-en="API Documentation" data-fr="Documentation API">API Documentation</a></li>
+        <li><a href="https://api.osa-observatory.africa/health" target="_blank" data-en="API Status" data-fr="Statut API">API Status</a></li>
+        <li><a href="#access" data-en="Registration" data-fr="Inscription">Registration</a></li>
+        <li><a href="#pillars" data-en="ISA Pillars" data-fr="Piliers ISA">ISA Pillars</a></li>
       </ul>
     </div>
     <div class="footer-col">
-      <h4>Contact</h4>
+      <h4 data-en="Contact" data-fr="Contact">Contact</h4>
       <ul>
-        <li><a href="mailto:pilot@osa-observatory.africa">pilot@osa-observatory.africa</a></li>
+        <li><a href="mailto:contact@osa-observatory.africa">contact@osa-observatory.africa</a></li>
         <li><a href="mailto:contact@kon-won.com">contact@kon-won.com</a></li>
       </ul>
     </div>
   </div>
   <div class="footer-bottom">
-    <span>© 2026 OSA Observatory — Observatoire de la Souveraineté Africaine</span>
+    <span data-en="&copy; 2026 OSA Observatory &mdash; African Sovereignty Observatory" data-fr="&copy; 2026 OSA Observatory &mdash; Observatoire de la Souverainet&eacute; Africaine">&copy; 2026 OSA Observatory &mdash; African Sovereignty Observatory</span>
     <span class="license-badge">CC-BY-NC-4.0</span>
   </div>
 </footer>
 
 <script>
-const API = 'https://api.osa-observatory.africa';
+const API = "https://api.osa-observatory.africa";
 let allProjects = [];
 let currentYear = null;
 let availableYears = [2021,2022,2023,2024];
+let currentLang = "en";
 
-// ── Fade-in on scroll ──────────────────────────────────────
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-}, { threshold: 0.1 });
-document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+// Language switcher
+function setLang(lang) {
+  currentLang = lang;
+  document.getElementById("html-root").setAttribute("lang", lang);
+  document.querySelectorAll(".lang-btn").forEach(function(b) {
+    b.classList.toggle("active", b.textContent === lang.toUpperCase());
+  });
+  document.querySelectorAll("[data-" + lang + "]").forEach(function(el) {
+    var val = el.getAttribute("data-" + lang);
+    if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+      el.placeholder = val;
+    } else if (el.tagName === "OPTION") {
+      el.textContent = val;
+    } else {
+      el.innerHTML = val;
+    }
+  });
+  // Update filter all button
+  var allBtn = document.querySelector(".filter-btn.active");
+  if (allBtn && allBtn.getAttribute("data-" + lang)) {
+    allBtn.textContent = allBtn.getAttribute("data-" + lang);
+  }
+  // Update projects count label
+  updateProjectsCount();
+  // Update trajectory loading text
+  ["critical","declining","stable","progressing","accelerating"].forEach(function(t) {
+    var el = document.getElementById("ex-" + t);
+    if (el && (el.textContent.indexOf("Loading") >= 0 || el.textContent.indexOf("Chargement") >= 0)) {
+      el.textContent = lang === "fr" ? " Chargement\u2026" : " Loading\u2026";
+    }
+  });
+}
 
-// ── Init data from API ─────────────────────────────────────
-async function initData() {
-  try {
-    const r = await fetch(`${API}/opendata/countries/latest`);
-    const d = await r.json();
-    const data = d.data || d;
-    
-    // Année de référence depuis les données
-    const latestYear = data[0]?.reference_year || 2024;
-    currentYear = latestYear;
-    const seriesStart = 2010;
-    const yearsCount = latestYear - seriesStart + 1;
-    
-    // Mettre à jour KPI hero
-    document.getElementById('hero-years').textContent = yearsCount;
-    document.getElementById('hero-period').textContent = `${seriesStart}–${latestYear}`;
-    document.getElementById('hero-opp-year').textContent = `HIGH IMPACT · ${latestYear}`;
-    document.getElementById('live-year-title').textContent = latestYear;
-    
-    // Mettre à jour method KPI
-    document.getElementById('method-years').textContent = yearsCount;
-    
-    // Années disponibles dynamiques
-    availableYears = [];
-    for (let y = 2021; y <= latestYear; y++) availableYears.push(y);
-    buildYearSelector(latestYear);
-    
-    // Afficher les scores
-    renderLiveScores(data, latestYear);
-    
-    // Mettre à jour OBSERVATION année
-    document.querySelectorAll('[id^="obs-year-"]').forEach(el => {
-      el.textContent = `OBSERVATION ${latestYear}`;
-    });
-    
-  } catch(e) {
-    console.error('initData error:', e);
-    buildYearSelector(2024);
-    renderLiveScores([], 2024);
+function updateProjectsCount() {
+  var countEl = document.getElementById("projects-count");
+  if (!countEl || !allProjects.length) return;
+  var n = allProjects.length;
+  if (currentLang === "fr") {
+    countEl.textContent = n + " PROJET" + (n > 1 ? "S" : "") + " \u00B7 NOTE D\u2019OPPORTUNIT\u00C9 DISPONIBLE SUR DEMANDE";
+  } else {
+    countEl.textContent = n + " PROJECT" + (n > 1 ? "S" : "") + " \u00B7 OPPORTUNITY NOTE AVAILABLE ON REQUEST";
   }
 }
 
-// ── Build year selector ────────────────────────────────────
+// Fade-in
+const observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) { if (e.isIntersecting) e.target.classList.add("visible"); });
+}, { threshold: 0.1 });
+document.querySelectorAll(".fade-in").forEach(function(el) { observer.observe(el); });
+
+// Init
+async function initData() {
+  try {
+    var r = await fetch(API + "/opendata/countries/latest");
+    var d = await r.json();
+    var data = d.data || d;
+    var latestYear = (data[0] && data[0].reference_year) ? data[0].reference_year : 2024;
+    currentYear = latestYear;
+    var editions = latestYear - 2021 + 1;
+    var el;
+    el = document.getElementById("hero-years"); if (el) el.textContent = editions;
+    el = document.getElementById("hero-period"); if (el) el.textContent = "2021\u2013" + latestYear;
+    el = document.getElementById("hero-opp-year"); if (el) el.textContent = "HIGH IMPACT \u00B7 " + latestYear;
+    el = document.getElementById("live-year-title"); if (el) el.textContent = latestYear;
+    el = document.getElementById("method-editions"); if (el) el.textContent = editions;
+    availableYears = [];
+    for (var y = 2021; y <= latestYear; y++) availableYears.push(y);
+    buildYearSelector(latestYear);
+    renderLiveScores(data);
+    document.querySelectorAll("[id^=obs-year-]").forEach(function(e) {
+      e.textContent = "OBSERVATION " + latestYear;
+    });
+  } catch(err) {
+    console.error("initData:", err);
+    buildYearSelector(2024);
+    renderLiveScores([]);
+  }
+}
+
 function buildYearSelector(activeYear) {
-  const sel = document.getElementById('year-selector');
+  var sel = document.getElementById("year-selector");
   if (!sel) return;
-  const label = sel.querySelector('.year-label');
-  sel.innerHTML = '';
-  if (label) sel.appendChild(label);
-  else sel.innerHTML = '<span class="year-label">ANNÉE :</span>';
-  
-  availableYears.forEach(y => {
-    const btn = document.createElement('button');
-    btn.className = 'year-btn' + (y === activeYear ? ' active' : '');
+  var labelText = currentLang === "fr" ? "ANN\u00C9E :" : "YEAR:";
+  sel.innerHTML = "<span class=\"year-label\">" + labelText + "</span>";
+  availableYears.forEach(function(y) {
+    var btn = document.createElement("button");
+    btn.className = "year-btn" + (y === activeYear ? " active" : "");
     btn.textContent = y;
-    btn.onclick = () => loadYearData(y);
+    btn.onclick = function() { loadYearData(y); };
     sel.appendChild(btn);
   });
 }
 
-// ── Load data for a specific year ─────────────────────────
 async function loadYearData(year) {
   currentYear = year;
-  document.getElementById('live-year-title').textContent = year;
-  document.querySelectorAll('.year-btn').forEach(b => {
-    b.classList.toggle('active', parseInt(b.textContent) === year);
+  var titleEl = document.getElementById("live-year-title");
+  if (titleEl) titleEl.textContent = year;
+  document.querySelectorAll(".year-btn").forEach(function(b) {
+    b.classList.toggle("active", parseInt(b.textContent) === year);
   });
-  
-  const grid = document.getElementById('live-grid');
-  grid.innerHTML = '<div class="live-card"><div class="loading-pulse"></div></div>'.repeat(6);
-  
+  var grid = document.getElementById("live-grid");
+  if (grid) grid.innerHTML = "<div class=\"live-card\"><div class=\"loading-pulse\"></div></div>".repeat(6);
   try {
-    // Pour les années précédentes, on utilise l'historique
-    let data;
-    if (year === currentYear || year === (new Date().getFullYear() - 1)) {
-      const r = await fetch(`${API}/opendata/countries/latest`);
-      const d = await r.json();
-      data = (d.data || d).filter(c => c.reference_year === year || !c.reference_year);
-    } else {
-      const r = await fetch(`${API}/opendata/countries/latest`);
-      const d = await r.json();
-      data = d.data || d;
-    }
-    renderLiveScores(data, year);
+    var r = await fetch(API + "/opendata/countries/latest");
+    var d = await r.json();
+    renderLiveScores(d.data || d);
   } catch(e) {
-    grid.innerHTML = '<div class="live-card" style="grid-column:1/-1; text-align:center; color:rgba(245,242,235,0.4); font-size:0.85rem;">Données disponibles via l'API OpenData</div>';
+    var msg = currentLang === "fr" ? "Donn\u00E9es disponibles via l\u2019API OpenData" : "Data available via the OpenData API";
+    if (grid) grid.innerHTML = "<div class=\"live-card\" style=\"grid-column:1/-1;text-align:center;color:rgba(245,242,235,0.4)\">" + msg + "</div>";
   }
 }
 
-// ── Render live scores ─────────────────────────────────────
-function renderLiveScores(data, year) {
-  const grid = document.getElementById('live-grid');
-  const countries = data.slice(0, 6);
-  
+function renderLiveScores(data) {
+  var grid = document.getElementById("live-grid");
+  if (!grid) return;
+  var countries = data.slice(0, 6);
   if (!countries.length) {
-    grid.innerHTML = '<div class="live-card" style="grid-column:1/-1; text-align:center; color:rgba(245,242,235,0.4); font-size:0.85rem;">Données disponibles via l'API OpenData</div>';
+    var msg = currentLang === "fr" ? "Donn\u00E9es disponibles via l\u2019API OpenData" : "Data available via the OpenData API";
+    grid.innerHTML = "<div class=\"live-card\" style=\"grid-column:1/-1;text-align:center;color:rgba(245,242,235,0.4)\">" + msg + "</div>";
     return;
   }
-  
-  grid.innerHTML = countries.map(c => {
-    const momentum = c.sovereign_momentum || '';
-    const trajClass = momentum.includes('NEGATIVE') ? 'critical'
-                    : momentum.includes('POSITIVE') ? 'progressing'
-                    : 'stable';
-    const nb_crit = c.nb_pillars_critical || 0;
-    const nb_prog = c.nb_pillars_progressing || 0;
-    const nb_accel = c.nb_pillars_accelerating || 0;
-    const momentumLabel = momentum.replace('_MOMENTUM','').replace('_',' ');
-    return `
-      <div class="live-card">
-        <div class="live-country">${c.country_iso3} · ${c.region_label || ""}</div>
-        <div class="live-score">${nb_crit} <span style="font-size:1rem;opacity:0.5">piliers critiques</span></div>
-        <div class="live-traj ${trajClass}">${momentumLabel}</div>
-        <div style="font-size:0.72rem; color:rgba(245,242,235,0.35); margin-top:0.5rem; font-family:Space Mono,monospace;">
-          ${nb_accel} ACCEL · ${nb_prog} PROG · AMAR: ${c.amar_risk_band||"—"}
-        </div>
-      </div>`;
-  }).join('');
+  var html = "";
+  countries.forEach(function(c) {
+    var momentum = c.sovereign_momentum || "";
+    var trajClass = momentum.indexOf("NEGATIVE") >= 0 ? "critical" : momentum.indexOf("POSITIVE") >= 0 ? "progressing" : "stable";
+    var nb_crit = c.nb_pillars_critical || 0;
+    var nb_accel = c.nb_pillars_accelerating || 0;
+    var nb_prog = c.nb_pillars_progressing || 0;
+    var momentumLabel = momentum.replace("_MOMENTUM","").replace("_"," ");
+    var region = c.region_label || "";
+    var amar = c.amar_risk_band || "\u2014";
+    var pillarsLabel = currentLang === "fr" ? "piliers critiques" : "critical pillars";
+    html += "<div class=\"live-card\">";
+    html += "<div class=\"live-country\">" + c.country_iso3 + " \u00B7 " + region + "</div>";
+    html += "<div class=\"live-score\">" + nb_crit + " <span style=\"font-size:1rem;opacity:0.5\">" + pillarsLabel + "</span></div>";
+    html += "<div class=\"live-traj " + trajClass + "\">" + momentumLabel + "</div>";
+    html += "<div style=\"font-size:0.72rem;color:rgba(245,242,235,0.35);margin-top:0.5rem;font-family:monospace\">" + nb_accel + " ACCEL \u00B7 " + nb_prog + " PROG \u00B7 AMAR: " + amar + "</div>";
+    html += "</div>";
+  });
+  grid.innerHTML = html;
 }
 
-// ── Load opportunities count ───────────────────────────────
 async function loadOpportunitiesCount() {
   try {
-    const r = await fetch(`${API}/opendata/opportunities`);
-    const d = await r.json();
-    const highImpact = (d.data||[]).filter(o => o.opportunity_class === 'HIGH_IMPACT_OPPORTUNITY').length;
-    document.getElementById('hero-opportunities').textContent = highImpact || d.count || '124';
+    var r = await fetch(API + "/opendata/opportunities");
+    var d = await r.json();
+    var data = d.data || [];
+    var highImpact = data.filter(function(o) { return o.opportunity_class === "HIGH_IMPACT_OPPORTUNITY"; }).length;
+    var el = document.getElementById("hero-opportunities");
+    if (el) el.textContent = highImpact || d.count || "124";
   } catch(e) {
-    document.getElementById('hero-opportunities').textContent = '124';
+    var el = document.getElementById("hero-opportunities");
+    if (el) el.textContent = "124";
   }
 }
 
-// ── Load methodology coverage ──────────────────────────────
 async function loadMethodologyCoverage() {
   try {
-    const r = await fetch(`${API}/opendata/countries/latest`);
-    const d = await r.json();
-    const data = d.data || d;
-    const fullCoverage = data.filter(c => c.data_coverage_class === 'FULL_COVERAGE').length;
-    const pct = Math.round(fullCoverage / data.length * 100);
-    const el = document.getElementById('method-coverage');
-    if (el) el.textContent = pct + '%';
+    var r = await fetch(API + "/opendata/countries/latest");
+    var d = await r.json();
+    var data = d.data || d;
+    var full = data.filter(function(c) { return c.data_coverage_class === "FULL_COVERAGE"; }).length;
+    var pct = Math.round(full / data.length * 100);
+    var el = document.getElementById("method-coverage");
+    if (el) el.textContent = pct + "%";
   } catch(e) {}
 }
 
-// ── Load sovereign projects ────────────────────────────────
-async function loadProjects(pillar = null) {
+async function loadProjects(pillar) {
+  var url = pillar ? (API + "/api/v2/sovereign-projects?pillar=" + pillar) : (API + "/api/v2/sovereign-projects");
   try {
-    const url = pillar 
-      ? `${API}/api/v2/sovereign-projects?pillar=${pillar}`
-      : `${API}/api/v2/sovereign-projects`;
-    const r = await fetch(url);
-    const d = await r.json();
-    
-    // Dédupliquer par acronyme
-    const seen = new Set();
-    allProjects = (d.data || []).filter(p => {
-      if (seen.has(p.project_acronym)) return false;
-      seen.add(p.project_acronym);
+    var r = await fetch(url);
+    var d = await r.json();
+    var seen = {};
+    allProjects = (d.data || []).filter(function(p) {
+      if (seen[p.project_acronym]) return false;
+      seen[p.project_acronym] = true;
       return true;
     });
-    
     renderProjects(allProjects);
   } catch(e) {
-    document.getElementById('projects-grid').innerHTML = 
-      '<div style="grid-column:1/-1; text-align:center; color:var(--muted); padding:2rem;">Projets disponibles via l'API</div>';
+    var grid = document.getElementById("projects-grid");
+    var msg = currentLang === "fr" ? "Projets disponibles via l\u2019API" : "Projects available via the API";
+    if (grid) grid.innerHTML = "<div style=\"grid-column:1/-1;text-align:center;color:var(--muted);padding:2rem\">" + msg + "</div>";
   }
 }
 
-// ── Render projects ────────────────────────────────────────
 function renderProjects(projects) {
-  const grid = document.getElementById('projects-grid');
-  const countEl = document.getElementById('projects-count');
-  
+  var grid = document.getElementById("projects-grid");
+  if (!grid) return;
   if (!projects.length) {
-    grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--muted); padding:2rem;">Aucun projet pour ce pilier</div>';
-    if (countEl) countEl.textContent = '';
+    var msg = currentLang === "fr" ? "Aucun projet pour ce pilier" : "No projects for this pillar";
+    grid.innerHTML = "<div style=\"grid-column:1/-1;text-align:center;color:var(--muted);padding:2rem\">" + msg + "</div>";
+    updateProjectsCount();
     return;
   }
-  
-  if (countEl) countEl.textContent = `${projects.length} PROJET${projects.length > 1 ? 'S' : ''} · CLIQUER POUR LA NOTE D&#39;OPPORTUNIT&#xE9;`;
-  
-  grid.innerHTML = projects.map(p => {
-    const cls = p.opportunity_class === 'HIGH_IMPACT_OPPORTUNITY' ? 'high' : 'significant';
-    const clsLabel = cls === 'high' ? '⬆ IMPACT ÉLEVÉ' : '↗ OPPORTUNITÉ';
-    const traj = p.trajectory_class || '';
-    const trajColor = traj === 'CRITICAL' ? '#C23B2A' 
-                    : traj === 'DECLINING' ? '#E07020'
-                    : traj.includes('PROGRESS') ? '#1A7A4A'
-                    : '#888';
-    return `
-      <div class="project-card">
-        <div class="project-name">${p.project_name}</div>
-        <div class="project-pillar">${p.pillar_code} · ${p.project_family_label || ""}</div>
-        <span class="project-acronym">${p.project_acronym}</span>
-        <p class="project-desc">${(p.project_description || "").substring(0, 140)}…</p>
-        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; margin-top:auto">
-          <span class="project-class ${cls}">${clsLabel}</span>
-          ${traj ? ("<span style=\"font-family:Space Mono,monospace; font-size:0.62rem; color:\"+trajColor+"; font-weight:700\">"+traj+"</span>") : ""}
-        </div>
-        <div style="margin-top:1rem; padding-top:0.75rem; border-top:1px solid rgba(0,0,0,0.06)">
-          <span style="font-family:Space Mono,monospace; font-size:0.62rem; color:var(--muted); letter-spacing:0.08em;">
-            NOTE D&#39;OPPORTUNIT&#xE9; → <a href="#access" style="color:var(--teal); text-decoration:none;">DEMANDE D&#39;ACC&#xE8;S</a>
-          </span>
-        </div>
-      </div>`;
-  }).join('');
+  updateProjectsCount();
+  var html = "";
+  projects.forEach(function(p) {
+    var cls = p.opportunity_class === "HIGH_IMPACT_OPPORTUNITY" ? "high" : "significant";
+    var clsLabel = cls === "high" ? (currentLang === "fr" ? "\u2B06 IMPACT \u00C9LEV\u00C9" : "\u2B06 HIGH IMPACT") : (currentLang === "fr" ? "\u2197 OPPORTUNIT\u00C9" : "\u2197 OPPORTUNITY");
+    var traj = p.trajectory_class || "";
+    var trajColor = traj === "CRITICAL" ? "#C23B2A" : traj === "DECLINING" ? "#E07020" : traj.indexOf("PROGRESS") >= 0 ? "#1A7A4A" : "#888";
+    var desc = (p.project_description || "").substring(0, 140);
+    var family = p.project_family_label || "";
+    var trajSpan = traj ? ("<span style=\"font-size:0.62rem;color:" + trajColor + ";font-weight:700\">" + traj + "</span>") : "";
+    var noteLabel = currentLang === "fr" ? "NOTE D\u2019OPPORTUNIT\u00C9 \u2192" : "OPPORTUNITY NOTE \u2192";
+    var accessLabel = currentLang === "fr" ? "DEMANDE D\u2019ACC\u00C8S" : "REQUEST ACCESS";
+    html += "<div class=\"project-card\">";
+    html += "<div class=\"project-pillar\">" + p.pillar_code + " \u00B7 " + family + "</div>";
+    html += "<div class=\"project-name\">" + p.project_name + "</div>";
+    html += "<span class=\"project-acronym\">" + p.project_acronym + "</span>";
+    html += "<p class=\"project-desc\">" + desc + "\u2026</p>";
+    html += "<div style=\"display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center\">";
+    html += "<span class=\"project-class " + cls + "\">" + clsLabel + "</span>";
+    html += trajSpan;
+    html += "</div>";
+    html += "<div class=\"project-deliverable\">" + noteLabel + " <a href=\"#access\">" + accessLabel + "</a></div>";
+    html += "</div>";
+  });
+  grid.innerHTML = html;
 }
 
-// ── Filter projects by pillar ──────────────────────────────
 function filterProjects(pillar, btn) {
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  document.querySelectorAll(".filter-btn").forEach(function(b) { b.classList.remove("active"); });
+  btn.classList.add("active");
   loadProjects(pillar);
 }
 
-// ── Load trajectory examples ──────────────────────────────
 async function loadTrajectoryExamples() {
   try {
-    const r = await fetch(`${API}/opendata/opportunities`);
-    const d = await r.json();
-    const opps = d.data || [];
-    
-    const trajs = { 'CRITICAL': null, 'DECLINING': null, 'STABLE': null, 'PROGRESSING': null, 'ACCELERATING': null };
-    opps.forEach(o => {
-      const t = o.trajectory_class || '';
-      if (t && trajs[t] === null) trajs[t] = (o.country_iso3||'') + ' · ' + (o.pillar_code||'');
+    var r = await fetch(API + "/opendata/opportunities");
+    var d = await r.json();
+    var opps = d.data || [];
+    var trajs = { "CRITICAL": null, "DECLINING": null, "STABLE": null, "PROGRESSING": null, "ACCELERATING": null };
+    opps.forEach(function(o) {
+      var t = o.trajectory_class || "";
+      if (t && trajs[t] === null) trajs[t] = o.country_iso3 + " \u00B7 " + o.pillar_code;
     });
-    
-    const year = currentYear || 2024;
-    Object.entries(trajs).forEach(([traj, val]) => {
-      const obsEl = document.getElementById('obs-year-' + traj.toLowerCase());
-      const exEl = document.getElementById('ex-' + traj.toLowerCase());
-      if (obsEl) obsEl.textContent = `OBSERVATION ${year}`;
-      if (exEl) exEl.textContent = val ? ` ${val}` : ' Données API';
+    var year = currentYear || 2024;
+    Object.keys(trajs).forEach(function(traj) {
+      var key = traj.toLowerCase();
+      var obsEl = document.getElementById("obs-year-" + key);
+      var exEl = document.getElementById("ex-" + key);
+      if (obsEl) obsEl.textContent = "OBSERVATION " + year;
+      if (exEl) exEl.textContent = trajs[traj] ? (" " + trajs[traj]) : (currentLang === "fr" ? " Donn\u00E9es API" : " API data");
     });
   } catch(e) {
-    ['critical','declining','stable','progressing','accelerating'].forEach(t => {
-      const el = document.getElementById('ex-' + t);
-      if (el) el.textContent = ' Données API';
+    ["critical","declining","stable","progressing","accelerating"].forEach(function(t) {
+      var el = document.getElementById("ex-" + t);
+      if (el) el.textContent = currentLang === "fr" ? " Donn\u00E9es API" : " API data";
     });
   }
 }
 
-// ── Submit access request ──────────────────────────────────
 async function submitAccessRequest(e) {
   e.preventDefault();
-  const form = e.target;
-  const data = Object.fromEntries(new FormData(form));
+  var form = e.target;
+  var data = Object.fromEntries(new FormData(form));
   try {
-    const body = {
+    var body = {
       ticket_type: "QUESTION",
-      subject: `Demande accès ${data.access_level} — ${data.institution} (${data.country})`,
-      description: `Institution: ${data.institution}\nPays: ${data.country}\nType: ${data.org_type}\nNiveau: ${data.access_level}\nContact: ${data.name} <${data.email}>\n\nMessage: ${data.message}`,
+      subject: "Access request " + data.access_level + " - " + data.institution + " (" + data.country + ")",
+      description: "Institution: " + data.institution + "\nCountry: " + data.country + "\nContact: " + data.name + " <" + data.email + ">\n\nMessage: " + data.message,
       submitter_email: data.email,
-      submitter_name: data.name,
+      submitter_name: data.name
     };
-    await fetch(`${API}/api/v1/tickets`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+    await fetch(API + "/api/v1/tickets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
     });
-    document.getElementById('form-success').style.display = 'block';
-    form.reset();
-    setTimeout(() => document.getElementById('form-success').style.display = 'none', 5000);
+    var s = document.getElementById("form-success");
+    if (s) {
+      s.style.display = "block";
+      form.reset();
+      setTimeout(function() { s.style.display = "none"; }, 5000);
+    }
   } catch(err) {
-    document.getElementById('form-success').style.display = 'block';
-    document.getElementById('form-success').textContent = '✓ Contactez pilot@osa-observatory.africa pour votre demande d'accès';
+    var s = document.getElementById("form-success");
+    if (s) { s.style.display = "block"; s.textContent = "Contact: contact@osa-observatory.africa"; }
   }
 }
 
-// ── Init ───────────────────────────────────────────────────
+// Init all
 initData();
 loadOpportunitiesCount();
 loadMethodologyCoverage();
 loadProjects();
 loadTrajectoryExamples();
 </script>
-
 </body>
 </html>
