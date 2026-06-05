@@ -1801,7 +1801,7 @@ function renderProjects(projects) {
     return;
   }
   
-  if (countEl) countEl.textContent = `${projects.length} PROJET${projects.length > 1 ? 'S' : ''} · CLIQUER POUR LA NOTE D'OPPORTUNITÉ`;
+  if (countEl) countEl.textContent = `${projects.length} PROJET${projects.length > 1 ? 'S' : ''} · CLIQUER POUR LA NOTE D&#39;OPPORTUNIT&#xE9;`;
   
   grid.innerHTML = projects.map(p => {
     const cls = p.opportunity_class === 'HIGH_IMPACT_OPPORTUNITY' ? 'high' : 'significant';
@@ -1823,7 +1823,7 @@ function renderProjects(projects) {
         </div>
         <div style="margin-top:1rem; padding-top:0.75rem; border-top:1px solid rgba(0,0,0,0.06)">
           <span style="font-family:'Space Mono',monospace; font-size:0.62rem; color:var(--muted); letter-spacing:0.08em;">
-            NOTE D'OPPORTUNITÉ → <a href="#access" style="color:var(--teal); text-decoration:none;">DEMANDE D'ACCÈS</a>
+            NOTE D&#39;OPPORTUNIT&#xE9; → <a href="#access" style="color:var(--teal); text-decoration:none;">DEMANDE D&#39;ACC&#xE8;S</a>
           </span>
         </div>
       </div>`;
