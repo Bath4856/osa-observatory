@@ -63,7 +63,7 @@ async def get_countries_latest(
     data = _rows(db, """
         SELECT * FROM pub.mv_isa_country_latest
         WHERE (:region   IS NULL OR region_code          = :region)
-          AND (:momentum IS NULL OR sovereign_trajectory  = :momentum)
+          AND (:momentum IS NULL OR sovereign_momentum = :momentum)
           AND (:amar     IS NULL OR amar_risk_band        = :amar)
         ORDER BY nb_pillars_critical DESC, country_iso3
     """, {
