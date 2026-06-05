@@ -37,13 +37,14 @@ async def lifespan(app):
 
 app = FastAPI(
     lifespan=lifespan,
-    title="OSA ISA Public API",
+    title="OSA Observatory -- African Sovereignty Observatory",
     version=settings.APP_VERSION,
     description=(
-        "Observatoire de la Souverainete Africaine -- Institutional Sovereign Intelligence API. "
-        "Provides ISA scores, sovereign positions, predictive execution signals (P7Z Phase 2), "
-        "sovereign fragility indices, civilian protection risk (P7I-AMAR), "
-        "and conflict-economy exposure (P7I-AMAR-GENECO) for 54 African countries (2010-2024)."
+        "OSA Observatory measures the sovereignty of 54 African states across 10 behavioural pillars. "
+        "Fact-based, not perception-based. "
+        "Provides ISA scores, sovereign trajectories, early warning signals and sovereign opportunity catalogue. "
+        "Data: 2021-2024. Licence: CC-BY-NC-4.0. "
+        "Portal: https://open.osa-observatory.africa"
     ),
     docs_url="/docs",
     redoc_url="/redoc",
