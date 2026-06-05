@@ -6,6 +6,7 @@ CC-BY-NC-4.0 -- open.osa-observatory.org
 
 import time
 import json
+from decimal import Decimal
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy import text
@@ -25,6 +26,12 @@ _DISCLAIMER = (
     "Request institutional access at open.osa-observatory.org for full scores and analytics."
 )
 
+class _OSAEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, Decimal):
+            return float(o)
+        return super().default(o)
+
 def _wrap(data: list, dataset_code: str) -> Response:
     payload = {
         "dataset":    dataset_code,
@@ -35,7 +42,7 @@ def _wrap(data: list, dataset_code: str) -> Response:
         "data":       data,
     }
     return Response(
-        content=json.dumps(payload, ensure_ascii=False),
+        content=json.dumps(payload, ensure_ascii=False, cls=_OSAEncoder),
         media_type="application/json; charset=utf-8"
     )
 
