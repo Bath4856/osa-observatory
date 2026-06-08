@@ -286,3 +286,38 @@ async def get_methodology(db: Session = Depends(get_db)):
     data = _rows(db, "SELECT * FROM pub.v_isa_public_methodology LIMIT 1")
     return {"dataset": "ISA_METHODOLOGY", "license": "CC-BY-NC-4.0",
             "access": "Couche 0 -- Open Data -- CC-BY-NC-4.0", "disclaimer": _DISCLAIMER, "data": data}
+
+
+# ── Politique de publication ──────────────────────────────────────────────────
+@router.get("/publication-policy", summary="Politique de publication OSA — cycle Y/Y-1")
+async def get_publication_policy(db: Session = Depends(get_db)):
+    """
+    Cycle officiel de publication ISA OSA Observatory.
+
+    Statuts :
+    - COLLECTING   : collecte en cours — données non soumises au Comité Scientifique
+    - PRELIMINARY  : collecte terminée — soumis au Comité Scientifique
+    - CONSOLIDATED : validé Comité Scientifique — publié officiellement
+    - OFFICIAL     : archivé — période de contestation close
+
+    Calendrier (Y = année de publication) :
+    - 2e semaine avril Y    : ouverture revue Comité Scientifique
+    - 3e semaine juillet Y  : validation Comité Scientifique
+    - 4e semaine août Y     : PV de validation disponible (déclencheur officiel)
+    - 2e semaine septembre Y: publication officielle ISA Y-1
+
+    Première publication institutionnelle OSA : septembre 2027
+    Couvre Y-1=2026 + validation historique 2020-2025.
+    """
+    data = _rows(db, """
+        SELECT year, publication_year, status,
+               validated_at::text,
+               published_at::text,
+               committee_review_open::text,
+               committee_validation::text,
+               publication_target::text,
+               pv_reference, notes
+        FROM rf.publication_policy
+        ORDER BY year DESC
+    """)
+    return _wrap(data, "OSA_PUBLICATION_POLICY")
