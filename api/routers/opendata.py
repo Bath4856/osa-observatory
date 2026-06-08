@@ -248,7 +248,7 @@ async def get_trajectories(
                trajectory_class, trajectory_signal,
                intervention_family_label,
                country_sovereign_alert_level
-        FROM mg.v_public_p7j_recommendations
+        FROM pub.mv_trajectories
         WHERE (:traj IS NULL OR trajectory_class = :traj)
           AND (:year IS NULL OR year             = :year)
         ORDER BY year DESC, country_iso3, pillar_code
@@ -270,7 +270,7 @@ async def get_country_trajectories(
                trajectory_class, trajectory_signal,
                intervention_family_label,
                country_sovereign_alert_level
-        FROM mg.v_public_p7j_recommendations
+        FROM pub.mv_trajectories
         WHERE country_iso3 = :iso3
           AND (:year IS NULL OR year = :year)
         ORDER BY year, pillar_code
