@@ -756,8 +756,8 @@ async function initData() {
   try {
     var r = await fetch(API + "/opendata/countries/latest");
     var d = await r.json();
-    var data = d.data || d;
-    var latestYear = (data[0] && data[0].reference_year) ? data[0].reference_year : 2024;
+    var meta = d.data || d;
+    var latestYear = (meta[0] && meta[0].reference_year) ? meta[0].reference_year : 2024;
     currentYear = latestYear;
     var editions = latestYear - 2021 + 1;
     var el;
@@ -769,10 +769,13 @@ async function initData() {
     availableYears = [];
     for (var y = 2021; y <= latestYear; y++) availableYears.push(y);
     buildYearSelector(latestYear);
-    renderLiveScores(data);
     document.querySelectorAll("[id^=obs-year-]").forEach(function(e) {
       e.textContent = "OBSERVATION " + latestYear;
     });
+    // Charger les scores ISA reels pour l'annee la plus recente
+    var rs = await fetch(API + "/api/v2/scores?year=" + latestYear);
+    var ds = await rs.json();
+    renderLiveScores(ds.scores || []);
   } catch(err) {
     console.error("initData:", err);
     buildYearSelector(2024);
@@ -804,9 +807,9 @@ async function loadYearData(year) {
   var grid = document.getElementById("live-grid");
   if (grid) grid.innerHTML = "<div class=\"live-card\"><div class=\"loading-pulse\"></div></div>".repeat(6);
   try {
-    var r = await fetch(API + "/opendata/countries/latest");
-    var d = await r.json();
-    renderLiveScores(d.data || d);
+    var rs = await fetch(API + "/api/v2/scores?year=" + year);
+    var ds = await rs.json();
+    renderLiveScores(ds.scores || []);
   } catch(e) {
     var msg = currentLang === "fr" ? "Donn\u00E9es disponibles via l\u2019API OpenData" : "Data available via the OpenData API";
     if (grid) grid.innerHTML = "<div class=\"live-card\" style=\"grid-column:1/-1;text-align:center;color:rgba(245,242,235,0.4)\">" + msg + "</div>";
@@ -824,20 +827,33 @@ function renderLiveScores(data) {
   }
   var html = "";
   countries.forEach(function(c) {
-    var momentum = c.sovereign_momentum || "";
-    var trajClass = momentum.indexOf("NEGATIVE") >= 0 ? "critical" : momentum.indexOf("POSITIVE") >= 0 ? "progressing" : "stable";
+    var traj = c.sovereign_trajectory || c.sovereign_momentum || "";
+    var trajClass = traj.indexOf("CRITICAL") >= 0 || traj.indexOf("NEGATIVE") >= 0 ? "critical"
+                  : traj.indexOf("ACCELERATING") >= 0 || traj.indexOf("POSITIVE") >= 0 ? "progressing"
+                  : traj.indexOf("IMPROVING") >= 0 || traj.indexOf("PROGRESS") >= 0 ? "progressing"
+                  : traj.indexOf("DECLINING") >= 0 ? "critical" : "stable";
+    var trajLabel = traj.replace("_TRAJECTORY","").replace("_MOMENTUM","").replace(/_/g," ");
+    var region = c.region_label || "";
     var nb_crit = c.nb_pillars_critical || 0;
     var nb_accel = c.nb_pillars_accelerating || 0;
-    var nb_prog = c.nb_pillars_progressing || 0;
-    var momentumLabel = momentum.replace("_MOMENTUM","").replace("_"," ");
-    var region = c.region_label || "";
-    var amar = c.amar_risk_band || "\u2014";
+    var score = c.isa_observed_score ? parseFloat(c.isa_observed_score) : null;
+    var position = c.isa_position || null;
+    var confidence = c.data_confidence ? Math.round(parseFloat(c.data_confidence) * 100) : null;
+    var scoreDisplay = score !== null ? (score * 100).toFixed(1) + "%" : "\u2014";
+    var posLabel = currentLang === "fr" ? "Pos." : "Rank";
+    var posDisplay = position ? "#" + position : "\u2014";
+    var confLabel = currentLang === "fr" ? "conf." : "conf.";
+    var confDisplay = confidence ? confidence + "%" : "\u2014";
     var pillarsLabel = currentLang === "fr" ? "piliers critiques" : "critical pillars";
+    var pubStatus = c.publication_status ? c.publication_status.replace("OFFICIAL_","") : "CONSOLIDATED";
     html += "<div class=\"live-card\">";
     html += "<div class=\"live-country\">" + c.country_iso3 + " \u00B7 " + region + "</div>";
-    html += "<div class=\"live-score\">" + nb_crit + " <span style=\"font-size:1rem;opacity:0.5\">" + pillarsLabel + "</span></div>";
-    html += "<div class=\"live-traj " + trajClass + "\">" + momentumLabel + "</div>";
-    html += "<div style=\"font-size:0.72rem;color:rgba(245,242,235,0.35);margin-top:0.5rem;font-family:monospace\">" + nb_accel + " ACCEL \u00B7 " + nb_prog + " PROG \u00B7 AMAR: " + amar + "</div>";
+    html += "<div class=\"live-score\">" + scoreDisplay + " <span style=\"font-size:0.9rem;opacity:0.5\">" + posLabel + " " + posDisplay + "</span></div>";
+    html += "<div class=\"live-traj " + trajClass + "\">" + trajLabel + "</div>";
+    html += "<div style=\"font-size:0.72rem;color:rgba(245,242,235,0.35);margin-top:0.5rem;font-family:monospace\">";
+    html += nb_crit + " " + pillarsLabel + " \u00B7 " + nb_accel + " ACCEL \u00B7 " + confLabel + " " + confDisplay;
+    html += " \u00B7 <span style=\"opacity:0.6\">" + pubStatus + "</span>";
+    html += "</div>";
     html += "</div>";
   });
   grid.innerHTML = html;
