@@ -137,7 +137,8 @@ async def get_sovereign_projects(
             ) AS deliverable_public,
             sp.opportunity_class,
             sp.priority_score, sp.status, sp.tags,
-            spc.project_family_label, spc.strategic_objective AS family_objective,
+            COALESCE(CASE WHEN :lang = 'fr' THEN spc.project_family_label_fr ELSE spc.project_family_label_en END, spc.project_family_label) AS project_family_label,
+            spc.strategic_objective AS family_objective,
             -- Enrichissement ISA : score opportunité du pays/pilier
             opp.trajectory_class, opp.intervention_priority_class,
             opp.intervention_priority_score, opp.delta_potential_label,
@@ -200,7 +201,7 @@ async def get_country_sovereign_projects(
             ) AS strategic_objective,
             sp.deliverable_public, sp.opportunity_class,
             sp.priority_score, sp.status, sp.tags,
-            spc.project_family_label,
+            COALESCE(CASE WHEN :lang = 'fr' THEN spc.project_family_label_fr ELSE spc.project_family_label_en END, spc.project_family_label) AS project_family_label,
             opp.trajectory_class, opp.intervention_priority_class,
             opp.intervention_priority_score, opp.delta_potential_label,
             opp.region_code, opp.region_label,
