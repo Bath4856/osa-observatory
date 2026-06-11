@@ -51,16 +51,18 @@ async def get_scores(
     effective_year = year or 2024
     data = _rows(db, """
         SELECT
-            country_iso3, year, region_code, region_label,
-            isa_observed_score, sovereignty_score, vulnerability_score,
-            resilience_score, data_confidence,
-            nb_pillars_observed, isa_position, regional_position,
-            avg_priority_score, nb_pillars_accelerating, nb_pillars_critical,
-            sovereign_trajectory, publication_status
-        FROM pub.mv_isa_country_rankings
-        WHERE year = :year
-          AND (:region IS NULL OR region_code = :region)
-        ORDER BY isa_position
+            r.country_iso3, r.year, r.region_code, r.region_label,
+            r.isa_observed_score, r.sovereignty_score, r.vulnerability_score,
+            r.resilience_score, r.data_confidence,
+            r.nb_pillars_observed, r.isa_position, r.regional_position,
+            r.avg_priority_score, r.nb_pillars_accelerating, r.nb_pillars_critical,
+            r.sovereign_trajectory,
+            COALESCE(pp.status, r.publication_status) AS publication_status
+        FROM pub.mv_isa_country_rankings r
+        LEFT JOIN rf.publication_policy pp ON pp.year = r.year
+        WHERE r.year = :year
+          AND (:region IS NULL OR r.region_code = :region)
+        ORDER BY r.isa_position
     """, {
         "year":   effective_year,
         "region": region.upper() if region else None,
