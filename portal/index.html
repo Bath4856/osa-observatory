@@ -560,8 +560,8 @@ footer{background:var(--ink);color:rgba(245,242,235,0.5);padding:3rem 2.5rem;}
   <div class="access-inner">
     <div class="section-label" style="justify-content:center;" data-en="Institutional access" data-fr="Acc&egrave;s institutionnel">Institutional access</div>
     <h2 style="text-align:center;" data-en="Join OSA Observatory" data-fr="Rejoindre OSA Observatory">Join OSA Observatory</h2>
-    <p class="section-intro" style="text-align:center;" data-en="OSA Observatory is open to African organisations, development partners, researchers and academics. Registration is free. The annual ISA publication will be available from 2027. Early warnings are published free of charge. Feasibility studies and proofs of concept are available to subscribers." data-fr="OSA Observatory est ouvert aux organisations africaines, partenaires du d&eacute;veloppement, chercheurs et acad&eacute;miciens. Les inscriptions sont libres. La publication annuelle ISA sera disponible d&egrave;s 2027. Les alertes pr&eacute;coces sont publi&eacute;es gratuitement. Les &eacute;tudes de faisabilit&eacute; et POC sont accessibles aux abonn&eacute;s.">
-      OSA Observatory is open to African organisations, development partners, researchers and academics. Registration is free. The annual ISA publication will be available from 2027. Early warnings are published free of charge. Feasibility studies and proofs of concept are available to subscribers.
+    <p class="section-intro" style="text-align:center;" data-en="OSA Observatory is open to African organisations, development partners, researchers and academics. Registration is free and immediate. ISA data 2020&ndash;2024 is available now. First institutional publication: September 2027. Early warnings published free of charge. Feasibility studies available to subscribers." data-fr="OSA Observatory est ouvert aux organisations africaines, partenaires du d&eacute;veloppement, chercheurs et acad&eacute;miciens. L&#39;inscription est gratuite et imm&eacute;diate. Les donn&eacute;es ISA 2020&ndash;2024 sont disponibles d&egrave;s maintenant. Premi&egrave;re publication institutionnelle : septembre 2027. Les alertes pr&eacute;coces sont publi&eacute;es gratuitement. Les &eacute;tudes de faisabilit&eacute; sont accessibles aux abonn&eacute;s.">
+      OSA Observatory is open to African organisations, development partners, researchers and academics. Registration is free and immediate. ISA data 2020&ndash;2024 is available now. First institutional publication: September 2027.
     </p>
     <div class="access-tiers">
       <div class="tier-card">
@@ -623,6 +623,7 @@ footer{background:var(--ink);color:rgba(245,242,235,0.5);padding:3rem 2.5rem;}
           <div class="form-group">
             <label data-en="Desired access level" data-fr="Niveau d&#39;acc&egrave;s souhait&eacute;">Desired access level</label>
             <select name="access_level">
+              <option value="PUBLIC" data-en="PUBLIC &mdash; free, immediate access" data-fr="PUBLIC &mdash; acc&egrave;s gratuit imm&eacute;diat">PUBLIC &mdash; free, immediate access</option>
               <option value="STANDARD" data-en="SUBSCRIBER &mdash; from 2027" data-fr="ABONN&Eacute; &mdash; d&egrave;s 2027">SUBSCRIBER &mdash; from 2027</option>
               <option value="PREMIUM" data-en="ADVANCED &mdash; on quote" data-fr="AVANC&Eacute; &mdash; sur devis">ADVANCED &mdash; on quote</option>
             </select>
@@ -886,7 +887,8 @@ async function loadMethodologyCoverage() {
 }
 
 async function loadProjects(pillar) {
-  var url = pillar ? (API + "/api/v2/sovereign-projects?pillar=" + pillar) : (API + "/api/v2/sovereign-projects");
+  var lang = currentLang || "en";
+  var url = pillar ? (API + "/api/v2/sovereign-projects?pillar=" + pillar + "&lang=" + lang) : (API + "/api/v2/sovereign-projects?lang=" + lang);
   try {
     var r = await fetch(url);
     var d = await r.json();

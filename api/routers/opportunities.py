@@ -111,15 +111,31 @@ async def get_sovereign_projects(
     pillar:  str = Query(default=None, description="Code pilier (ex: PMIN, PECO)"),
     iso3:    str = Query(default=None, description="ISO3 pays (projets specifiques ou generiques)"),
     status:  str = Query(default=None, description="Statut projet (CONCEPT/FEASIBILITY/ACTIVE)"),
+    lang:    str = Query(default="en", description="Langue des contenus : en (defaut) ou fr"),
     db: Session = Depends(get_db),
 ):
     t0 = time.time()
     rows = db.execute(text("""
         SELECT
-            sp.project_code, sp.project_acronym, sp.project_name,
+            sp.project_code, sp.project_acronym,
+            COALESCE(
+                CASE WHEN :lang = 'fr' THEN sp.project_name_fr ELSE sp.project_name_en END,
+                sp.project_name
+            ) AS project_name,
             sp.pillar_code, sp.country_iso3,
-            sp.project_description, sp.strategic_objective,
-            sp.deliverable_public, sp.opportunity_class,
+            COALESCE(
+                CASE WHEN :lang = 'fr' THEN sp.project_description_fr ELSE sp.project_description_en END,
+                sp.project_description
+            ) AS project_description,
+            COALESCE(
+                CASE WHEN :lang = 'fr' THEN sp.strategic_objective_fr ELSE sp.strategic_objective_en END,
+                sp.strategic_objective
+            ) AS strategic_objective,
+            COALESCE(
+                CASE WHEN :lang = 'fr' THEN sp.deliverable_public_fr ELSE sp.deliverable_public_en END,
+                sp.deliverable_public
+            ) AS deliverable_public,
+            sp.opportunity_class,
             sp.priority_score, sp.status, sp.tags,
             spc.project_family_label, spc.strategic_objective AS family_objective,
             -- Enrichissement ISA : score opportunité du pays/pilier
@@ -141,8 +157,9 @@ async def get_sovereign_projects(
         LIMIT 200
     """), {
         "pillar": pillar.upper() if pillar else None,
-        "iso3":   iso3.upper() if iso3 else None,
+        "iso3":   iso3.upper()   if iso3   else None,
         "status": status.upper() if status else None,
+        "lang":   lang.lower()   if lang   else "en",
     }).mappings().all()
 
     elapsed = round((time.time() - t0) * 1000, 2)
@@ -161,13 +178,26 @@ async def get_sovereign_projects(
 )
 async def get_country_sovereign_projects(
     iso3: str,
+    lang: str = Query(default="en", description="Langue des contenus : en (defaut) ou fr"),
     db: Session = Depends(get_db),
 ):
     t0 = time.time()
     rows = db.execute(text("""
         SELECT
-            sp.project_code, sp.project_acronym, sp.project_name,
-            sp.pillar_code, sp.project_description, sp.strategic_objective,
+            sp.project_code, sp.project_acronym,
+            COALESCE(
+                CASE WHEN :lang = 'fr' THEN sp.project_name_fr ELSE sp.project_name_en END,
+                sp.project_name
+            ) AS project_name,
+            sp.pillar_code,
+            COALESCE(
+                CASE WHEN :lang = 'fr' THEN sp.project_description_fr ELSE sp.project_description_en END,
+                sp.project_description
+            ) AS project_description,
+            COALESCE(
+                CASE WHEN :lang = 'fr' THEN sp.strategic_objective_fr ELSE sp.strategic_objective_en END,
+                sp.strategic_objective
+            ) AS strategic_objective,
             sp.deliverable_public, sp.opportunity_class,
             sp.priority_score, sp.status, sp.tags,
             spc.project_family_label,
@@ -187,7 +217,7 @@ async def get_country_sovereign_projects(
         WHERE sp.is_active = true
           AND (sp.country_iso3 = :iso3 OR sp.country_iso3 IS NULL)
         ORDER BY sp.priority_score DESC, opp.intervention_priority_score DESC NULLS LAST
-    """), {"iso3": iso3.upper()}).mappings().all()
+    """), {"iso3": iso3.upper(), "lang": lang.lower() if lang else "en"}).mappings().all()
 
     elapsed = round((time.time() - t0) * 1000, 2)
     await register_api_usage(
