@@ -54,6 +54,13 @@ def _rows(db: Session, sql: str, params: dict = None) -> list:
 # ── 1. Catalogue ──────────────────────────────────────────────
 @router.get("/", summary="Catalogue datasets Open Data OSA")
 async def get_catalog(db: Session = Depends(get_db)):
+    """
+    Catalogue complet des datasets Open Data OSA Observatory.
+
+    Retourne la liste de tous les datasets disponibles en acces libre (CC-BY-NC-4.0),
+    avec leur description, couverture geographique et temporelle.
+    Licence : CC-BY-NC-4.0 — usage non commercial avec attribution obligatoire.
+    """
     data = _rows(db, "SELECT * FROM pub.v_isa_open_data_catalog ORDER BY access_layer, dataset_code")
     return {"platform": "OSA Observatory Open Data", "license": "CC-BY-NC-4.0",
             "disclaimer": _DISCLAIMER, "datasets": data}
@@ -67,6 +74,16 @@ async def get_countries_latest(
     momentum: Optional[str] = Query(default=None),
     amar_band: Optional[str] = Query(default=None),
 ):
+    """
+    Etat souverain le plus recent — 54 pays africains.
+
+    Momentum souverain, alertes AMAR, piliers critiques/accelerants/progressants.
+    Filtres optionnels :
+    - region : AFC, AFS, AFE, AFN, AFW
+    - momentum : POSITIVE_MOMENTUM, NEGATIVE_MOMENTUM, STABLE_MOMENTUM
+    - amar_band : BLACK, RED, ORANGE, YELLOW, GREEN
+    Licence : CC-BY-NC-4.0
+    """
     data = _rows(db, """
         SELECT * FROM pub.mv_isa_country_latest
         WHERE (:region   IS NULL OR region_code          = :region)
@@ -83,6 +100,15 @@ async def get_countries_latest(
 
 @router.get("/countries/latest/{iso3}", summary="Etat souverain le plus recent -- un pays")
 async def get_country_latest(iso3: str, db: Session = Depends(get_db)):
+    """
+    Etat souverain le plus recent pour un pays africain.
+
+    Retourne le momentum souverain, les alertes AMAR, le nombre de piliers
+    critiques/accelerants/progressants pour le pays specifie.
+
+    Parametre : iso3 — code ISO 3166-1 alpha-3 (ex: GHA, SEN, ZAF)
+    Licence : CC-BY-NC-4.0
+    """
     data = _rows(db,
         "SELECT * FROM pub.mv_isa_country_latest WHERE country_iso3 = :iso3",
         {"iso3": iso3.upper()})
@@ -98,6 +124,16 @@ async def get_countries_history(
     direction: Optional[str] = Query(default=None),
     year:      Optional[int] = Query(default=None),
 ):
+    """
+    Historique directionnel souverain 2020-2024 — 54 pays africains.
+
+    Direction annuelle, statut AMAR et statut de publication par pays et annee.
+    Filtres optionnels :
+    - direction : IMPROVING, DECLINING, STABLE, ACCELERATING, CRITICAL
+    - year : 2020, 2021, 2022, 2023, 2024
+    Statuts publication : OFFICIAL / CONSOLIDATED / PRELIMINARY / COLLECTING.
+    Licence : CC-BY-NC-4.0
+    """
     data = _rows(db, """
         SELECT * FROM pub.v_isa_country_history
         WHERE (:direction IS NULL OR annual_direction = :direction)
@@ -112,6 +148,15 @@ async def get_countries_history(
 
 @router.get("/countries/history/{iso3}", summary="Historique directionnel -- un pays")
 async def get_country_history(iso3: str, db: Session = Depends(get_db)):
+    """
+    Historique directionnel souverain 2020-2024 pour un pays.
+
+    Retourne la direction annuelle (IMPROVING/DECLINING/STABLE), le statut AMAR
+    et le statut de publication pour chaque annee disponible.
+
+    Parametre : iso3 — code ISO 3166-1 alpha-3 (ex: GHA, SEN, ZAF)
+    Licence : CC-BY-NC-4.0
+    """
     data = _rows(db,
         "SELECT * FROM pub.v_isa_country_history WHERE country_iso3 = :iso3 ORDER BY year",
         {"iso3": iso3.upper()})
@@ -128,6 +173,16 @@ async def get_pillars(
     trajectory: Optional[str] = Query(default=None),
     year:       Optional[int] = Query(default=None),
 ):
+    """
+    Trajectoires souveraines par pilier — 54 pays africains.
+
+    Classe de trajectoire pour chacun des 10 piliers ISA par pays et annee.
+    Filtres optionnels :
+    - pillar : PECO, PENV, PGEO, PHUM, PMIL, PMIN, PMON, PNUM, PRES, PTRA
+    - trajectory : CRITICAL, DECLINING, STABLE, PROGRESSING, ACCELERATING
+    - year : 2020-2024
+    Licence : CC-BY-NC-4.0
+    """
     data = _rows(db, """
         SELECT * FROM pub.mv_isa_pillar_breakdown
         WHERE (:pillar     IS NULL OR pillar_code      = :pillar)
@@ -148,6 +203,14 @@ async def get_country_pillars(
     db:   Session       = Depends(get_db),
     year: Optional[int] = Query(default=None),
 ):
+    """
+    Trajectoires souveraines par pilier pour un pays africain.
+
+    Classe de trajectoire pour chacun des 10 piliers ISA du pays specifie.
+    Parametre : iso3 — code ISO 3166-1 alpha-3 (ex: GHA, SEN, ZAF)
+    Filtre optionnel par annee (2020-2024).
+    Licence : CC-BY-NC-4.0
+    """
     data = _rows(db, """
         SELECT * FROM pub.mv_isa_pillar_breakdown
         WHERE country_iso3 = :iso3
@@ -166,6 +229,16 @@ async def get_opportunities(
     opportunity_class: Optional[str] = Query(default=None),
     pillar:            Optional[str] = Query(default=None),
 ):
+    """
+    Catalogue projets souverains structurants — 54 pays africains.
+
+    Pour chaque pilier en deficit souverain, projets a fort impact souverain.
+    Filtres optionnels :
+    - opportunity_class : HIGH_IMPACT_OPPORTUNITY, SIGNIFICANT_OPPORTUNITY
+    - pillar : PECO, PENV, PGEO, PHUM, PMIL, PMIN, PMON, PNUM, PRES, PTRA
+    Note d'opportunite accessible librement. Faisabilite sur demande institutionnelle.
+    Licence : CC-BY-NC-4.0
+    """
     data = _rows(db, """
         SELECT * FROM pub.mv_isa_opportunity_catalog
         WHERE (:opp    IS NULL OR opportunity_class = :opp)
@@ -186,6 +259,16 @@ async def get_opportunities(
 
 @router.get("/opportunities/{iso3}", summary="Opportunites projets structurants -- un pays")
 async def get_country_opportunities(iso3: str, db: Session = Depends(get_db)):
+    """
+    Projets souverains structurants prioritaires pour un pays.
+
+    Identifie les projets a fort impact pour chaque pilier en deficit souverain.
+    Note d'opportunite accessible librement. Etude de faisabilite complete
+    disponible sur demande institutionnelle.
+
+    Parametre : iso3 — code ISO 3166-1 alpha-3 (ex: GHA, SEN, ZAF)
+    Licence : CC-BY-NC-4.0
+    """
     data = _rows(db, """
         SELECT * FROM pub.mv_isa_opportunity_catalog
         WHERE country_iso3 = :iso3
@@ -209,6 +292,18 @@ async def get_amar_alerts(
     risk_band: Optional[str] = Query(default=None),
     year:      Optional[int] = Query(default=None),
 ):
+    """
+    Alertes AMAR (Africa Mass Atrocity Risk) — 54 pays, 2020-2024.
+
+    Precurseurs comportementaux de risque d'atrocites de masse.
+    Sources : ACLED, SIPRI, indicateurs de gouvernance ISA.
+    Bandes : BLACK (critique) > RED > ORANGE > YELLOW > GREEN.
+    Filtres optionnels :
+    - risk_band : BLACK, RED, ORANGE, YELLOW, GREEN
+    - year : 2020-2024
+    Doctrine : observation pure — jamais une qualification diplomatique.
+    Licence : CC-BY-NC-4.0
+    """
     data = _rows(db, """
         SELECT country_iso3, year, risk_code, risk_band, source_engine, public_narrative
         FROM mg.v_public_p7i_amar_alerts
@@ -225,6 +320,16 @@ async def get_amar_alerts(
 
 @router.get("/alerts/amar/{iso3}", summary="Alertes AMAR -- un pays")
 async def get_country_amar(iso3: str, db: Session = Depends(get_db)):
+    """
+    Alertes AMAR pour un pays africain.
+
+    Le moteur AMAR mesure les precurseurs comportementaux de risque d'atrocites
+    de masse. Bandes : BLACK > RED > ORANGE > YELLOW > GREEN.
+    Doctrine : observation comportementale pure — jamais une qualification diplomatique.
+
+    Parametre : iso3 — code ISO 3166-1 alpha-3 (ex: GHA, SEN, ZAF)
+    Licence : CC-BY-NC-4.0
+    """
     data = _rows(db, """
         SELECT country_iso3, year, risk_code, risk_band, source_engine, public_narrative
         FROM mg.v_public_p7i_amar_alerts
@@ -243,6 +348,16 @@ async def get_trajectories(
     trajectory_class: Optional[str] = Query(default=None),
     year:             Optional[int] = Query(default=None),
 ):
+    """
+    Trajectoires souveraines P7J et recommandations d'intervention — 54 pays.
+
+    Classe de trajectoire, signal associe et famille d'intervention par pilier.
+    Source : pub.mv_trajectories (vue materialisee — performance optimisee).
+    Filtres optionnels :
+    - trajectory_class : CRITICAL, DECLINING, STABLE, PROGRESSING, ACCELERATING
+    - year : 2020-2024
+    Licence : CC-BY-NC-4.0
+    """
     data = _rows(db, """
         SELECT country_iso3, year, pillar_code,
                trajectory_class, trajectory_signal,
@@ -265,6 +380,15 @@ async def get_country_trajectories(
     db:   Session       = Depends(get_db),
     year: Optional[int] = Query(default=None),
 ):
+    """
+    Trajectoires souveraines P7J pour un pays africain.
+
+    Classe de trajectoire, signal et recommandation d'intervention pour
+    chacun des 10 piliers ISA du pays specifie.
+    Parametre : iso3 — code ISO 3166-1 alpha-3 (ex: GHA, SEN, ZAF)
+    Filtre optionnel par annee (2020-2024).
+    Licence : CC-BY-NC-4.0
+    """
     data = _rows(db, """
         SELECT country_iso3, year, pillar_code,
                trajectory_class, trajectory_signal,
@@ -283,6 +407,15 @@ async def get_country_trajectories(
 # ── 8. Methodologie ──────────────────────────────────────────
 @router.get("/methodology", summary="Documentation methodologique ISA v2")
 async def get_methodology(db: Session = Depends(get_db)):
+    """
+    Documentation methodologique complete ISA v2.
+
+    Retourne la description des 10 piliers, des indicateurs, des sources,
+    de la methode d'imputation MICE et des regles de normalisation.
+    Chaque indicateur ISA est une donnee primaire observable — jamais un sondage,
+    jamais une estimation d'expert.
+    Licence : CC-BY-NC-4.0
+    """
     data = _rows(db, "SELECT * FROM pub.v_isa_public_methodology LIMIT 1")
     return {"dataset": "ISA_METHODOLOGY", "license": "CC-BY-NC-4.0",
             "access": "Couche 0 -- Open Data -- CC-BY-NC-4.0", "disclaimer": _DISCLAIMER, "data": data}
