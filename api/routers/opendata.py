@@ -454,3 +454,23 @@ async def get_publication_policy(db: Session = Depends(get_db)):
         ORDER BY year DESC
     """)
     return _wrap(data, "OSA_PUBLICATION_POLICY")
+
+
+# ── P9 Gouvernance executive ──────────────────────────────────────────────────
+@router.get("/governance", summary="P9 — Tableau de bord gouvernance executive OSA")
+async def get_executive_governance(db: Session = Depends(get_db)):
+    """
+    Tableau de bord de gouvernance executive OSA Observatory — P9.
+
+    Consolide en un seul endpoint :
+    - Affiliations actives par tier (PUBLIC, STATE, DEVELOPMENT_BANK, SUBSCRIBER, ADVANCED)
+    - KPIs API : consultations totales, 7j, 24h, latence moyenne et P95
+    - Tickets : total, contestations, taux de resolution, urgents
+    - Donnees ISA : pays couverts, derniere annee, indicateurs actifs, TRAJECTOIRE
+    - Cycle publication : annees OFFICIAL/PRELIMINARY/COLLECTING, prochaines echeances
+    - Sante systeme : indicateurs inactifs, indicateurs sans groupe
+
+    Acces : public — donnees agregees sans information nominative.
+    """
+    data = _rows(db, "SELECT * FROM pub.v_p9_executive_governance")
+    return _wrap(data, "OSA_P9_EXECUTIVE_GOVERNANCE")
