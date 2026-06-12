@@ -474,3 +474,23 @@ async def get_executive_governance(db: Session = Depends(get_db)):
     """
     data = _rows(db, "SELECT * FROM pub.v_p9_executive_governance")
     return _wrap(data, "OSA_P9_EXECUTIVE_GOVERNANCE")
+
+
+# ── P7Z Statut couche predictive ─────────────────────────────────────────────
+@router.get("/predictive-status", summary="P7Z — Statut couche predictive souveraine")
+async def get_predictive_status(db: Session = Depends(get_db)):
+    """
+    Statut de la couche predictive souveraine P7Z — OSA Sovereign Predictive Intelligence.
+
+    P7Z mesure la capacite d execution des programmes souverains et produit des
+    signaux de convergence, de fragilite et de projection ISA.
+
+    Statut actuel : PENDING_SCIENTIFIC_COMMITTEE_VALIDATION
+    Activation prevue : avril 2027 (premiere revue Comite Scientifique OSA)
+
+    La couche P7Z est architecturalement complete (8091 entrees baseline,
+    54 pays, 15 annees). L activation est conditionnee a la validation de la
+    calibration des couts d intervention par le Comite Scientifique.
+    """
+    data = _rows(db, "SELECT * FROM pub.v_p7z_readiness_status")
+    return _wrap(data, "OSA_P7Z_READINESS_STATUS")
