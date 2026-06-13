@@ -32,6 +32,11 @@ nav a:hover{color:var(--ink);}
 .btn-access{background:var(--ink);color:var(--paper)!important;padding:0.5rem 1.25rem;border-radius:2px;font-size:0.8rem!important;letter-spacing:0.05em;text-transform:uppercase;}
 .btn-access:hover{background:var(--teal)!important;color:var(--paper)!important;}
 
+/* EARLY ACCESS BANNER */
+.early-access-banner{background:linear-gradient(90deg,var(--teal) 0%,#0D3D31 100%);padding:0.6rem 2rem;text-align:center;font-family:'Space Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;color:rgba(245,242,235,0.9);border-bottom:1px solid rgba(200,168,75,0.3);display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;}
+.early-access-badge{background:var(--gold);color:var(--ink);padding:0.2rem 0.6rem;border-radius:2px;font-weight:700;font-size:0.68rem;letter-spacing:0.08em;white-space:nowrap;}
+.early-access-sep{color:rgba(245,242,235,0.3);}
+@media(max-width:600px){.early-access-banner{font-size:0.65rem;padding:0.5rem 1rem;}}
 /* HERO */
 .hero{min-height:100vh;padding:120px 2.5rem 80px;display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;position:relative;max-width:1280px;margin:0 auto;}
 .hero::after{content:'';position:absolute;top:60px;right:-80px;width:600px;height:600px;background:radial-gradient(circle,rgba(200,151,58,0.08) 0%,transparent 70%);pointer-events:none;}
@@ -275,6 +280,13 @@ footer{background:var(--ink);color:rgba(245,242,235,0.5);padding:3rem 2.5rem;}
     <a href="#access" class="btn-access" data-en="Request Access" data-fr="Demande d&#39;acc&egrave;s">Request Access</a>
   </nav>
 </header>
+<!-- EARLY ACCESS BANNER -->
+<div class="early-access-banner">
+  <span class="early-access-badge" data-en="EARLY ACCESS 2026" data-fr="ACC&Egrave;S ANTICIP&Eacute; 2026">EARLY ACCESS 2026</span>
+  <span data-en="ISA data 2020&ndash;2024 &mdash; 54 African states &mdash; Reference data available now" data-fr="Donn&eacute;es ISA 2020&ndash;2024 &mdash; 54 &Eacute;tats africains &mdash; Donn&eacute;es disponibles maintenant">ISA data 2020&ndash;2024 &mdash; 54 African states &mdash; Reference data available now</span>
+  <span class="early-access-sep">|</span>
+  <span data-en="First institutional publication: September 2027" data-fr="Premi&egrave;re publication institutionnelle&nbsp;: septembre 2027">First institutional publication: September 2027</span>
+</div>
 
 <!-- HERO -->
 <section class="hero">
@@ -396,7 +408,7 @@ footer{background:var(--ink);color:rgba(245,242,235,0.5);padding:3rem 2.5rem;}
     <div class="fade-in" style="transition-delay:0.15s">
       <div class="why-approach">
         <div class="why-approach-label" data-en="The OSA approach" data-fr="L&#39;approche OSA">The OSA approach</div>
-        <p class="why-approach-text" data-en="For decades, Africa has been evaluated through indices built on <em>perceptions</em>.<br><br>OSA proposes a different approach: observing the <em>real capabilities</em> of African states from verifiable behavioural data, tracking their <em>trajectories over time</em> and informing public decisions with facts rather than perceptions.<br><br>Every ISA indicator is a <em>primary observable datum</em> &mdash; collected from an audited, geolocated, dated source. Never a survey. Never an expert estimate." data-fr="Depuis plusieurs d&eacute;cennies, l&#39;Afrique est &eacute;valu&eacute;e &agrave; travers des indices construits sur des <em>perceptions</em>.<br><br>OSA propose une approche diff&eacute;rente : observer les <em>capacit&eacute;s r&eacute;elles</em> des &Eacute;tats africains &agrave; partir de donn&eacute;es comportementales v&eacute;rifiables, suivre leurs <em>trajectoires dans le temps</em> et &eacute;clairer les d&eacute;cisions publiques par des faits plut&ocirc;t que par des perceptions.<br><br>Chaque indicateur ISA est une <em>donn&eacute;e primaire observable</em> &mdash; collect&eacute;e depuis une source audit&eacute;e, g&eacute;olis&eacute;e, dat&eacute;e. Jamais un sondage. Jamais une estimation d&#39;expert.">
+        <p class="why-approach-text" data-en="For decades, Africa has been evaluated through indices built on <em>perceptions</em>.<br><br>OSA proposes a different approach: observing the <em>real capabilities</em> of African states from verifiable behavioural data, tracking their <em>trajectories over time</em> and informing public decisions with facts rather than perceptions.<br><br>Every ISA indicator is a <em>primary observable datum</em> &mdash; collected from an audited, geolocated, dated source. Never a survey. Never an expert estimate." data-fr="Depuis plusieurs d&eacute;cennies, l&#39;Afrique est &eacute;valu&eacute;e &agrave; travers des indices construits sur des <em>perceptions</em>.<br><br>OSA propose une approche diff&eacute;rente : observer les <em>capacit&eacute;s r&eacute;elles</em> des &Eacute;tats africains &agrave; partir de donn&eacute;es comportementales v&eacute;rifiables, suivre leurs <em>trajectoires dans le temps</em> et &eacute;clairer les d&eacute;cisions publiques par des faits plut&ocirc;t que par des perceptions.<br><br>Chaque indicateur ISA est une <em>donn&eacute;e primaire observable</em> &mdash; collect&eacute;e depuis une source audit&eacute;e, g&eacute;olocalis&eacute;e, dat&eacute;e. Jamais un sondage. Jamais une estimation d&#39;expert.">
           For decades, Africa has been evaluated through indices built on <em>perceptions</em>.<br><br>OSA proposes a different approach: observing the <em>real capabilities</em> of African states from verifiable behavioural data, tracking their <em>trajectories over time</em> and informing public decisions with facts rather than perceptions.<br><br>Every ISA indicator is a <em>primary observable datum</em> &mdash; collected from an audited, geolocated, dated source. Never a survey. Never an expert estimate.
         </p>
       </div>
@@ -455,7 +467,7 @@ footer{background:var(--ink);color:rgba(245,242,235,0.5);padding:3rem 2.5rem;}
     <div class="fade-in">
       <div class="section-label" data-en="Scientific rigour" data-fr="Rigueur scientifique">Scientific rigour</div>
       <h2 data-en="ISA Methodology" data-fr="M&eacute;thodologie ISA">ISA Methodology</h2>
-      <p class="section-intro" data-en="Every ISA indicator is a primary observable datum &mdash; collected from an audited, geolocated, dated source. Never a survey. Never an expert estimate." data-fr="Chaque indicateur ISA est une donn&eacute;e primaire observable &mdash; collect&eacute;e depuis une source audit&eacute;e, g&eacute;olis&eacute;e, dat&eacute;e. Jamais un sondage. Jamais une estimation d&#39;expert.">Every ISA indicator is a primary observable datum &mdash; collected from an audited, geolocated, dated source. Never a survey. Never an expert estimate.</p>
+      <p class="section-intro" data-en="Every ISA indicator is a primary observable datum &mdash; collected from an audited, geolocated, dated source. Never a survey. Never an expert estimate." data-fr="Chaque indicateur ISA est une donn&eacute;e primaire observable &mdash; collect&eacute;e depuis une source audit&eacute;e, g&eacute;olocalis&eacute;e, dat&eacute;e. Jamais un sondage. Jamais une estimation d&#39;expert.">Every ISA indicator is a primary observable datum &mdash; collected from an audited, geolocated, dated source. Never a survey. Never an expert estimate.</p>
       <a href="https://api.osa-observatory.africa/docs" target="_blank" class="btn-secondary" style="display:inline-flex;" data-en="Methodological documentation &rarr;" data-fr="Documentation m&eacute;thodologique &rarr;">Methodological documentation &rarr;</a>
     </div>
     <div class="method-kpis fade-in" style="transition-delay:0.1s">
