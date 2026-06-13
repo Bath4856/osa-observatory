@@ -713,6 +713,7 @@ let allProjects = [];
 let currentYear = null;
 let availableYears = [2021,2022,2023,2024];
 let currentLang = "en";
+let currentPillar = null;
 
 // Language switcher
 function setLang(lang) {
@@ -745,6 +746,8 @@ function setLang(lang) {
       el.textContent = lang === "fr" ? " Chargement\u2026" : " Loading\u2026";
     }
   });
+  // Reload projects in the new language
+  loadProjects(currentPillar);
 }
 
 function updateProjectsCount() {
@@ -957,6 +960,7 @@ function renderProjects(projects) {
 function filterProjects(pillar, btn) {
   document.querySelectorAll(".filter-btn").forEach(function(b) { b.classList.remove("active"); });
   btn.classList.add("active");
+  currentPillar = pillar;
   loadProjects(pillar);
 }
 
