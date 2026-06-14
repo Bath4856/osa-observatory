@@ -996,7 +996,7 @@ async function submitAccessRequest(e) {
   var data = Object.fromEntries(new FormData(form));
   try {
     var body = {
-      ticket_type: "QUESTION",
+      ticket_type: "DEMANDE_ACCES",
       subject: "Access request " + data.access_level + " - " + data.institution + " (" + data.country + ")",
       description: "Institution: " + data.institution + "\nCountry: " + data.country + "\nContact: " + data.name + " <" + data.email + ">\n\nMessage: " + data.message,
       submitter_email: data.email,
