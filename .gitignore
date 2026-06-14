@@ -24,3 +24,10 @@ osa_p8_v2_foundation.sql
 *_long_search.txt
 
 *.pem
+.env.production
+portal/index.html.bak.*
+audit/__init__.py
+audit/audits/
+audit/config/
+audit/core/
+audit/scripts/

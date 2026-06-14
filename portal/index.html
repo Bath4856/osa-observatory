@@ -32,6 +32,13 @@ nav a:hover{color:var(--ink);}
 .btn-access{background:var(--ink);color:var(--paper)!important;padding:0.5rem 1.25rem;border-radius:2px;font-size:0.8rem!important;letter-spacing:0.05em;text-transform:uppercase;}
 .btn-access:hover{background:var(--teal)!important;color:var(--paper)!important;}
 
+/* EARLY ACCESS BANNER */
+.early-access-banner{margin-top:64px;background:linear-gradient(90deg,var(--teal) 0%,#0D3D31 100%);padding:0.6rem 2rem;text-align:center;font-family:'Space Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;color:rgba(245,242,235,0.9);border-bottom:1px solid rgba(200,168,75,0.3);display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;position:relative;z-index:50;}
+.early-access-badge{background:var(--gold);color:var(--ink);padding:0.2rem 0.6rem;border-radius:2px;font-weight:700;font-size:0.68rem;letter-spacing:0.08em;white-space:nowrap;}
+.early-access-sep{color:rgba(245,242,235,0.3);}
+.early-access-link{color:var(--gold);text-decoration:underline;text-decoration-color:rgba(200,168,75,0.4);white-space:nowrap;}
+.early-access-link:hover{text-decoration-color:var(--gold);}
+@media(max-width:600px){.early-access-banner{font-size:0.65rem;padding:0.5rem 1rem;}}
 /* HERO */
 .hero{min-height:100vh;padding:120px 2.5rem 80px;display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;position:relative;max-width:1280px;margin:0 auto;}
 .hero::after{content:'';position:absolute;top:60px;right:-80px;width:600px;height:600px;background:radial-gradient(circle,rgba(200,151,58,0.08) 0%,transparent 70%);pointer-events:none;}
@@ -275,6 +282,15 @@ footer{background:var(--ink);color:rgba(245,242,235,0.5);padding:3rem 2.5rem;}
     <a href="#access" class="btn-access" data-en="Request Access" data-fr="Demande d&#39;acc&egrave;s">Request Access</a>
   </nav>
 </header>
+<!-- EARLY ACCESS BANNER -->
+<div class="early-access-banner">
+  <span class="early-access-badge" data-en="EARLY ACCESS" data-fr="ACC&Egrave;S ANTICIP&Eacute;">EARLY ACCESS</span>
+  <span data-en="ISA reference data available now &mdash; 54 African states" data-fr="Donn&eacute;es de r&eacute;f&eacute;rence ISA disponibles maintenant &mdash; 54 &Eacute;tats africains">ISA reference data available now &mdash; 54 African states</span>
+  <span class="early-access-sep">|</span>
+  <span data-en="First institutional publication: September 2027" data-fr="Premi&egrave;re publication institutionnelle&nbsp;: septembre 2027">First institutional publication: September 2027</span>
+  <span class="early-access-sep">|</span>
+  <a class="early-access-link" href="https://api.osa-observatory.africa/docs" target="_blank" data-en="Explore the API &rarr;" data-fr="Explorer l&#39;API &rarr;">Explore the API &rarr;</a>
+</div>
 
 <!-- HERO -->
 <section class="hero">
@@ -396,7 +412,7 @@ footer{background:var(--ink);color:rgba(245,242,235,0.5);padding:3rem 2.5rem;}
     <div class="fade-in" style="transition-delay:0.15s">
       <div class="why-approach">
         <div class="why-approach-label" data-en="The OSA approach" data-fr="L&#39;approche OSA">The OSA approach</div>
-        <p class="why-approach-text" data-en="For decades, Africa has been evaluated through indices built on <em>perceptions</em>.<br><br>OSA proposes a different approach: observing the <em>real capabilities</em> of African states from verifiable behavioural data, tracking their <em>trajectories over time</em> and informing public decisions with facts rather than perceptions.<br><br>Every ISA indicator is a <em>primary observable datum</em> &mdash; collected from an audited, geolocated, dated source. Never a survey. Never an expert estimate." data-fr="Depuis plusieurs d&eacute;cennies, l&#39;Afrique est &eacute;valu&eacute;e &agrave; travers des indices construits sur des <em>perceptions</em>.<br><br>OSA propose une approche diff&eacute;rente : observer les <em>capacit&eacute;s r&eacute;elles</em> des &Eacute;tats africains &agrave; partir de donn&eacute;es comportementales v&eacute;rifiables, suivre leurs <em>trajectoires dans le temps</em> et &eacute;clairer les d&eacute;cisions publiques par des faits plut&ocirc;t que par des perceptions.<br><br>Chaque indicateur ISA est une <em>donn&eacute;e primaire observable</em> &mdash; collect&eacute;e depuis une source audit&eacute;e, g&eacute;olis&eacute;e, dat&eacute;e. Jamais un sondage. Jamais une estimation d&#39;expert.">
+        <p class="why-approach-text" data-en="For decades, Africa has been evaluated through indices built on <em>perceptions</em>.<br><br>OSA proposes a different approach: observing the <em>real capabilities</em> of African states from verifiable behavioural data, tracking their <em>trajectories over time</em> and informing public decisions with facts rather than perceptions.<br><br>Every ISA indicator is a <em>primary observable datum</em> &mdash; collected from an audited, geolocated, dated source. Never a survey. Never an expert estimate." data-fr="Depuis plusieurs d&eacute;cennies, l&#39;Afrique est &eacute;valu&eacute;e &agrave; travers des indices construits sur des <em>perceptions</em>.<br><br>OSA propose une approche diff&eacute;rente : observer les <em>capacit&eacute;s r&eacute;elles</em> des &Eacute;tats africains &agrave; partir de donn&eacute;es comportementales v&eacute;rifiables, suivre leurs <em>trajectoires dans le temps</em> et &eacute;clairer les d&eacute;cisions publiques par des faits plut&ocirc;t que par des perceptions.<br><br>Chaque indicateur ISA est une <em>donn&eacute;e primaire observable</em> &mdash; collect&eacute;e depuis une source audit&eacute;e, g&eacute;olocalis&eacute;e, dat&eacute;e. Jamais un sondage. Jamais une estimation d&#39;expert.">
           For decades, Africa has been evaluated through indices built on <em>perceptions</em>.<br><br>OSA proposes a different approach: observing the <em>real capabilities</em> of African states from verifiable behavioural data, tracking their <em>trajectories over time</em> and informing public decisions with facts rather than perceptions.<br><br>Every ISA indicator is a <em>primary observable datum</em> &mdash; collected from an audited, geolocated, dated source. Never a survey. Never an expert estimate.
         </p>
       </div>
@@ -455,7 +471,7 @@ footer{background:var(--ink);color:rgba(245,242,235,0.5);padding:3rem 2.5rem;}
     <div class="fade-in">
       <div class="section-label" data-en="Scientific rigour" data-fr="Rigueur scientifique">Scientific rigour</div>
       <h2 data-en="ISA Methodology" data-fr="M&eacute;thodologie ISA">ISA Methodology</h2>
-      <p class="section-intro" data-en="Every ISA indicator is a primary observable datum &mdash; collected from an audited, geolocated, dated source. Never a survey. Never an expert estimate." data-fr="Chaque indicateur ISA est une donn&eacute;e primaire observable &mdash; collect&eacute;e depuis une source audit&eacute;e, g&eacute;olis&eacute;e, dat&eacute;e. Jamais un sondage. Jamais une estimation d&#39;expert.">Every ISA indicator is a primary observable datum &mdash; collected from an audited, geolocated, dated source. Never a survey. Never an expert estimate.</p>
+      <p class="section-intro" data-en="Every ISA indicator is a primary observable datum &mdash; collected from an audited, geolocated, dated source. Never a survey. Never an expert estimate." data-fr="Chaque indicateur ISA est une donn&eacute;e primaire observable &mdash; collect&eacute;e depuis une source audit&eacute;e, g&eacute;olocalis&eacute;e, dat&eacute;e. Jamais un sondage. Jamais une estimation d&#39;expert.">Every ISA indicator is a primary observable datum &mdash; collected from an audited, geolocated, dated source. Never a survey. Never an expert estimate.</p>
       <a href="https://api.osa-observatory.africa/docs" target="_blank" class="btn-secondary" style="display:inline-flex;" data-en="Methodological documentation &rarr;" data-fr="Documentation m&eacute;thodologique &rarr;">Methodological documentation &rarr;</a>
     </div>
     <div class="method-kpis fade-in" style="transition-delay:0.1s">
@@ -521,6 +537,12 @@ footer{background:var(--ink);color:rgba(245,242,235,0.5);padding:3rem 2.5rem;}
       <div class="live-card"><div class="loading-pulse"></div></div>
       <div class="live-card"><div class="loading-pulse"></div></div>
       <div class="live-card"><div class="loading-pulse"></div></div>
+    </div>
+    <div style="text-align:center;margin-top:2rem;display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;align-items:center;">
+      <button id="toggle-countries-btn" class="btn-secondary" style="border-color:rgba(255,255,255,0.3);color:white;background:transparent;cursor:pointer;" onclick="toggleAllCountries()" data-en="Show all 54 countries &darr;" data-fr="Voir les 54 pays &darr;">Show all 54 countries &darr;</button>
+      <select id="country-selector" onchange="filterByCountry(this.value)" style="font-family:'Space Mono',monospace;font-size:0.72rem;letter-spacing:0.08em;padding:0.6rem 1rem;border:1.5px solid rgba(255,255,255,0.3);border-radius:2px;background:transparent;color:white;cursor:pointer;">
+        <option value="" data-en="-- Track a country --" data-fr="-- Suivre un pays --">-- Track a country --</option>
+      </select>
     </div>
     <div style="text-align:center;margin-top:2.5rem;">
       <a href="#access" class="btn-secondary" style="border-color:rgba(255,255,255,0.3);color:white;" data-en="Request institutional access &rarr;" data-fr="Demande d&#39;acc&egrave;s institutionnel &rarr;">Request institutional access &rarr;</a>
@@ -701,6 +723,10 @@ let allProjects = [];
 let currentYear = null;
 let availableYears = [2021,2022,2023,2024];
 let currentLang = "en";
+let currentPillar = null;
+let showAllCountries = false;
+let lastScoresData = [];
+let selectedCountry = "";
 
 // Language switcher
 function setLang(lang) {
@@ -733,6 +759,8 @@ function setLang(lang) {
       el.textContent = lang === "fr" ? " Chargement\u2026" : " Loading\u2026";
     }
   });
+  // Reload projects in the new language
+  loadProjects(currentPillar);
 }
 
 function updateProjectsCount() {
@@ -817,10 +845,54 @@ async function loadYearData(year) {
   }
 }
 
+function populateCountrySelector(data) {
+  var sel = document.getElementById("country-selector");
+  if (!sel || sel.dataset.populated === "1") return;
+  var sorted = data.slice().sort(function(a,b) {
+    return a.country_iso3.localeCompare(b.country_iso3);
+  });
+  sorted.forEach(function(c) {
+    var opt = document.createElement("option");
+    opt.value = c.country_iso3;
+    opt.textContent = c.country_iso3 + " \u00B7 " + (c.region_label || "");
+    sel.appendChild(opt);
+  });
+  sel.dataset.populated = "1";
+}
+
+function filterByCountry(iso3) {
+  selectedCountry = iso3;
+  renderLiveScores(lastScoresData);
+}
+
+function toggleAllCountries() {
+  showAllCountries = !showAllCountries;
+  var btn = document.getElementById("toggle-countries-btn");
+  if (btn) {
+    var lang = currentLang;
+    if (showAllCountries) {
+      btn.setAttribute("data-en", "Show top 6 \u2191");
+      btn.setAttribute("data-fr", "Voir le top 6 \u2191");
+    } else {
+      btn.setAttribute("data-en", "Show all 54 countries \u2193");
+      btn.setAttribute("data-fr", "Voir les 54 pays \u2193");
+    }
+    btn.innerHTML = btn.getAttribute("data-" + lang);
+  }
+  renderLiveScores(lastScoresData);
+}
+
 function renderLiveScores(data) {
   var grid = document.getElementById("live-grid");
   if (!grid) return;
-  var countries = data.slice(0, 6);
+  lastScoresData = data;
+  populateCountrySelector(data);
+  var countries;
+  if (selectedCountry) {
+    countries = data.filter(function(c) { return c.country_iso3 === selectedCountry; });
+  } else {
+    countries = showAllCountries ? data.slice(0, 54) : data.slice(0, 6);
+  }
   if (!countries.length) {
     var msg = currentLang === "fr" ? "Donn\u00E9es disponibles via l\u2019API OpenData" : "Data available via the OpenData API";
     grid.innerHTML = "<div class=\"live-card\" style=\"grid-column:1/-1;text-align:center;color:rgba(245,242,235,0.4)\">" + msg + "</div>";
@@ -945,6 +1017,7 @@ function renderProjects(projects) {
 function filterProjects(pillar, btn) {
   document.querySelectorAll(".filter-btn").forEach(function(b) { b.classList.remove("active"); });
   btn.classList.add("active");
+  currentPillar = pillar;
   loadProjects(pillar);
 }
 
@@ -980,7 +1053,7 @@ async function submitAccessRequest(e) {
   var data = Object.fromEntries(new FormData(form));
   try {
     var body = {
-      ticket_type: "QUESTION",
+      ticket_type: "DEMANDE_ACCES",
       subject: "Access request " + data.access_level + " - " + data.institution + " (" + data.country + ")",
       description: "Institution: " + data.institution + "\nCountry: " + data.country + "\nContact: " + data.name + " <" + data.email + ">\n\nMessage: " + data.message,
       submitter_email: data.email,
