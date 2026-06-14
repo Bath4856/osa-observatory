@@ -33,7 +33,7 @@ nav a:hover{color:var(--ink);}
 .btn-access:hover{background:var(--teal)!important;color:var(--paper)!important;}
 
 /* EARLY ACCESS BANNER */
-.early-access-banner{background:linear-gradient(90deg,var(--teal) 0%,#0D3D31 100%);padding:0.6rem 2rem;text-align:center;font-family:'Space Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;color:rgba(245,242,235,0.9);border-bottom:1px solid rgba(200,168,75,0.3);display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;}
+.early-access-banner{margin-top:64px;background:linear-gradient(90deg,var(--teal) 0%,#0D3D31 100%);padding:0.6rem 2rem;text-align:center;font-family:'Space Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;color:rgba(245,242,235,0.9);border-bottom:1px solid rgba(200,168,75,0.3);display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;position:relative;z-index:50;}
 .early-access-badge{background:var(--gold);color:var(--ink);padding:0.2rem 0.6rem;border-radius:2px;font-weight:700;font-size:0.68rem;letter-spacing:0.08em;white-space:nowrap;}
 .early-access-sep{color:rgba(245,242,235,0.3);}
 .early-access-link{color:var(--gold);text-decoration:underline;text-decoration-color:rgba(200,168,75,0.4);white-space:nowrap;}
@@ -285,7 +285,7 @@ footer{background:var(--ink);color:rgba(245,242,235,0.5);padding:3rem 2.5rem;}
 <!-- EARLY ACCESS BANNER -->
 <div class="early-access-banner">
   <span class="early-access-badge" data-en="EARLY ACCESS" data-fr="ACC&Egrave;S ANTICIP&Eacute;">EARLY ACCESS</span>
-  <span data-en="ISA data 2020&ndash;2024 &mdash; 54 African states &mdash; Reference data available now" data-fr="Donn&eacute;es ISA 2020&ndash;2024 &mdash; 54 &Eacute;tats africains &mdash; Donn&eacute;es disponibles maintenant">ISA data 2020&ndash;2024 &mdash; 54 African states &mdash; Reference data available now</span>
+  <span data-en="ISA reference data available now &mdash; 54 African states" data-fr="Donn&eacute;es de r&eacute;f&eacute;rence ISA disponibles maintenant &mdash; 54 &Eacute;tats africains">ISA reference data available now &mdash; 54 African states</span>
   <span class="early-access-sep">|</span>
   <span data-en="First institutional publication: September 2027" data-fr="Premi&egrave;re publication institutionnelle&nbsp;: septembre 2027">First institutional publication: September 2027</span>
   <span class="early-access-sep">|</span>
@@ -538,8 +538,11 @@ footer{background:var(--ink);color:rgba(245,242,235,0.5);padding:3rem 2.5rem;}
       <div class="live-card"><div class="loading-pulse"></div></div>
       <div class="live-card"><div class="loading-pulse"></div></div>
     </div>
-    <div style="text-align:center;margin-top:2rem;">
+    <div style="text-align:center;margin-top:2rem;display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;align-items:center;">
       <button id="toggle-countries-btn" class="btn-secondary" style="border-color:rgba(255,255,255,0.3);color:white;background:transparent;cursor:pointer;" onclick="toggleAllCountries()" data-en="Show all 54 countries &darr;" data-fr="Voir les 54 pays &darr;">Show all 54 countries &darr;</button>
+      <select id="country-selector" onchange="filterByCountry(this.value)" style="font-family:'Space Mono',monospace;font-size:0.72rem;letter-spacing:0.08em;padding:0.6rem 1rem;border:1.5px solid rgba(255,255,255,0.3);border-radius:2px;background:transparent;color:white;cursor:pointer;">
+        <option value="" data-en="-- Track a country --" data-fr="-- Suivre un pays --">-- Track a country --</option>
+      </select>
     </div>
     <div style="text-align:center;margin-top:2.5rem;">
       <a href="#access" class="btn-secondary" style="border-color:rgba(255,255,255,0.3);color:white;" data-en="Request institutional access &rarr;" data-fr="Demande d&#39;acc&egrave;s institutionnel &rarr;">Request institutional access &rarr;</a>
@@ -723,6 +726,7 @@ let currentLang = "en";
 let currentPillar = null;
 let showAllCountries = false;
 let lastScoresData = [];
+let selectedCountry = "";
 
 // Language switcher
 function setLang(lang) {
@@ -841,6 +845,26 @@ async function loadYearData(year) {
   }
 }
 
+function populateCountrySelector(data) {
+  var sel = document.getElementById("country-selector");
+  if (!sel || sel.dataset.populated === "1") return;
+  var sorted = data.slice().sort(function(a,b) {
+    return a.country_iso3.localeCompare(b.country_iso3);
+  });
+  sorted.forEach(function(c) {
+    var opt = document.createElement("option");
+    opt.value = c.country_iso3;
+    opt.textContent = c.country_iso3 + " \u00B7 " + (c.region_label || "");
+    sel.appendChild(opt);
+  });
+  sel.dataset.populated = "1";
+}
+
+function filterByCountry(iso3) {
+  selectedCountry = iso3;
+  renderLiveScores(lastScoresData);
+}
+
 function toggleAllCountries() {
   showAllCountries = !showAllCountries;
   var btn = document.getElementById("toggle-countries-btn");
@@ -862,7 +886,13 @@ function renderLiveScores(data) {
   var grid = document.getElementById("live-grid");
   if (!grid) return;
   lastScoresData = data;
-  var countries = showAllCountries ? data.slice(0, 54) : data.slice(0, 6);
+  populateCountrySelector(data);
+  var countries;
+  if (selectedCountry) {
+    countries = data.filter(function(c) { return c.country_iso3 === selectedCountry; });
+  } else {
+    countries = showAllCountries ? data.slice(0, 54) : data.slice(0, 6);
+  }
   if (!countries.length) {
     var msg = currentLang === "fr" ? "Donn\u00E9es disponibles via l\u2019API OpenData" : "Data available via the OpenData API";
     grid.innerHTML = "<div class=\"live-card\" style=\"grid-column:1/-1;text-align:center;color:rgba(245,242,235,0.4)\">" + msg + "</div>";
