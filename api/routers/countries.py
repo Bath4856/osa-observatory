@@ -32,12 +32,15 @@ def _rows(db: Session, sql: str, params: dict = None) -> list:
 
 @router.get(
     "",
-    summary="Latest ISA scores -- all countries -- Couche 1",
+    summary="[DEPRECATED] Latest ISA scores -- all countries -- Couche 1",
     description=(
-        "Returns the latest ISA score for all 54 countries "
-        "with P7J trajectory and AMAR alert. "
-        "Requires Standard affiliation (Couche 1)."
+        "DEPRECATED -- use GET /api/v2/scores instead (public, maintained, "
+        "aligned with rf.publication_policy). "
+        "This endpoint relies on an obsolete publication_status filter "
+        "(OFFICIAL_CONSOLIDATED) and is kept only for backward compatibility. "
+        "Will be removed in a future release."
     ),
+    deprecated=True,
 )
 async def get_latest_countries(
     db:     Session       = Depends(get_db),
