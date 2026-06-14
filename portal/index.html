@@ -538,6 +538,9 @@ footer{background:var(--ink);color:rgba(245,242,235,0.5);padding:3rem 2.5rem;}
       <div class="live-card"><div class="loading-pulse"></div></div>
       <div class="live-card"><div class="loading-pulse"></div></div>
     </div>
+    <div style="text-align:center;margin-top:2rem;">
+      <button id="toggle-countries-btn" class="btn-secondary" style="border-color:rgba(255,255,255,0.3);color:white;background:transparent;cursor:pointer;" onclick="toggleAllCountries()" data-en="Show all 54 countries &darr;" data-fr="Voir les 54 pays &darr;">Show all 54 countries &darr;</button>
+    </div>
     <div style="text-align:center;margin-top:2.5rem;">
       <a href="#access" class="btn-secondary" style="border-color:rgba(255,255,255,0.3);color:white;" data-en="Request institutional access &rarr;" data-fr="Demande d&#39;acc&egrave;s institutionnel &rarr;">Request institutional access &rarr;</a>
     </div>
@@ -718,6 +721,8 @@ let currentYear = null;
 let availableYears = [2021,2022,2023,2024];
 let currentLang = "en";
 let currentPillar = null;
+let showAllCountries = false;
+let lastScoresData = [];
 
 // Language switcher
 function setLang(lang) {
@@ -836,10 +841,28 @@ async function loadYearData(year) {
   }
 }
 
+function toggleAllCountries() {
+  showAllCountries = !showAllCountries;
+  var btn = document.getElementById("toggle-countries-btn");
+  if (btn) {
+    var lang = currentLang;
+    if (showAllCountries) {
+      btn.setAttribute("data-en", "Show top 6 \u2191");
+      btn.setAttribute("data-fr", "Voir le top 6 \u2191");
+    } else {
+      btn.setAttribute("data-en", "Show all 54 countries \u2193");
+      btn.setAttribute("data-fr", "Voir les 54 pays \u2193");
+    }
+    btn.innerHTML = btn.getAttribute("data-" + lang);
+  }
+  renderLiveScores(lastScoresData);
+}
+
 function renderLiveScores(data) {
   var grid = document.getElementById("live-grid");
   if (!grid) return;
-  var countries = data.slice(0, 6);
+  lastScoresData = data;
+  var countries = showAllCountries ? data.slice(0, 54) : data.slice(0, 6);
   if (!countries.length) {
     var msg = currentLang === "fr" ? "Donn\u00E9es disponibles via l\u2019API OpenData" : "Data available via the OpenData API";
     grid.innerHTML = "<div class=\"live-card\" style=\"grid-column:1/-1;text-align:center;color:rgba(245,242,235,0.4)\">" + msg + "</div>";
