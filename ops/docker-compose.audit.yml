@@ -1,0 +1,96 @@
+version: "3.9"
+
+# OSA ISA – P8 OPS V2
+# Orchestration Docker du runner d'audit OPS.
+#
+# Corrections (AUDIT OSA-2026-001) :
+# - [P0] Interversion de fichiers : le contenu de requirements.txt et de
+#   docker-compose.audit.yml avait été échangé. Chaque fichier contient
+#   désormais son contenu correct.
+# - [P0] Indentation YAML : les clés du service audit (container_name,
+#   image, command…) n'étaient pas indentées sous services.audit —
+#   elles étaient au niveau racine, ce qui rendait le fichier invalide
+#   pour Docker Compose. Corrigé.
+# - [P1] Commande : python audit_runner.py remplacé par un entrypoint
+#   bash qui installe d'abord les dépendances (pip install -r
+#   requirements.txt) puis lance run_audit.py. Sans pip install,
+#   l'image python:3.12-slim n'a pas psycopg2, requests, reportlab…
+# - [P1] Volume requirements.txt ajouté en lecture seule pour que
+#   pip install fonctionne dans le conteneur.
+# - [P1] PYTHONUNBUFFERED ajouté pour que les logs apparaissent en
+#   temps réel dans docker logs.
+# - [P2] Healthcheck amélioré : teste que Python peut importer les
+#   modules critiques plutôt qu'un simple print.
+# - [P2] Limites de ressources (deploy.resources) ajoutées.
+
+services:
+
+  audit:
+    container_name: osa-audit
+    image: python:3.12-slim
+    working_dir: /app
+
+    command:
+      - bash
+      - -c
+      - |
+        pip install --no-cache-dir -r requirements.txt &&
+        python run_audit.py
+
+    restart: unless-stopped
+
+    environment:
+      ENVIRONMENT: production
+      DB_HOST: osa-db
+      DB_PORT: "5432"
+      DB_NAME: osa_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      API_URL: https://api.osa-observatory.africa
+      TZ: UTC
+      PYTHONUNBUFFERED: "1"
+
+    volumes:
+      - ./audit:/app/audit
+      - ./ops/run_audit.py:/app/run_audit.py:ro
+      - ./ops/requirements.txt:/app/requirements.txt:ro
+      - ./audit/config:/app/config:ro
+      - ./reports:/app/reports
+      - ./logs:/app/logs
+
+    networks:
+      - osa-network
+
+    depends_on:
+      osa-db:
+        condition: service_started
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c 'import psycopg2, requests, yaml; print(\"AUDIT_OK\")'"
+        ]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "10"
+
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 1024M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+
+networks:
+  osa-network:
+    external: true
