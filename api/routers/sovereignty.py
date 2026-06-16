@@ -6,7 +6,7 @@ Endpoints :
   GET /api/v2/sovereignty/swot          — signaux SWOT tous pays
   GET /api/v2/sovereignty/swot/{iso3}   — signaux SWOT pays unique
 
-View : ma.v_isa_swot_signal_engine
+View : pub.mv_swot_signal
 Access class : PUBLIC
 """
 from typing import Optional, List
@@ -40,7 +40,7 @@ class SWOTSignalItem(BaseModel):
 
 @router.get("/swot",
     summary="Signaux SWOT souverains ISA — tous pays",
-    description="Force/Opportunité/Faiblesse/Menace par pilier et par pays. Source : ma.v_isa_swot_signal_engine.",
+    description="Force/Opportunité/Faiblesse/Menace par pilier et par pays. Source : pub.mv_swot_signal.",
     response_model=List[SWOTSignalItem])
 def list_swot(
     year:   Optional[int] = Query(None, description="Filtrer par année (ex: 2024)"),
@@ -48,7 +48,7 @@ def list_swot(
     limit:  int           = Query(540, ge=1, le=5000),
     db:     Session       = Depends(get_db),
 ):
-    sql = "SELECT * FROM ma.v_isa_swot_signal_engine WHERE 1=1"
+    sql = "SELECT * FROM pub.mv_swot_signal WHERE 1=1"
     params = {}
     if year is not None:
         sql += " AND year = :year"
@@ -63,7 +63,7 @@ def list_swot(
 
 @router.get("/swot/{iso3}",
     summary="Signaux SWOT souverains ISA — pays unique",
-    description="Signaux SWOT F/O/F/M pour un pays donné, tous piliers. Source : ma.v_isa_swot_signal_engine.",
+    description="Signaux SWOT F/O/F/M pour un pays donné, tous piliers. Source : pub.mv_swot_signal.",
     response_model=List[SWOTSignalItem])
 def get_swot_country(
     iso3:   str           = Path(..., min_length=3, max_length=3, description="Code ISO3 du pays"),
@@ -72,7 +72,7 @@ def get_swot_country(
     limit:  int           = Query(100, ge=1, le=1000),
     db:     Session       = Depends(get_db),
 ):
-    sql = "SELECT * FROM ma.v_isa_swot_signal_engine WHERE country_iso3 = :iso3"
+    sql = "SELECT * FROM pub.mv_swot_signal WHERE country_iso3 = :iso3"
     params = {"iso3": iso3.upper()}
     if year is not None:
         sql += " AND year = :year"
