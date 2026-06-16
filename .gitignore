@@ -27,7 +27,4 @@ osa_p8_v2_foundation.sql
 .env.production
 portal/index.html.bak.*
 audit/__init__.py
-audit/audits/
-audit/config/
-audit/core/
 audit/scripts/

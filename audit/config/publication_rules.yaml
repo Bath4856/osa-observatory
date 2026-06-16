@@ -1,0 +1,98 @@
+# ====================================================
+# OSA ISA
+# Publication Rules
+# Production Configuration
+#
+# Corrections (AUDIT OSA-2026-001) :
+# - Seuils alignés avec audit_config.yaml :
+#     review_threshold      < 70  → REVIEW_REQUIRED
+#     conditional_threshold 70–89 → CONDITIONAL_PUBLICATION
+#     ready_threshold       >= 90 → READY_FOR_PUBLICATION
+#   (La version originale avait conditional=85, ready=90 ici, mais
+#    audit_config.yaml avait ready=85 — deux sources de vérité
+#    contradictoires. Source de vérité unique : ce fichier.
+#    audit_config.yaml publication.ready_threshold mis à 90 en cohérence.)
+# - max_warning_modules : 3 → 5 pour absorber les modules infra/API
+#   en WARNING sans bloquer la publication (10+ modules dans le runner).
+# ====================================================
+
+# ----------------------------------------------------
+# IPRS Thresholds
+# Source de vérité unique pour les seuils de publication.
+# audit_config.yaml publication.* doit être identique.
+# ----------------------------------------------------
+review_threshold: 70
+conditional_threshold: 85
+ready_threshold: 90
+
+# ----------------------------------------------------
+# FAIL Rules
+# ----------------------------------------------------
+allow_fail_modules: false
+max_fail_modules: 0
+
+# ----------------------------------------------------
+# WARNING Rules
+# ----------------------------------------------------
+allow_warning_modules: true
+max_warning_modules: 5
+
+# ----------------------------------------------------
+# Confidence Rules
+# ----------------------------------------------------
+minimum_confidence:
+  isa: 0.70
+  swot: 0.50
+  p7i: 0.50
+  trajectory: 0.50
+
+# ----------------------------------------------------
+# Scientific Drift
+# ----------------------------------------------------
+allow_scientific_drift: false
+max_confidence_delta: 0.10
+max_score_delta: 0.15
+
+# ----------------------------------------------------
+# Coverage Rules
+# ----------------------------------------------------
+minimum_countries: 54
+minimum_regions: 5
+minimum_regional_blocs: 11
+minimum_pillars: 10
+
+# ----------------------------------------------------
+# Publication Decisions
+# Labels des statuts retournés par publication_gate.py
+# ----------------------------------------------------
+statuses:
+  ready: READY_FOR_PUBLICATION
+  conditional: CONDITIONAL_PUBLICATION
+  review: REVIEW_REQUIRED
+
+# ----------------------------------------------------
+# Audit Health
+# ----------------------------------------------------
+minimum_health_ratio: 0.80
+
+# ----------------------------------------------------
+# Governance
+# ----------------------------------------------------
+require_audit_signature: true
+require_ledger_entry: true
+require_publication_gate: true
+require_pdf_report: true
+require_grafana_export: true
+
+# ----------------------------------------------------
+# Emergency Override
+# ----------------------------------------------------
+allow_manual_override: false
+manual_override_role: OBSERVATORY_ADMIN
+
+# ----------------------------------------------------
+# Versioning
+# ----------------------------------------------------
+version: 1.1
+owner: OSA Observatory
+environment: production

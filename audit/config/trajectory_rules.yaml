@@ -1,0 +1,150 @@
+# ====================================================
+# OSA ISA
+# Trajectory Rules
+# Production Configuration
+#
+# Corrections (AUDIT OSA-2026-001) :
+# - [P0] Erreur de syntaxe YAML : les listes utilisaient * comme
+#   marqueur (syntaxe Markdown). Remplacé par - (syntaxe YAML valide).
+#   Concernait trajectory_indicators et future_trajectory_families.
+# - [P0] trajectory_classes : les valeurs des sous-clés (positive,
+#   stable, warning, negative) n'étaient pas indentées — YAML les
+#   interprétait comme des clés racine orphelines. Corrigé avec
+#   indentation correcte sous leur clé parente.
+# - [P1] ECO_PUBLIC_LEAKAGE et MIN_LEAKAGE_RISK retirés de
+#   trajectory_indicators : ces indicateurs n'ont pas été ingérés au
+#   Sprint 21 et ne sont pas prévus avant Sprint 23+. Leur présence
+#   dans la liste garantissait un FAIL systématique de audit_trajectory
+#   (cf. correction audit_trajectory.py session précédente).
+#   Ils sont déplacés dans future_trajectory_indicators pour traçabilité.
+# - [P2] reference_year renommé ref_year pour cohérence avec
+#   audit_config.yaml et les modules Python qui lisent cfg["ref_year"].
+# ====================================================
+
+# ----------------------------------------------------
+# Metadata
+# ----------------------------------------------------
+
+version: 1.1
+environment: production
+owner: OSA Observatory
+trajectory_group: TRAJECTOIRE
+
+# ----------------------------------------------------
+# Reference Year
+# ----------------------------------------------------
+
+ref_year: 2024
+minimum_years_history: 5
+
+# ----------------------------------------------------
+# Trajectory Indicators (ingérés — Sprint 21)
+# ECO_PUBLIC_LEAKAGE et MIN_LEAKAGE_RISK déplacés dans
+# future_trajectory_indicators (prévus Sprint 23+).
+# ----------------------------------------------------
+
+trajectory_indicators:
+  - PMIN_VALUE_CAPTURE
+  - PMIN_VALUE_LEAKAGE
+  - PMIN_SMUGGLING_SIGNAL_RANK
+  - PHUM_VALUE_CAPTURE
+
+# ----------------------------------------------------
+# Future Trajectory Indicators (non encore ingérés)
+# ----------------------------------------------------
+
+future_trajectory_indicators:
+  - ECO_PUBLIC_LEAKAGE
+  - MIN_LEAKAGE_RISK
+
+# ----------------------------------------------------
+# Coverage Rules
+# ----------------------------------------------------
+
+minimum_indicator_coverage_pct: 80
+minimum_country_coverage_pct: 90
+
+# ----------------------------------------------------
+# Confidence Rules
+# ----------------------------------------------------
+
+minimum_confidence_score: 0.50
+warning_confidence_score: 0.60
+target_confidence_score: 0.75
+
+# ----------------------------------------------------
+# Trajectory Classification
+# ----------------------------------------------------
+
+trajectory_classes:
+  positive: POSITIVE_TRAJECTORY
+  stable: STABLE_TRAJECTORY
+  warning: WARNING_TRAJECTORY
+  negative: NEGATIVE_TRAJECTORY
+
+# ----------------------------------------------------
+# Leakage Thresholds
+# ----------------------------------------------------
+
+leakage_risk:
+  low: 0.25
+  medium: 0.50
+  high: 0.75
+
+# ----------------------------------------------------
+# Smuggling Thresholds
+# ----------------------------------------------------
+
+smuggling_signal:
+  low: 25
+  medium: 50
+  high: 75
+
+# ----------------------------------------------------
+# Sovereign Capture Thresholds
+# ----------------------------------------------------
+
+capture_score:
+  weak: 0.40
+  medium: 0.60
+  strong: 0.80
+
+# ----------------------------------------------------
+# Publication Rules
+# max_missing_indicators = 0 tant que ECO_PUBLIC_LEAKAGE
+# et MIN_LEAKAGE_RISK sont dans future_trajectory_indicators
+# ----------------------------------------------------
+
+allow_missing_indicators: false
+max_missing_indicators: 0
+require_minimum_coverage: true
+
+# ----------------------------------------------------
+# Scientific Drift
+# ----------------------------------------------------
+
+allow_scientific_drift: false
+max_confidence_delta: 0.10
+max_score_delta: 0.15
+
+# ----------------------------------------------------
+# Audit Integration
+# ----------------------------------------------------
+
+audit_module: TRAJECTORY
+save_to_ledger: true
+export_to_grafana: true
+include_in_pdf: true
+include_in_publication_gate: true
+
+# ----------------------------------------------------
+# Future Trajectory Families (Sprint 23+)
+# ----------------------------------------------------
+
+future_trajectory_families:
+  - PMON
+  - PNUM
+  - PECO
+  - PGEO
+  - PENV
+  - PMIL

@@ -1,0 +1,205 @@
+# ====================================================
+# OSA ISA
+# P8 OPS V2
+# Production Configuration
+#
+# Corrections (AUDIT OSA-2026-001) :
+# - publication_year remplacé par ref_year (clé attendue par les
+#   modules dynamiques : audit_isa, audit_database, audit_performance,
+#   audit_swot, audit_trajectory, audit_scientific_drift).
+#   publication_year conservé en alias pour rétrocompatibilité.
+# - conditional_threshold ajouté dans cfg.publication pour aligner
+#   avec publication_rules.yaml (70 / 85 / 90).
+# - audit_timeout_seconds ajouté (timeout thread par module dans le runner).
+# - enabled_audits complété avec tous les modules du pack audit.
+# - api_contract supprimé de enabled_audits (module redondant, remplacé
+#   par api_contract_advanced — cf. session de correction précédente).
+# - db_password : valeur placeholder explicite remplacée par une note.
+# - git_commit : "production" remplacé par "auto" pour indiquer qu'il
+#   doit être injecté dynamiquement au moment du run.
+# ====================================================
+
+environment: production
+
+# ====================================================
+# API
+# ====================================================
+
+api_url: https://api.osa-observatory.africa
+api_timeout_seconds: 60
+
+# Timeout par module (thread) dans audit_runner — distinct des seuils
+# de latence WARNING ci-dessous
+audit_timeout_seconds: 120
+
+minimum_countries: 54
+minimum_regions: 5
+minimum_regional_blocs: 11
+
+# Année de référence des données publiées (N-1).
+# Utilisée par tous les modules qui résolvent l'année dynamiquement.
+# Mettre à jour chaque année de publication.
+ref_year: 2024
+publication_year: 2024   # alias conservé pour rétrocompatibilité
+
+# ====================================================
+# DATABASE
+# ====================================================
+
+db_host: 172.18.0.3
+db_port: 5432
+db_name: osa_db
+db_user: postgres
+# db_password: Il1tRBwubTkPd8jd
+# Ne jamais committer un mot de passe en clair.
+db_password: Il1tRBwubTkPd8jd
+
+# ====================================================
+# ISA
+# ====================================================
+
+minimum_pillars: 10
+
+minimum_confidence:
+  isa: 0.70
+  swot: 0.50
+  p7i: 0.50
+  trajectory: 0.50
+
+allow_null_confidence: false
+
+# ====================================================
+# PERFORMANCE — seuils de latence WARNING par module
+# ====================================================
+
+performance:
+  dns_max_ms: 100
+  openapi_max_ms: 200
+  api_max_ms: 300
+  database_max_ms: 500
+  isa_max_ms: 1000
+  swot_max_ms: 1000
+  p7i_max_ms: 1500
+  trajectory_max_ms: 1000
+
+# ====================================================
+# PUBLICATION GATE
+# Aligné avec publication_rules.yaml :
+#   review_threshold     < 70  → REVIEW_REQUIRED
+#   conditional_threshold 70–84 → CONDITIONAL_PUBLICATION
+#   ready_threshold      >= 85 → READY_FOR_PUBLICATION
+# ====================================================
+
+publication:
+  review_threshold: 70
+  conditional_threshold: 85
+  ready_threshold: 90
+
+# ====================================================
+# AUDITS — liste complète des modules activés
+# audit_api_contract retiré (redondant avec api_contract_advanced)
+# ====================================================
+
+enabled_audits:
+  - DNS
+  - OPENAPI
+  - API
+  - DATABASE
+  - ISA
+  - SWOT
+  - P7I
+  - TRAJECTORY
+  - SCIENTIFIC_DRIFT
+  - DOCUMENTATION
+  - PERFORMANCE
+  - REPOSITORY_STRUCTURE
+  - SECURITY
+  - API_CONTRACT_ADVANCED
+  - API_SCHEMA
+  - API_PERMISSIONS
+  - API_PERFORMANCE_ADVANCED
+  - METHODOLOGY
+  - DATA_QUALITY
+
+# ====================================================
+# DRIFT SCIENTIFIQUE
+# ====================================================
+
+drift_thresholds:
+  warning: 0.05
+  fail: 0.15
+
+scientific_drift:
+  confidence_delta_threshold: 0.10
+  score_delta_threshold: 0.15
+  publication_gap_threshold: 2
+
+# ====================================================
+# LEDGER
+# ====================================================
+
+ledger:
+  enabled: true
+  save_results: true
+  save_publication_gate: true
+
+# ====================================================
+# SIGNATURE
+# ====================================================
+
+signature:
+  enabled: true
+  algorithm: SHA256
+
+# ====================================================
+# PDF REPORTS
+# ====================================================
+
+pdf_output_dir: reports/pdf
+
+# ====================================================
+# GRAFANA EXPORT
+# ====================================================
+
+grafana_export_dir: reports/grafana
+
+# ====================================================
+# EMAIL
+# smtp_user / smtp_password : injecter via variables d'environnement
+# OSA_SMTP_USER / OSA_SMTP_PASSWORD
+# ====================================================
+
+smtp_host: smtp.mailjet.com
+smtp_port: 587
+smtp_user: CHANGE_ME
+smtp_password: CHANGE_ME
+
+email_sender: audit@osa-observatory.africa
+
+email_recipients:
+  - admin@osa-observatory.africa
+
+# ====================================================
+# GIT
+# "auto" = doit être injecté dynamiquement au lancement du runner
+# (ex. git rev-parse --short HEAD)
+# ====================================================
+
+git_commit: auto
+
+# ====================================================
+# OBSERVATORY
+# ====================================================
+
+organization: OSA Observatory
+platform: OSA ISA
+version: P8_OPS_V2
+
+# ====================================================
+# LOGGING
+# ====================================================
+
+logging:
+  level: INFO
+  file: logs/audit.log
+api_base_url: https://api.osa-observatory.africa
