@@ -1,0 +1,64 @@
+# ============================================================
+# OSA ISA – Sprint 24 GAF
+# Configuration du moteur de gouvernance des findings
+# ============================================================
+
+version: "1.0"
+environment: production
+sprint_courant: "Sprint 24"
+
+# ── Sévérités actives ─────────────────────────────────────
+severities:
+  - CRITICAL
+  - HIGH
+  - MEDIUM
+  - LOW
+  - INFO
+
+# ── Seuils de sévérité ────────────────────────────────────
+# Un finding CRITICAL bloque la publication
+# Un finding HIGH déclenche une alerte immédiate
+severity_thresholds:
+  publication_block: CRITICAL
+  alert_immediate:   HIGH
+  alert_next_sprint: MEDIUM
+
+# ── Règles d'orientation actives ──────────────────────────
+# Désactiver une règle sans supprimer son code
+active_rules:
+  - R01_METHOD_VERSION_NULL
+  - R02_DUPLICATE_VALUES
+  - R03_WEIGHT_CONSISTENCY
+  - R04_INDICATOR_NOT_LINKED
+  - R05_ENDPOINT_MISSING
+  - R06_ENDPOINT_TIMEOUT
+  - R07_ENDPOINT_SLOW
+  - R08_NULL_VALUES
+  - R09_TRAJECTORY_INACTIVE
+  - R10_SECURITY_SENSITIVE
+  - R11_MISSING_COUNTRY
+  - R12_NO_AUTH_TOKEN
+
+# ── Propriétaires par défaut ──────────────────────────────
+owners:
+  DATA_STEWARD:           "Équipe collecte et qualité données"
+  METHODOLOGY_COMMITTEE:  "Comité Scientifique OSA"
+  OPS_ADMINISTRATOR:      "Administrateur OPS VPS"
+  PUBLICATION_BOARD:      "Comité de publication"
+
+# ── Sprint targets ────────────────────────────────────────
+sprint_targets:
+  Sprint 24: "Gouvernance findings + corrections critiques"
+  Sprint 25: "Collecte 2025 PRELIMINARY + corrections HIGH"
+  Sprint 26: "Publication institutionnelle préparation"
+
+# ── Persistance ───────────────────────────────────────────
+persistence:
+  enabled: true
+  save_findings: true
+  save_recommendations: true
+
+# ── Rapports ──────────────────────────────────────────────
+reports:
+  output_dir: reports/gaf
+  format: json

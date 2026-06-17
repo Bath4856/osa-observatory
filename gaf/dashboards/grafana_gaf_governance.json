@@ -1,0 +1,161 @@
+{
+  "uid": "osa-gaf-governance",
+  "title": "OSA GAF – Governance of Audit Findings",
+  "description": "Gouvernance des findings d'audit OSA. KPIs : résolution, MTTC, impact IPRS.",
+  "tags": ["osa", "gaf", "governance", "findings", "iprs"],
+  "schemaVersion": 36,
+  "version": 1,
+  "refresh": "10m",
+  "time": {"from": "now-30d", "to": "now"},
+  "timezone": "UTC",
+  "panels": [
+    {
+      "id": 1, "type": "text", "title": "",
+      "gridPos": {"x": 0, "y": 0, "w": 24, "h": 2},
+      "options": {"mode": "markdown", "content": "## OSA GAF – Governance of Audit Findings\nKPIs de gouvernance · Source : `ops.v_gaf_iprs_impact` · `ops.v_findings_open`"}
+    },
+    {
+      "id": 2, "type": "row", "title": "KPIs IPRS & Publication",
+      "gridPos": {"x": 0, "y": 2, "w": 24, "h": 1}, "collapsed": false, "panels": []
+    },
+    {
+      "id": 3, "type": "stat", "title": "Déduction IPRS active",
+      "gridPos": {"x": 0, "y": 3, "w": 4, "h": 4},
+      "datasource": {"type": "marcusolsson-json-datasource", "uid": "osa-json-ds"},
+      "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [
+        {"color": "#5AA64B", "value": null}, {"color": "#F2CC0C", "value": 5}, {"color": "#E02F44", "value": 10}
+      ]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "targets": [{"refId": "A", "fields": [{"name": "iprs_deduction_active", "jsonPath": "$.iprs_deduction_active"}]}]
+    },
+    {
+      "id": 4, "type": "stat", "title": "Findings BLOCKING ouverts",
+      "gridPos": {"x": 4, "y": 3, "w": 4, "h": 4},
+      "datasource": {"type": "marcusolsson-json-datasource", "uid": "osa-json-ds"},
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [
+        {"color": "#5AA64B", "value": null}, {"color": "#E02F44", "value": 1}
+      ]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "targets": [{"refId": "A", "fields": [{"name": "blocking_open", "jsonPath": "$.blocking_findings_open"}]}]
+    },
+    {
+      "id": 5, "type": "gauge", "title": "Audit Resolution Rate (%)",
+      "gridPos": {"x": 8, "y": 3, "w": 6, "h": 4},
+      "datasource": {"type": "marcusolsson-json-datasource", "uid": "osa-json-ds"},
+      "fieldConfig": {"defaults": {"min": 0, "max": 100, "thresholds": {"mode": "absolute", "steps": [
+        {"color": "#E02F44", "value": null}, {"color": "#F2CC0C", "value": 50}, {"color": "#5AA64B", "value": 80}
+      ]}}},
+      "options": {"showThresholdLabels": true, "showThresholdMarkers": true},
+      "targets": [{"refId": "A", "fields": [{"name": "resolution_rate", "jsonPath": "$.audit_resolution_rate_pct"}]}]
+    },
+    {
+      "id": 6, "type": "stat", "title": "MTTC (jours)",
+      "gridPos": {"x": 14, "y": 3, "w": 4, "h": 4},
+      "datasource": {"type": "marcusolsson-json-datasource", "uid": "osa-json-ds"},
+      "fieldConfig": {"defaults": {"unit": "d", "thresholds": {"mode": "absolute", "steps": [
+        {"color": "#5AA64B", "value": null}, {"color": "#F2CC0C", "value": 14}, {"color": "#E02F44", "value": 30}
+      ]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
+      "targets": [{"refId": "A", "fields": [{"name": "mttc", "jsonPath": "$.mttc_days"}]}]
+    },
+    {
+      "id": 7, "type": "stat", "title": "Âge max finding ouvert (jours)",
+      "gridPos": {"x": 18, "y": 3, "w": 4, "h": 4},
+      "datasource": {"type": "marcusolsson-json-datasource", "uid": "osa-json-ds"},
+      "fieldConfig": {"defaults": {"unit": "d", "thresholds": {"mode": "absolute", "steps": [
+        {"color": "#5AA64B", "value": null}, {"color": "#F2CC0C", "value": 30}, {"color": "#E02F44", "value": 90}
+      ]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "targets": [{"refId": "A", "fields": [{"name": "age_max", "jsonPath": "$.max_age_days"}]}]
+    },
+    {
+      "id": 8, "type": "row", "title": "Findings ouverts par sévérité & impact",
+      "gridPos": {"x": 0, "y": 7, "w": 24, "h": 1}, "collapsed": false, "panels": []
+    },
+    {
+      "id": 9, "type": "stat", "title": "CRITICAL",
+      "gridPos": {"x": 0, "y": 8, "w": 3, "h": 3},
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [
+        {"color": "#5AA64B", "value": null}, {"color": "#E02F44", "value": 1}
+      ]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "datasource": {"type": "marcusolsson-json-datasource", "uid": "osa-json-ds"},
+      "targets": [{"refId": "A", "fields": [{"name": "critical", "jsonPath": "$.open_by_severity.CRITICAL"}]}]
+    },
+    {
+      "id": 10, "type": "stat", "title": "HIGH",
+      "gridPos": {"x": 3, "y": 8, "w": 3, "h": 3},
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [
+        {"color": "#5AA64B", "value": null}, {"color": "#F2CC0C", "value": 1}, {"color": "#E02F44", "value": 3}
+      ]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "datasource": {"type": "marcusolsson-json-datasource", "uid": "osa-json-ds"},
+      "targets": [{"refId": "A", "fields": [{"name": "high", "jsonPath": "$.open_by_severity.HIGH"}]}]
+    },
+    {
+      "id": 11, "type": "stat", "title": "MEDIUM",
+      "gridPos": {"x": 6, "y": 8, "w": 3, "h": 3},
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [
+        {"color": "#5AA64B", "value": null}, {"color": "#F2CC0C", "value": 3}
+      ]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "datasource": {"type": "marcusolsson-json-datasource", "uid": "osa-json-ds"},
+      "targets": [{"refId": "A", "fields": [{"name": "medium", "jsonPath": "$.open_by_severity.MEDIUM"}]}]
+    },
+    {
+      "id": 12, "type": "stat", "title": "LOW",
+      "gridPos": {"x": 9, "y": 8, "w": 3, "h": 3},
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [
+        {"color": "#5AA64B", "value": null}, {"color": "#F2CC0C", "value": 5}
+      ]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "datasource": {"type": "marcusolsson-json-datasource", "uid": "osa-json-ds"},
+      "targets": [{"refId": "A", "fields": [{"name": "low", "jsonPath": "$.open_by_severity.LOW"}]}]
+    },
+    {
+      "id": 13, "type": "row", "title": "Table des findings ouverts",
+      "gridPos": {"x": 0, "y": 11, "w": 24, "h": 1}, "collapsed": false, "panels": []
+    },
+    {
+      "id": 14, "type": "table", "title": "Findings ouverts — vue de travail",
+      "gridPos": {"x": 0, "y": 12, "w": 24, "h": 10},
+      "datasource": {"type": "marcusolsson-json-datasource", "uid": "osa-json-ds"},
+      "options": {"showHeader": true},
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "severity"}, "properties": [
+            {"id": "custom.displayMode", "value": "color-background"},
+            {"id": "mappings", "value": [
+              {"type": "value", "options": {"CRITICAL": {"color": "#E02F44", "index": 0}}},
+              {"type": "value", "options": {"HIGH":     {"color": "#FF780A", "index": 1}}},
+              {"type": "value", "options": {"MEDIUM":   {"color": "#F2CC0C", "index": 2}}},
+              {"type": "value", "options": {"LOW":      {"color": "#5AA64B", "index": 3}}}
+            ]}
+          ]},
+          {"matcher": {"id": "byName", "options": "publication_impact"}, "properties": [
+            {"id": "custom.displayMode", "value": "color-background"},
+            {"id": "mappings", "value": [
+              {"type": "value", "options": {"BLOCKING":    {"color": "#E02F44", "index": 0}}},
+              {"type": "value", "options": {"CONDITIONAL": {"color": "#F2CC0C", "index": 1}}},
+              {"type": "value", "options": {"NONE":        {"color": "#5AA64B", "index": 2}}}
+            ]}
+          ]}
+        ]
+      },
+      "targets": [{"refId": "A", "fields": [
+        {"name": "module",             "jsonPath": "$.findings[*].module"},
+        {"name": "finding_code",       "jsonPath": "$.findings[*].finding_code"},
+        {"name": "severity",           "jsonPath": "$.findings[*].severity"},
+        {"name": "publication_impact", "jsonPath": "$.findings[*].publication_impact"},
+        {"name": "iprs_weight",        "jsonPath": "$.findings[*].iprs_weight"},
+        {"name": "owner",              "jsonPath": "$.findings[*].owner"},
+        {"name": "sprint_target",      "jsonPath": "$.findings[*].sprint_target"}
+      ]}]
+    }
+  ],
+  "templating": {"list": []},
+  "annotations": {"list": []},
+  "editable": true,
+  "liveNow": false
+}
