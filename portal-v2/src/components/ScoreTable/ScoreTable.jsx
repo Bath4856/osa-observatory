@@ -5,6 +5,12 @@ import './ScoreTable.css'
 
 const PILLARS = ['PGEO','PECO','PMIN','PHUM','PENV','PMIL','PMON','PNUM','PRES','PTRA']
 
+const PILLAR_LABELS = {
+  PGEO:'Geopolitical', PECO:'Economic', PMIN:'Mineral',
+  PHUM:'Human', PENV:'Environmental', PMIL:'Military',
+  PMON:'Monetary', PNUM:'Digital', PRES:'Energy', PTRA:'Transport'
+}
+
 const STATUS_COLOR = {
   OFFICIAL:    '#1B5E20',
   PRELIMINARY: '#7D4800',
@@ -28,21 +34,14 @@ export default function ScoreTable({ iso3, scoresData, pillarData }) {
   const navigate = useNavigate()
 
   const allYears = Array.from({ length: 20 }, (_, i) => 2010 + i)
-
-  // Annee max disponible dans les donnees
   const maxDataYear = scoresData && scoresData.length > 0
     ? Math.max(...scoresData.map(d => d.year))
     : 2024
-
-  // Fenetre glissante : 5 ans se terminant a maxDataYear
   const defaultEnd = Math.min(maxDataYear, 2029)
-  const defaultStart = defaultEnd - 4
   const [windowEnd, setWindowEnd] = useState(defaultEnd)
   const windowStart = windowEnd - 4
-
   const canPrev = windowStart > 2010
   const canNext = windowEnd < 2029
-
   const windowYears = allYears.filter(y => y >= windowStart && y <= windowEnd)
 
   const getISA = (year) => {
@@ -60,16 +59,18 @@ export default function ScoreTable({ iso3, scoresData, pillarData }) {
   const getTraj = (year) => {
     if (!scoresData) return null
     const entry = scoresData.find(d => d.year === year)
-    if (!entry) return null
-    const t = entry.sovereign_trajectory
-    if (!t) return null
-    if (t.includes('IMPROVING')) return '↗'
-    if (t.includes('DECLINING')) return '↘'
+    if (!entry || !entry.sovereign_trajectory) return null
+    if (entry.sovereign_trajectory.includes('IMPROVING')) return '↗'
+    if (entry.sovereign_trajectory.includes('DECLINING')) return '↘'
     return '→'
   }
 
   return (
     <div className="score-table-wrapper">
+      <div className="score-legend">
+        Scores range from 0 (low sovereignty) to 1 (high sovereignty). → navigates to sovereign projects for this pillar.
+      </div>
+
       <div className="year-nav">
         <button className="year-nav-btn"
           onClick={() => setWindowEnd(e => e - 1)}
@@ -101,11 +102,10 @@ export default function ScoreTable({ iso3, scoresData, pillarData }) {
             <td className="cell-label">ISA</td>
             {windowYears.map(y => {
               const st = getStatus(y)
-              const val = getISA(y)
               return (
                 <td key={y} className={`cell-score ${st === 'COLLECTING' ? 'collecting' : ''}`}
                   style={{ color: STATUS_COLOR[st] }}>
-                  {fmt(val, st)}
+                  {fmt(getISA(y), st)}
                 </td>
               )
             })}
@@ -114,14 +114,16 @@ export default function ScoreTable({ iso3, scoresData, pillarData }) {
 
           {PILLARS.map(pillar => (
             <tr key={pillar} className="row-pillar">
-              <td className="cell-label">{pillar}</td>
+              <td className="cell-label">
+                <span className="pillar-code">{pillar}</span>
+                <span className="pillar-label">{PILLAR_LABELS[pillar]}</span>
+              </td>
               {windowYears.map(y => {
                 const st = getStatus(y)
-                const val = getPillar(pillar, y)
                 return (
                   <td key={y} className={`cell-score ${st === 'COLLECTING' ? 'collecting' : ''}`}
                     style={{ color: STATUS_COLOR[st] }}>
-                    {fmt(val, st)}
+                    {fmt(getPillar(pillar, y), st)}
                   </td>
                 )
               })}
@@ -145,12 +147,7 @@ export default function ScoreTable({ iso3, scoresData, pillarData }) {
                 </td>
               )
             })}
-            <td className="cell-action">
-              <button className="btn-pillar"
-                onClick={() => navigate(`/country/${iso3}/projects`)}>
-                →
-              </button>
-            </td>
+            <td></td>
           </tr>
         </tbody>
       </table>

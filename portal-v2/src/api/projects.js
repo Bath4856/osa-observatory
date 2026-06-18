@@ -7,5 +7,7 @@ export async function getProjects(iso3, pillar) {
   const params = pillar ? `?pillar=${pillar}` : ''
   const res = await fetch(`${url}${params}`)
   if (!res.ok) throw new Error('projects fetch failed')
-  return res.json()
+  const json = await res.json()
+  const arr = json.data || json.projects || json.results || []
+  return pillar ? arr.filter(p => p.pillar_code === pillar) : arr
 }
