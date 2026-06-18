@@ -22,17 +22,23 @@
 # ma.compute_pillar_score, SUM(processed_value * weight) non protege
 # contre les doublons, plafonne par LEAST(1.0, ...)).
 
-from audit.core.db import get_connection
+import psycopg2
 
 
-def run():
+def run(cfg=None):
 
     findings = []
     recommendations = []
 
     score = 100
 
-    conn = get_connection()
+    conn = psycopg2.connect(
+        host=cfg.get("db_host","172.18.0.3"),
+        port=cfg.get("db_port", 5432),
+        dbname=cfg.get("db_name","osa_db"),
+        user=cfg.get("db_user","postgres"),
+        password=cfg.get("db_password","")
+    )
     cur = conn.cursor()
 
     # =====================================================
@@ -264,7 +270,7 @@ def run():
         status = "PASS"
 
     elif score >= 70:
-        status = "REVIEW_REQUIRED"
+        status = "WARNING"
 
     else:
         status = "FAIL"

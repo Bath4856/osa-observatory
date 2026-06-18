@@ -44,7 +44,7 @@ def run(cfg: dict) -> dict:
         cur.execute("""
             SELECT COUNT(*)
             FROM ma.indicator_values
-            WHERE value IS NULL
+            WHERE processed_value IS NULL AND raw_value IS NULL
         """)
         null_values = cur.fetchone()[0]
 
@@ -62,7 +62,7 @@ def run(cfg: dict) -> dict:
             SELECT COUNT(*)
             FROM ma.indicator_values
             WHERE layer_id = 3
-              AND (value < 0 OR value > 100)
+              AND (processed_value < 0 OR processed_value > 100)
         """)
         out_of_range = cur.fetchone()[0]
 

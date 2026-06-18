@@ -59,6 +59,8 @@ class ScientificDriftAudit:
             f"{self.base}/api/v2/scores?year={year}",
             timeout=60,
         )
+        if response.status_code == 429:
+            raise ValueError("RATE_LIMITED_429")
         response.raise_for_status()
         payload = response.json()
         if not isinstance(payload, dict):

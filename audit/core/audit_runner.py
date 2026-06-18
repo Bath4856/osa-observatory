@@ -80,6 +80,9 @@ _AUDIT_MODULE_NAMES = [
     "audit.audits.audit_repository_structure",
     "audit.audits.audit_security",
 
+    # QUALITÉ DONNÉES
+    "audit.audits.audit_methodology",
+    "audit.audits.audit_data_quality",
     # PACK API COMPLET
     "audit.audits.audit_api_contract_advanced",
     "audit.audits.audit_api_schema",

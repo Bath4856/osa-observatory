@@ -203,3 +203,6 @@ logging:
   level: INFO
   file: logs/audit.log
 api_base_url: https://api.osa-observatory.africa
+
+gaf:
+  enabled: false
