@@ -1,0 +1,101 @@
+.score-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+.year-nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  justify-content: center;
+}
+.year-nav-btn {
+  background: #1F4E5F;
+  color: #ffffff;
+  border: none;
+  padding: 0.4rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+}
+.year-nav-btn:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+}
+.year-nav-btn:hover:not(:disabled) {
+  background: #2E7D6E;
+}
+.year-nav-range {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1F4E5F;
+  min-width: 100px;
+  text-align: center;
+}
+.score-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.score-table th, .score-table td {
+  padding: 0.6rem 0.8rem;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: center;
+}
+.col-indicator {
+  text-align: left;
+  min-width: 120px;
+}
+.col-year {
+  min-width: 80px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.year-status {
+  font-size: 0.7rem;
+}
+.cell-label {
+  text-align: left;
+  font-weight: 600;
+  color: #2d3748;
+}
+.cell-score {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+.cell-score.collecting {
+  color: #AAAAAA !important;
+  font-style: italic;
+}
+.row-isa td {
+  background: #f0f7f4;
+  font-weight: 700;
+  border-top: 2px solid #1F4E5F;
+  border-bottom: 2px solid #1F4E5F;
+}
+.row-trajectory td {
+  background: #f8f9fa;
+  font-style: italic;
+}
+.row-pillar:hover td {
+  background: #f0f7f4;
+}
+.cell-action {
+  width: 40px;
+}
+.btn-pillar {
+  background: none;
+  border: 1px solid #1F4E5F;
+  color: #1F4E5F;
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 700;
+  transition: all 0.2s;
+}
+.btn-pillar:hover {
+  background: #1F4E5F;
+  color: #ffffff;
+}
