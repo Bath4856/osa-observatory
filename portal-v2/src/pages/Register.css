@@ -1,0 +1,24 @@
+.register-page { max-width: 680px; margin: 0 auto; }
+.register-header { margin-bottom: 2rem; }
+.register-title { font-size: 1.8rem; font-weight: 700; color: #1F4E5F; }
+.register-subtitle { color: #888; font-size: 0.9rem; margin-top: 0.3rem; }
+.register-context { margin-top: 0.8rem; font-size: 0.85rem; color: #555; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.ctx-tag { background: #e8f4f8; color: #1F4E5F; padding: 0.2rem 0.6rem; border-radius: 12px; font-weight: 600; font-size: 0.8rem; }
+.register-form { display: flex; flex-direction: column; gap: 1.2rem; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.register-form label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem; font-weight: 600; color: #4a5568; }
+.register-form input, .register-form select, .register-form textarea {
+  padding: 0.5rem 0.8rem; border: 1px solid #cbd5e0; border-radius: 6px;
+  font-size: 0.9rem; font-family: inherit; transition: border-color 0.2s; }
+.register-form input:focus, .register-form select:focus, .register-form textarea:focus {
+  outline: none; border-color: #1F4E5F; }
+.form-full { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem; font-weight: 600; color: #4a5568; }
+.form-actions { display: flex; justify-content: flex-end; margin-top: 0.5rem; }
+.btn-submit { background: #1F4E5F; color: #fff; border: none; padding: 0.7rem 1.8rem; border-radius: 6px; cursor: pointer; font-size: 0.95rem; font-weight: 600; transition: background 0.2s; }
+.btn-submit:hover:not(:disabled) { background: #2E7D6E; }
+.btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+.form-error { background: #fff0f0; color: #B00020; padding: 0.7rem 1rem; border-radius: 6px; font-size: 0.85rem; }
+.register-success { text-align: center; padding: 3rem 2rem; }
+.register-success h1 { color: #1B5E20; font-size: 2rem; margin-bottom: 1rem; }
+.register-success p { color: #555; margin-bottom: 2rem; }
+.btn-home { background: #1F4E5F; color: #fff; padding: 0.6rem 1.4rem; border-radius: 6px; text-decoration: none; font-weight: 600; }
