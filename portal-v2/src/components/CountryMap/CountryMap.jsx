@@ -1,22 +1,32 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import * as d3 from 'd3'
-import { useLang } from '../../i18n/useLang'
 import './CountryMap.css'
 
-const AFRICA_ISO3 = [
-  'DZA','AGO','BEN','BWA','BFA','BDI','CPV','CMR','CAF','TCD',
-  'COM','COD','COG','CIV','DJI','EGY','GNQ','ERI','SWZ','ETH',
-  'GAB','GMB','GHA','GIN','GNB','KEN','LSO','LBR','LBY','MDG',
-  'MWI','MLI','MRT','MUS','MAR','MOZ','NAM','NER','NGA','RWA',
-  'STP','SEN','SLE','SOM','ZAF','SSD','SDN','TZA','TGO','TUN',
-  'UGA','ZMB','ZWE','SYC'
-]
+const NAME_TO_ISO3 = {
+  'Algeria':'DZA','Angola':'AGO','Benin':'BEN','Botswana':'BWA',
+  'Burkina Faso':'BFA','Burundi':'BDI','Cabo Verde':'CPV','Cape Verde':'CPV',
+  'Cameroon':'CMR','Central African Republic':'CAF','Chad':'TCD',
+  'Comoros':'COM','Democratic Republic of the Congo':'COD',
+  'Republic of the Congo':'COG',"Cote d'Ivoire":'CIV',"Côte d'Ivoire":'CIV',
+  'Ivory Coast':'CIV','Djibouti':'DJI','Egypt':'EGY',
+  'Equatorial Guinea':'GNQ','Eritrea':'ERI','Eswatini':'SWZ','Swaziland':'SWZ',
+  'Ethiopia':'ETH','Gabon':'GAB','Gambia':'GMB','The Gambia':'GMB',
+  'Ghana':'GHA','Guinea':'GIN','Guinea-Bissau':'GNB','Kenya':'KEN',
+  'Lesotho':'LSO','Liberia':'LBR','Libya':'LBY','Madagascar':'MDG',
+  'Malawi':'MWI','Mali':'MLI','Mauritania':'MRT','Mauritius':'MUS',
+  'Morocco':'MAR','Mozambique':'MOZ','Namibia':'NAM','Niger':'NER',
+  'Nigeria':'NGA','Rwanda':'RWA','Sao Tome and Principe':'STP',
+  'São Tomé and Príncipe':'STP','Senegal':'SEN','Sierra Leone':'SLE',
+  'Somalia':'SOM','South Africa':'ZAF','South Sudan':'SSD','Sudan':'SDN',
+  'Tanzania':'TZA','United Republic of Tanzania':'TZA','Togo':'TGO',
+  'Tunisia':'TUN','Uganda':'UGA','Zambia':'ZMB','Zimbabwe':'ZWE',
+  'Seychelles':'SYC',
+}
 
 export default function CountryMap({ scoresData }) {
   const svgRef = useRef(null)
   const navigate = useNavigate()
-  const { lang } = useLang()
   const [tooltip, setTooltip] = useState(null)
   const [geoData, setGeoData] = useState(null)
 
@@ -27,23 +37,10 @@ export default function CountryMap({ scoresData }) {
         const africa = {
           ...world,
           features: world.features.filter(f =>
-            AFRICA_ISO3.includes(f.properties.adm0_iso || f.properties.iso_a3 || f.properties.ISO_A3)
+            NAME_TO_ISO3[f.properties.name] !== undefined
           )
         }
         setGeoData(africa)
-      })
-      .catch(() => {
-        fetch('/src/assets/africa.geojson')
-          .then(r => r.json())
-          .then(world => {
-            const africa = {
-              ...world,
-              features: world.features.filter(f =>
-                AFRICA_ISO3.includes(f.properties.iso_a3 || f.properties.ISO_A3)
-              )
-            }
-            setGeoData(africa)
-          })
       })
   }, [])
 
@@ -79,8 +76,8 @@ export default function CountryMap({ scoresData }) {
       .attr('stroke', '#ffffff')
       .attr('stroke-width', 0.5)
       .on('mouseenter', function(event, d) {
-        const iso3 = d.properties.iso_a3 || d.properties.ISO_A3
-        const name = d.properties.name || iso3
+        const iso3 = NAME_TO_ISO3[d.properties.name]
+        const name = d.properties.name
         const isa = getISA(iso3)
         d3.select(this).attr('fill', '#1F4E5F')
         const [mx, my] = d3.pointer(event, svgRef.current.parentNode)
@@ -91,8 +88,8 @@ export default function CountryMap({ scoresData }) {
         setTooltip(null)
       })
       .on('click', function(event, d) {
-        const iso3 = d.properties.iso_a3 || d.properties.ISO_A3
-        if (AFRICA_ISO3.includes(iso3)) navigate(`/country/${iso3}`)
+        const iso3 = NAME_TO_ISO3[d.properties.name]
+        if (iso3) navigate(`/country/${iso3}`)
       })
   }, [geoData, scoresData, navigate])
 
@@ -100,12 +97,11 @@ export default function CountryMap({ scoresData }) {
     <div className="map-container">
       <svg ref={svgRef} className="africa-map" />
       {tooltip && (
-        <div
-          className="map-tooltip"
+        <div className="map-tooltip"
           style={{ left: tooltip.x + 12, top: tooltip.y - 10 }}>
           <div className="tooltip-name">{tooltip.name}</div>
           <div className="tooltip-iso">{tooltip.iso3}</div>
-          {tooltip.isa !== null && tooltip.isa !== undefined && (
+          {tooltip.isa != null && (
             <div className="tooltip-isa">ISA 2024 : <strong>{Number(tooltip.isa).toFixed(2)}</strong></div>
           )}
           <div className="tooltip-cta">View →</div>
