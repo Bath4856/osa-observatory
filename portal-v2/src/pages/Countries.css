@@ -1,0 +1,13 @@
+.countries-page { max-width: 1100px; margin: 0 auto; }
+.countries-title { font-size: 1.8rem; font-weight: 700; color: #1F4E5F; margin-bottom: 1.5rem; }
+.countries-filters { display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 2rem; }
+.search-input { padding: 0.5rem 1rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; max-width: 300px; }
+.region-filters { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.region-btn { background: #f0f7f4; border: 1px solid #1F4E5F; color: #1F4E5F; padding: 0.3rem 0.8rem; border-radius: 20px; cursor: pointer; font-size: 0.8rem; transition: all 0.2s; }
+.region-btn.active, .region-btn:hover { background: #1F4E5F; color: #fff; }
+.countries-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: 1rem; }
+.country-card { display: flex; flex-direction: column; padding: 1rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; text-decoration: none; transition: all 0.2s; }
+.country-card:hover { border-color: #1F4E5F; box-shadow: 0 2px 8px rgba(31,78,95,0.15); }
+.card-iso { font-size: 0.75rem; font-weight: 700; color: #1F4E5F; letter-spacing: 0.05em; }
+.card-name { font-size: 0.9rem; font-weight: 600; color: #2d3748; margin: 0.2rem 0; }
+.card-region { font-size: 0.75rem; color: #888; }
