@@ -1,0 +1,37 @@
+{
+  "nav": {
+    "countries": "Pays",
+    "about": "A propos",
+    "methodology": "Methodologie",
+    "data": "Donnees",
+    "participate": "Participer"
+  },
+  "home": {
+    "tagline": "Mesurer la souverainete africaine",
+    "subtitle": "54 pays — 10 piliers — 2010–2024"
+  },
+  "table": {
+    "indicator": "Indicateur",
+    "trajectory": "Trajectoire",
+    "projects": "Projets structurants"
+  },
+  "status": {
+    "OFFICIAL": "Officiel",
+    "PRELIMINARY": "Preliminaire",
+    "COLLECTING": "Collecte"
+  },
+  "register": {
+    "title": "Demander l'acces",
+    "org": "Nom de l'organisation",
+    "type": "Type d'affilie",
+    "country": "Pays",
+    "contact": "Nom du contact",
+    "email": "Email institutionnel",
+    "message": "Message",
+    "submit": "Soumettre la demande"
+  },
+  "footer": {
+    "api": "API Explorer",
+    "contact": "Contact"
+  }
+}

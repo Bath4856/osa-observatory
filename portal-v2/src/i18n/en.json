@@ -1,0 +1,37 @@
+{
+  "nav": {
+    "countries": "Countries",
+    "about": "About",
+    "methodology": "Methodology",
+    "data": "Data",
+    "participate": "Participate"
+  },
+  "home": {
+    "tagline": "Measuring African Sovereignty",
+    "subtitle": "54 countries — 10 pillars — 2010–2024"
+  },
+  "table": {
+    "indicator": "Indicator",
+    "trajectory": "Trajectory",
+    "projects": "Sovereign projects"
+  },
+  "status": {
+    "OFFICIAL": "Official",
+    "PRELIMINARY": "Preliminary",
+    "COLLECTING": "Collecting"
+  },
+  "register": {
+    "title": "Request access",
+    "org": "Organisation name",
+    "type": "Affiliate type",
+    "country": "Country",
+    "contact": "Contact name",
+    "email": "Institutional email",
+    "message": "Message",
+    "submit": "Submit request"
+  },
+  "footer": {
+    "api": "API Explorer",
+    "contact": "Contact"
+  }
+}

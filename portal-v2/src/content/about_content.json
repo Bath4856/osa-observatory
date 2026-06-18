@@ -1,0 +1,46 @@
+{
+  "blocks": [
+    {
+      "id": "measuring",
+      "anchor": "measuring",
+      "title": { "en": "Measuring African sovereignty", "fr": "Mesurer la souveraineté africaine" },
+      "body": { "en": "TODO — to be filled by OSA Observatory team.", "fr": "TODO — à remplir par l'équipe OSA Observatory." }
+    },
+    {
+      "id": "pillars",
+      "anchor": "pillars",
+      "title": { "en": "10 pillars of sovereignty", "fr": "10 piliers de souveraineté" },
+      "body": { "en": "TODO", "fr": "TODO" }
+    },
+    {
+      "id": "governance",
+      "anchor": "governance",
+      "title": { "en": "Scientific governance", "fr": "Gouvernance scientifique" },
+      "body": { "en": "TODO", "fr": "TODO" }
+    },
+    {
+      "id": "methodology",
+      "anchor": "methodology",
+      "title": { "en": "ISA Methodology", "fr": "Méthodologie ISA" },
+      "body": { "en": "TODO", "fr": "TODO" }
+    },
+    {
+      "id": "why",
+      "anchor": "why",
+      "title": { "en": "Why measure?", "fr": "Pourquoi mesurer ?" },
+      "body": { "en": "TODO", "fr": "TODO" }
+    },
+    {
+      "id": "trajectories",
+      "anchor": "trajectories",
+      "title": { "en": "Observing trajectories", "fr": "Observer les trajectoires" },
+      "body": { "en": "TODO", "fr": "TODO" }
+    },
+    {
+      "id": "approach",
+      "anchor": "approach",
+      "title": { "en": "A different approach", "fr": "Une approche différente" },
+      "body": { "en": "TODO", "fr": "TODO" }
+    }
+  ]
+}
