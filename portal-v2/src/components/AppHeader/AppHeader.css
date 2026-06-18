@@ -1,0 +1,68 @@
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: #1F4E5F;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.header-logo {
+  text-decoration: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+.logo-osa {
+  color: #ffffff;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.logo-tagline {
+  color: #a8cdd8;
+  font-size: 0.9rem;
+}
+.header-nav {
+  display: flex;
+  gap: 1.8rem;
+}
+.header-nav a {
+  color: #a8cdd8;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.header-nav a:hover,
+.header-nav a.active {
+  color: #ffffff;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.lang-btn {
+  background: none;
+  border: none;
+  color: #a8cdd8;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  transition: color 0.2s;
+}
+.lang-btn:hover,
+.lang-btn.active {
+  color: #ffffff;
+}
+.lang-sep {
+  color: #a8cdd8;
+  font-size: 0.8rem;
+}
