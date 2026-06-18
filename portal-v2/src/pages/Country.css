@@ -1,0 +1,9 @@
+.country-page { max-width: 1000px; margin: 0 auto; }
+.country-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+.country-title { font-size: 2rem; font-weight: 700; color: #1F4E5F; }
+.back-link { color: #1F4E5F; text-decoration: none; font-size: 0.9rem; }
+.back-link:hover { text-decoration: underline; }
+.country-actions { margin-top: 2rem; display: flex; justify-content: flex-end; }
+.btn-projects { background: #1F4E5F; color: #fff; padding: 0.6rem 1.4rem; border-radius: 6px; text-decoration: none; font-weight: 600; transition: background 0.2s; }
+.btn-projects:hover { background: #2E7D6E; }
+.page-loading, .page-error { padding: 2rem; text-align: center; color: #666; }

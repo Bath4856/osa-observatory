@@ -5,63 +5,79 @@ import './ScoreTable.css'
 
 const PILLARS = ['PGEO','PECO','PMIN','PHUM','PENV','PMIL','PMON','PNUM','PRES','PTRA']
 
-const PUBLICATION_STATUS = {
-  OFFICIAL:    { label: 'OFFICIAL',    color: '#1B5E20' },
-  PRELIMINARY: { label: 'PRELIMINARY', color: '#7D4800' },
-  COLLECTING:  { label: 'COLLECTING',  color: '#AAAAAA' },
+const STATUS_COLOR = {
+  OFFICIAL:    '#1B5E20',
+  PRELIMINARY: '#7D4800',
+  COLLECTING:  '#AAAAAA',
 }
 
 function getStatus(year) {
   if (year <= 2024) return 'OFFICIAL'
-  if (year <= 2026) return 'COLLECTING'
   return 'COLLECTING'
 }
 
-function formatScore(val, status) {
+function fmt(val, status) {
   if (status === 'COLLECTING') return '—'
   if (val === null || val === undefined) return '—'
-  return typeof val === 'number' ? val.toFixed(2) : val
+  const n = parseFloat(val)
+  return isNaN(n) ? '—' : n.toFixed(3)
 }
 
-export default function ScoreTable({ iso3, scoresData }) {
+export default function ScoreTable({ iso3, scoresData, pillarData }) {
   const { t } = useLang()
   const navigate = useNavigate()
 
   const allYears = Array.from({ length: 20 }, (_, i) => 2010 + i)
-  const [windowStart, setWindowStart] = useState(2020)
 
-  const windowYears = allYears.filter(y => y >= windowStart && y < windowStart + 5)
+  // Annee max disponible dans les donnees
+  const maxDataYear = scoresData && scoresData.length > 0
+    ? Math.max(...scoresData.map(d => d.year))
+    : 2024
+
+  // Fenetre glissante : 5 ans se terminant a maxDataYear
+  const defaultEnd = Math.min(maxDataYear, 2029)
+  const defaultStart = defaultEnd - 4
+  const [windowEnd, setWindowEnd] = useState(defaultEnd)
+  const windowStart = windowEnd - 4
 
   const canPrev = windowStart > 2010
-  const canNext = windowStart + 5 <= 2029
+  const canNext = windowEnd < 2029
 
-  const getScore = (indicator, year) => {
+  const windowYears = allYears.filter(y => y >= windowStart && y <= windowEnd)
+
+  const getISA = (year) => {
     if (!scoresData) return null
     const entry = scoresData.find(d => d.year === year)
-    if (!entry) return null
-    if (indicator === 'ISA') return entry.isa_score ?? entry.score ?? null
-    return entry[indicator.toLowerCase()] ?? entry.pillars?.[indicator] ?? null
+    return entry ? entry.isa_observed_score : null
   }
 
-  const getISAScore = (year) => {
+  const getPillar = (pillarCode, year) => {
+    if (!pillarData) return null
+    const entry = pillarData.find(d => d.pillar_code === pillarCode && d.year === year)
+    return entry ? entry.strength_score : null
+  }
+
+  const getTraj = (year) => {
     if (!scoresData) return null
     const entry = scoresData.find(d => d.year === year)
     if (!entry) return null
-    return entry.isa_score ?? entry.score ?? null
+    const t = entry.sovereign_trajectory
+    if (!t) return null
+    if (t.includes('IMPROVING')) return '↗'
+    if (t.includes('DECLINING')) return '↘'
+    return '→'
   }
 
   return (
     <div className="score-table-wrapper">
       <div className="year-nav">
-        <button
-          className="year-nav-btn"
-          onClick={() => setWindowStart(s => s - 5)}
-          disabled={!canPrev}>← {windowStart - 5}–{windowStart - 1}</button>
-        <span className="year-nav-range">{windowStart}–{windowStart + 4}</span>
-        <button
-          className="year-nav-btn"
-          onClick={() => setWindowStart(s => s + 5)}
-          disabled={!canNext}>{windowStart + 5}–{windowStart + 9} →</button>
+        <button className="year-nav-btn"
+          onClick={() => setWindowEnd(e => e - 1)}
+          disabled={!canPrev}>← {windowStart - 1}</button>
+        <span className="year-nav-range">{windowStart}–{windowEnd}</span>
+        <button className="year-nav-btn"
+          onClick={() => setWindowEnd(e => e + 1)}
+          disabled={!canNext}>{windowEnd + 1} →</button>
       </div>
 
       <table className="score-table">
@@ -71,9 +87,9 @@ export default function ScoreTable({ iso3, scoresData }) {
             {windowYears.map(y => {
               const st = getStatus(y)
               return (
-                <th key={y} className="col-year" style={{ color: PUBLICATION_STATUS[st].color }}>
-                  {y}
-                  <span className="year-status">{st === 'COLLECTING' ? ' ○' : ''}</span>
+                <th key={y} className="col-year"
+                  style={{ color: STATUS_COLOR[st] }}>
+                  {y}{st === 'COLLECTING' ? ' ○' : ''}
                 </th>
               )
             })}
@@ -85,11 +101,11 @@ export default function ScoreTable({ iso3, scoresData }) {
             <td className="cell-label">ISA</td>
             {windowYears.map(y => {
               const st = getStatus(y)
-              const val = getISAScore(y)
+              const val = getISA(y)
               return (
                 <td key={y} className={`cell-score ${st === 'COLLECTING' ? 'collecting' : ''}`}
-                  style={{ color: PUBLICATION_STATUS[st].color }}>
-                  {formatScore(val, st)}
+                  style={{ color: STATUS_COLOR[st] }}>
+                  {fmt(val, st)}
                 </td>
               )
             })}
@@ -101,17 +117,16 @@ export default function ScoreTable({ iso3, scoresData }) {
               <td className="cell-label">{pillar}</td>
               {windowYears.map(y => {
                 const st = getStatus(y)
-                const val = getScore(pillar, y)
+                const val = getPillar(pillar, y)
                 return (
                   <td key={y} className={`cell-score ${st === 'COLLECTING' ? 'collecting' : ''}`}
-                    style={{ color: PUBLICATION_STATUS[st].color }}>
-                    {formatScore(val, st)}
+                    style={{ color: STATUS_COLOR[st] }}>
+                    {fmt(val, st)}
                   </td>
                 )
               })}
               <td className="cell-action">
-                <button
-                  className="btn-pillar"
+                <button className="btn-pillar"
                   onClick={() => navigate(`/country/${iso3}/projects?pillar=${pillar}`)}>
                   →
                 </button>
@@ -123,15 +138,15 @@ export default function ScoreTable({ iso3, scoresData }) {
             <td className="cell-label">{t('table.trajectory')}</td>
             {windowYears.map(y => {
               const st = getStatus(y)
+              const traj = getTraj(y)
               return (
                 <td key={y} className={`cell-score ${st === 'COLLECTING' ? 'collecting' : ''}`}>
-                  {st === 'COLLECTING' ? '—' : '↗'}
+                  {st === 'COLLECTING' ? '—' : (traj || '—')}
                 </td>
               )
             })}
             <td className="cell-action">
-              <button
-                className="btn-pillar"
+              <button className="btn-pillar"
                 onClick={() => navigate(`/country/${iso3}/projects`)}>
                 →
               </button>

@@ -1,23 +1,28 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { getCountryScores } from '../api/scores'
+import { getCountryScores, getCountryPillarScores } from '../api/scores'
 import ScoreTable from '../components/ScoreTable/ScoreTable'
 import { useLang } from '../i18n/useLang'
+import './Country.css'
 
 export default function Country() {
   const { iso3 } = useParams()
   const { t } = useLang()
   const [scores, setScores] = useState(null)
+  const [pillarScores, setPillarScores] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
     setLoading(true)
     setError(null)
-    getCountryScores(iso3)
-      .then(data => {
-        const arr = Array.isArray(data) ? data : data.scores || data.results || []
-        setScores(arr)
+    Promise.all([
+      getCountryScores(iso3),
+      getCountryPillarScores(iso3)
+    ])
+      .then(([isa, pillars]) => {
+        setScores(isa)
+        setPillarScores(pillars)
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
@@ -32,7 +37,7 @@ export default function Country() {
         <h1 className="country-title">{iso3}</h1>
         <Link to="/countries" className="back-link">← {t('nav.countries')}</Link>
       </div>
-      <ScoreTable iso3={iso3} scoresData={scores} />
+      <ScoreTable iso3={iso3} scoresData={scores} pillarData={pillarScores} />
       <div className="country-actions">
         <Link to={`/country/${iso3}/projects`} className="btn-projects">
           {t('table.projects')} →
