@@ -1,0 +1,14 @@
+.participate-page { max-width: 680px; margin: 0 auto; }
+.participate-title { font-size: 2rem; font-weight: 700; color: #1F4E5F; margin-bottom: 1rem; }
+.participate-intro { color: #555; line-height: 1.7; margin-bottom: 2rem; }
+.participate-context { background: #e8f4f8; padding: 0.6rem 1rem; border-radius: 6px; font-size: 0.85rem; margin-bottom: 1.5rem; }
+.ctx-link { color: #1F4E5F; margin-left: 0.5rem; }
+.participate-form { display: flex; flex-direction: column; gap: 1rem; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.participate-form label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem; font-weight: 600; color: #4a5568; }
+.participate-form input, .participate-form textarea { padding: 0.5rem 0.8rem; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 0.9rem; font-family: inherit; }
+.participate-form input:focus, .participate-form textarea:focus { outline: none; border-color: #1F4E5F; }
+.btn-submit { background: #1F4E5F; color: #fff; border: none; padding: 0.7rem 1.8rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 600; align-self: flex-end; transition: background 0.2s; }
+.btn-submit:hover { background: #2E7D6E; }
+.form-error { background: #fff0f0; color: #B00020; padding: 0.6rem 1rem; border-radius: 6px; font-size: 0.85rem; }
+.participate-success { background: #f0f7f4; color: #1B5E20; padding: 1.5rem; border-radius: 8px; font-weight: 600; }

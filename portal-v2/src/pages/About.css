@@ -1,0 +1,7 @@
+.about-page { max-width: 800px; margin: 0 auto; }
+.about-title { font-size: 2rem; font-weight: 700; color: #1F4E5F; margin-bottom: 1rem; }
+.about-intro { color: #555; line-height: 1.7; font-size: 1rem; margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 2px solid #e2e8f0; }
+.about-blocks { display: flex; flex-direction: column; gap: 2.5rem; }
+.about-block { scroll-margin-top: 80px; }
+.block-title { font-size: 1.25rem; font-weight: 700; color: #1F4E5F; margin-bottom: 0.8rem; padding-bottom: 0.4rem; border-bottom: 1px solid #e2e8f0; }
+.block-body { color: #4a5568; line-height: 1.8; }

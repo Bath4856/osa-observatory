@@ -1,0 +1,17 @@
+.data-page { max-width: 900px; margin: 0 auto; }
+.data-title { font-size: 2rem; font-weight: 700; color: #1F4E5F; margin-bottom: 2rem; }
+.data-section { margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid #e2e8f0; }
+.data-section h2 { font-size: 1.2rem; font-weight: 700; color: #1F4E5F; margin-bottom: 0.8rem; }
+.data-section p { color: #4a5568; line-height: 1.8; margin-bottom: 1rem; }
+.btn-download, .btn-api, .btn-affiliate { display: inline-block; padding: 0.6rem 1.3rem; border-radius: 6px; font-weight: 600; font-size: 0.9rem; text-decoration: none; transition: background 0.2s; }
+.btn-download { background: #1B5E20; color: #fff; }
+.btn-download:hover { background: #2E7D32; }
+.btn-api { background: #1F4E5F; color: #fff; }
+.btn-api:hover { background: #2E7D6E; }
+.btn-affiliate { background: #7D4800; color: #fff; }
+.btn-affiliate:hover { background: #9E6000; }
+.endpoints-list { display: flex; flex-direction: column; gap: 0.6rem; }
+.endpoint-row { display: flex; align-items: baseline; gap: 1rem; padding: 0.5rem 0.8rem; background: #f8f9fa; border-radius: 6px; font-size: 0.85rem; flex-wrap: wrap; }
+.ep-method { background: #1F4E5F; color: #fff; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; }
+.ep-path { font-family: Consolas, monospace; color: #2E7D6E; font-size: 0.82rem; }
+.ep-desc { color: #666; }
