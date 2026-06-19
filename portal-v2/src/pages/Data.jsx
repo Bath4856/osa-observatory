@@ -23,7 +23,7 @@ export default function Data() {
       <section className="data-section">
         <h2>Open Data — CC-BY-NC-4.0</h2>
         <p>ISA sovereign trajectories for 54 African states (2010–{currentYear}) are freely available under the Creative Commons CC-BY-NC-4.0 licence. Attribution to the OSA Observatory is required. Commercial exploitation is prohibited without a written institutional agreement.</p>
-        <a href="https://api.osa-observatory.africa/opendata/countries/history"
+        <a href="https://api.osa-observatory.africa/opendata/countries/history" download="osa_sovereign_history.json"
           target="_blank" rel="noreferrer" className="btn-download">
           Access sovereign history data (JSON) →
         </a>
