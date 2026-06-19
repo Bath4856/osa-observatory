@@ -9,6 +9,7 @@ const AFFILIATE_TYPES = [
   { value: 'REGIONAL_ORG',      label: { en: 'Regional Organisation',      fr: 'Organisation regionale' } },
   { value: 'ACADEMIC',          label: { en: 'Academic Institution',       fr: 'Institution academique' } },
   { value: 'PRIVATE',           label: { en: 'Private Sector',             fr: 'Secteur prive' } },
+  { value: 'INTERNATIONAL_ORG', label: { en: 'International Organisation', fr: 'Organisation internationale' } },
   { value: 'DEVELOPMENT_BANK',  label: { en: 'Development Bank',           fr: 'Banque de developpement' } },
 ]
 

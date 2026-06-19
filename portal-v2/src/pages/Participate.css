@@ -1,14 +1,22 @@
-.participate-page { max-width: 680px; margin: 0 auto; }
+.participate-page { max-width: 720px; margin: 0 auto; }
 .participate-title { font-size: 2rem; font-weight: 700; color: #1F4E5F; margin-bottom: 1rem; }
 .participate-intro { color: #555; line-height: 1.7; margin-bottom: 2rem; }
-.participate-context { background: #e8f4f8; padding: 0.6rem 1rem; border-radius: 6px; font-size: 0.85rem; margin-bottom: 1.5rem; }
-.ctx-link { color: #1F4E5F; margin-left: 0.5rem; }
+.type-selector { display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 2rem; }
+.type-btn { background: #f8f9fa; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem 1.2rem; cursor: pointer; text-align: left; transition: all 0.2s; display: flex; flex-direction: column; gap: 0.3rem; }
+.type-btn:hover { border-color: #1F4E5F; background: #f0f7f4; }
+.type-btn.active { border-color: #1F4E5F; background: #e8f4f8; border-width: 2px; }
+.type-btn strong { font-size: 0.95rem; color: #1F4E5F; }
+.type-btn span { font-size: 0.82rem; color: #666; line-height: 1.5; }
 .participate-form { display: flex; flex-direction: column; gap: 1rem; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .participate-form label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem; font-weight: 600; color: #4a5568; }
-.participate-form input, .participate-form textarea { padding: 0.5rem 0.8rem; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 0.9rem; font-family: inherit; }
+.participate-form input, .participate-form textarea { padding: 0.5rem 0.8rem; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 0.9rem; font-family: inherit; transition: border-color 0.2s; }
 .participate-form input:focus, .participate-form textarea:focus { outline: none; border-color: #1F4E5F; }
 .btn-submit { background: #1F4E5F; color: #fff; border: none; padding: 0.7rem 1.8rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 600; align-self: flex-end; transition: background 0.2s; }
-.btn-submit:hover { background: #2E7D6E; }
+.btn-submit:hover:not(:disabled) { background: #2E7D6E; }
+.btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 .form-error { background: #fff0f0; color: #B00020; padding: 0.6rem 1rem; border-radius: 6px; font-size: 0.85rem; }
-.participate-success { background: #f0f7f4; color: #1B5E20; padding: 1.5rem; border-radius: 8px; font-weight: 600; }
+.participate-success { text-align: center; padding: 3rem 2rem; }
+.participate-success h1 { color: #1B5E20; font-size: 1.8rem; margin-bottom: 1rem; }
+.participate-success p { color: #555; margin-bottom: 2rem; }
+.btn-home { background: #1F4E5F; color: #fff; padding: 0.6rem 1.4rem; border-radius: 6px; text-decoration: none; font-weight: 600; }
