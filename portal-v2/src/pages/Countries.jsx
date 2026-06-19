@@ -61,9 +61,13 @@ const COUNTRIES = [
 ]
 
 const REGIONS = ['All','North Africa','West Africa','Central Africa','East Africa','Southern Africa']
+const REGION_LABELS = {
+  en: { 'All':'All regions', 'North Africa':'North Africa', 'West Africa':'West Africa', 'Central Africa':'Central Africa', 'East Africa':'East Africa', 'Southern Africa':'Southern Africa' },
+  fr: { 'All':'Toutes les régions', 'North Africa':'Afrique du Nord', 'West Africa':"Afrique de l'Ouest", 'Central Africa':'Afrique Centrale', 'East Africa':"Afrique de l'Est", 'Southern Africa':'Afrique Australe' }
+}
 
 export default function Countries() {
-  const { lang } = useLang()
+  const { lang, t } = useLang()
   const [filter, setFilter] = useState('All')
   const [search, setSearch] = useState('')
 
@@ -76,18 +80,18 @@ export default function Countries() {
 
   return (
     <div className="countries-page">
-      <h1 className="countries-title">54 African Countries</h1>
+      <h1 className="countries-title">{t('countries.title')}</h1>
       <div className="countries-filters">
         <input
           className="search-input"
-          placeholder="Search..."
+          placeholder={t('countries.search')}
           value={search}
           onChange={e => setSearch(e.target.value)} />
         <div className="region-filters">
           {REGIONS.map(r => (
             <button key={r}
               className={`region-btn ${filter === r ? 'active' : ''}`}
-              onClick={() => setFilter(r)}>{r}</button>
+              onClick={() => setFilter(r)}>{REGION_LABELS[lang]?.[r] || r}</button>
           ))}
         </div>
       </div>
