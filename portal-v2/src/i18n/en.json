@@ -3,17 +3,20 @@
     "countries": "Countries",
     "about": "About",
     "methodology": "Methodology",
-    "data": "Data",
-    "participate": "Participate"
+    "data": "Open Data",
+    "participate": "E-Participation"
   },
   "home": {
     "tagline": "Measuring African Sovereignty",
-    "subtitle": "54 countries — 10 pillars — 2010–2024"
+    "subtitle": "54 countries — 10 pillars — observed from 2010",
+    "intro": "Click on a country to view its sovereignty profile across 10 pillars and 15 years of data.",
+    "explore": "Explore all 54 countries"
   },
   "table": {
     "indicator": "Indicator",
     "trajectory": "Trajectory",
-    "projects": "Sovereign projects"
+    "projects": "Sovereign projects",
+    "legend": "Scores range from 0 (low sovereignty) to 1 (high sovereignty). → navigates to sovereign projects for this pillar."
   },
   "status": {
     "OFFICIAL": "Official",
@@ -28,10 +31,104 @@
     "contact": "Contact name",
     "email": "Institutional email",
     "message": "Message",
-    "submit": "Submit request"
+    "submit": "Submit request",
+    "subtitle": "OSA Observatory — Affiliation request",
+    "context": "Context",
+    "success_title": "Request submitted",
+    "success_msg": "Thank you. Your affiliation request has been received. We will contact you at",
+    "back_home": "Back to home"
   },
   "footer": {
     "api": "API Explorer",
     "contact": "Contact"
+  },
+  "about": {
+    "title": "About OSA Observatory",
+    "intro_template": "The OSA Observatory (Observatoire de la Souverainete Africaine) is an African infrastructure for sovereign observation — measuring the trajectories of 54 states across 10 behavioural pillars, observed from 2010 ({years} years of data)."
+  },
+  "methodology": {
+    "title": "ISA Methodology",
+    "intro": "The Index of African Sovereignty (ISA) is computed from observed, primary, auditable data — never surveys, never expert estimates. The methodology follows the OSA P7E consequentialist doctrine.",
+    "doctrine_title": "Doctrine P7E — Consequentialist",
+    "doctrine_text": "For decades, Africa has been evaluated through indices built on perceptions. OSA proposes a different approach: observing the real capabilities of African states from verifiable behavioural data, tracking their trajectories over time and informing public decisions with facts rather than perceptions.",
+    "pipeline_title": "3-Layer Pipeline",
+    "normalisation_title": "Normalisation — Frozen Bounds v1_2026",
+    "normalisation_text": "Min-max normalisation: score = (value - min) / (max - min) for positive indicators, inverted for negative ones. Bounds are frozen on the 2010-2020 reference period (v1_2026) — ensuring new data does not shift historical scores.",
+    "weighting_title": "Weighting",
+    "weighting_text": "Equal weighting within each pillar — each active indicator receives 1/n weight where n is the number of indicators with observed data. The 10 pillars are equally weighted in the ISA composite. Weights are automatically renormalized when indicators are activated or deactivated.",
+    "status_title": "Publication Status",
+    "pillars_title": "The 10 Pillars",
+    "sources_title": "Data Sources",
+    "rules": [
+      "Every indicator is a primary observable datum — collected from an audited, geolocated, dated source",
+      "Perception-based indicators (WGI, CPI) are permanently excluded — demonstrated OECD evaluator bias",
+      "No country is compared to another — each is observed against its own sovereign trajectory",
+      "Indicators without observed data do not participate in weighting",
+      "Imputation rate above 50% → indicator inactive"
+    ]
+  },
+  "data": {
+    "title": "Open Data & API",
+    "opendata_title": "Open Data — CC-BY-NC-4.0",
+    "opendata_text": "ISA sovereign trajectories for 54 African states (2010-{year}) are freely available under the Creative Commons CC-BY-NC-4.0 licence. Attribution to the OSA Observatory is required. Commercial exploitation is prohibited without a written institutional agreement.",
+    "opendata_btn": "Access sovereign history data (JSON)",
+    "api_title": "API Explorer",
+    "api_text": "Interactive documentation for all OSA Observatory API endpoints. Researchers and affiliated institutions may test queries, explore data structures, and integrate sovereign indicators into their own analytical frameworks.",
+    "api_btn": "Open API Explorer (Swagger)",
+    "datasets_title": "Available Datasets",
+    "access_title": "Institutional Access",
+    "access_text": "SUBSCRIBER and ADVANCED affiliates access feasibility studies, proof-of-concept documents, and sovereign intelligence reports. Six affiliation categories: State, Regional Organisation, International Organisation, Academic Institution, Private Sector, Development Bank.",
+    "access_btn": "Request institutional affiliation"
+  },
+  "participate": {
+    "title": "E-Participation",
+    "intro": "Contribute to the quality of African sovereign data. Report an anomaly, propose a primary source, or submit a methodological contribution to the Scientific Committee.",
+    "types": {
+      "DATA_SIGNAL": { "label": "Data signal", "desc": "Report an anomaly, incorrect value, or suggest an alternative primary source for a specific indicator." },
+      "SOURCE_PROPOSAL": { "label": "Source proposal", "desc": "Suggest a new primary data source that could improve coverage of a sovereign pillar." },
+      "METHODOLOGICAL": { "label": "Methodological contribution", "desc": "Propose a new indicator, a methodological improvement, or a doctrinal comment for Scientific Committee review." }
+    },
+    "fields": {
+      "name": "Name",
+      "country": "Country (ISO3)",
+      "indicator": "Indicator",
+      "year": "Year",
+      "pillar": "Pillar",
+      "source_url": "Source URL",
+      "message": "Message"
+    },
+    "submit": "Submit contribution",
+    "success_title": "Contribution recorded",
+    "success_msg": "Thank you. Your contribution has been transmitted to the OSA Scientific Committee.",
+    "back_home": "Home"
+  },
+  "pillar": {
+    "definition": "Definition",
+    "indicators": "Indicators",
+    "sources": "Data Sources",
+    "doctrine": "Doctrine",
+    "doctrine_text": "This pillar follows the OSA P7E consequentialist doctrine: only observed, verifiable data is used. Perception-based indicators are excluded. Equal weighting is applied across active indicators with available data.",
+    "back": "← Methodology"
+  },
+  "countries": {
+    "title": "54 African Countries",
+    "search": "Search...",
+    "all_regions": "All regions"
+  },
+  "projects": {
+    "title": "Sovereign Projects",
+    "no_projects": "No projects available for this selection.",
+    "loading": "Loading projects...",
+    "feasibility": "Feasibility study available",
+    "opportunity": "Opportunity identified",
+    "view": "View project"
+  },
+  "project_detail": {
+    "description": "Description",
+    "feasibility": "Feasibility Study",
+    "poc": "Proof of Concept (POC)",
+    "not_available": "Not yet available.",
+    "premium_msg": "Full content available for SUBSCRIBER and ADVANCED affiliates.",
+    "request": "Request access"
   }
 }
