@@ -21,3 +21,11 @@ export async function getAllScores(year) {
   const data = await res.json()
   return data.scores || []
 }
+
+export async function getCountryHistory(iso3) {
+  const res = await fetch(`${API}/opendata/countries/history`)
+  if (!res.ok) throw new Error('history fetch failed')
+  const data = await res.json()
+  const arr = Array.isArray(data) ? data : data.data || []
+  return arr.filter(d => d.country_iso3 === iso3)
+}

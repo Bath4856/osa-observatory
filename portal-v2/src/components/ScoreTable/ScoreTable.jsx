@@ -6,9 +6,22 @@ import './ScoreTable.css'
 const PILLARS = ['PGEO','PECO','PMIN','PHUM','PENV','PMIL','PMON','PNUM','PRES','PTRA']
 
 const PILLAR_LABELS = {
-  PGEO:'Geopolitical', PECO:'Economic', PMIN:'Mineral',
-  PHUM:'Human', PENV:'Environmental', PMIL:'Military',
-  PMON:'Monetary', PNUM:'Digital', PRES:'Energy', PTRA:'Transport'
+  PGEO:{en:'Geopolitical',fr:'Géopolitique'},
+  PECO:{en:'Economic',fr:'Économique'},
+  PMIN:{en:'Mineral',fr:'Minière'},
+  PHUM:{en:'Human',fr:'Humaine'},
+  PENV:{en:'Environmental',fr:'Environnementale'},
+  PMIL:{en:'Military',fr:'Militaire'},
+  PMON:{en:'Monetary',fr:'Monétaire'},
+  PNUM:{en:'Digital',fr:'Numérique'},
+  PRES:{en:'Energy',fr:'Énergétique'},
+  PTRA:{en:'Transport',fr:'Transport'}
+}
+
+const DIRECTION_ICON = {
+  IMPROVING:    '↗',
+  STABLE:       '→',
+  DETERIORATING:'↘',
 }
 
 const STATUS_COLOR = {
@@ -29,14 +42,13 @@ function fmt(val, status) {
   return isNaN(n) ? '—' : n.toFixed(3)
 }
 
-export default function ScoreTable({ iso3, scoresData, pillarData }) {
-  const { t } = useLang()
+export default function ScoreTable({ iso3, scoresData, pillarData, historyData }) {
+  const { t, lang } = useLang()
   const navigate = useNavigate()
 
   const allYears = Array.from({ length: 20 }, (_, i) => 2010 + i)
   const maxDataYear = scoresData && scoresData.length > 0
-    ? Math.max(...scoresData.map(d => d.year))
-    : 2024
+    ? Math.max(...scoresData.map(d => d.year)) : 2024
   const defaultEnd = Math.min(maxDataYear, 2029)
   const [windowEnd, setWindowEnd] = useState(defaultEnd)
   const windowStart = windowEnd - 4
@@ -57,20 +69,16 @@ export default function ScoreTable({ iso3, scoresData, pillarData }) {
   }
 
   const getTraj = (year) => {
-    if (!scoresData) return null
-    const entry = scoresData.find(d => d.year === year)
-    if (!entry || !entry.sovereign_trajectory) return null
-    if (entry.sovereign_trajectory.includes('IMPROVING')) return '↗'
-    if (entry.sovereign_trajectory.includes('DECLINING')) return '↘'
-    return '→'
+    if (year <= 2020) return null
+    if (!historyData) return null
+    const entry = historyData.find(d => d.year === year)
+    if (!entry || !entry.annual_direction) return null
+    return DIRECTION_ICON[entry.annual_direction] || '→'
   }
 
   return (
     <div className="score-table-wrapper">
-      <div className="score-legend">
-        Scores range from 0 (low sovereignty) to 1 (high sovereignty). → navigates to sovereign projects for this pillar.
-      </div>
-
+      <div className="score-legend">{t('table.legend')}</div>
       <div className="year-nav">
         <button className="year-nav-btn"
           onClick={() => setWindowEnd(e => e - 1)}
@@ -80,7 +88,6 @@ export default function ScoreTable({ iso3, scoresData, pillarData }) {
           onClick={() => setWindowEnd(e => e + 1)}
           disabled={!canNext}>{windowEnd + 1} →</button>
       </div>
-
       <table className="score-table">
         <thead>
           <tr>
@@ -88,8 +95,7 @@ export default function ScoreTable({ iso3, scoresData, pillarData }) {
             {windowYears.map(y => {
               const st = getStatus(y)
               return (
-                <th key={y} className="col-year"
-                  style={{ color: STATUS_COLOR[st] }}>
+                <th key={y} className="col-year" style={{ color: STATUS_COLOR[st] }}>
                   {y}{st === 'COLLECTING' ? ' ○' : ''}
                 </th>
               )
@@ -103,7 +109,7 @@ export default function ScoreTable({ iso3, scoresData, pillarData }) {
             {windowYears.map(y => {
               const st = getStatus(y)
               return (
-                <td key={y} className={`cell-score ${st === 'COLLECTING' ? 'collecting' : ''}`}
+                <td key={y} className={`cell-score ${st==='COLLECTING'?'collecting':''}`}
                   style={{ color: STATUS_COLOR[st] }}>
                   {fmt(getISA(y), st)}
                 </td>
@@ -111,17 +117,16 @@ export default function ScoreTable({ iso3, scoresData, pillarData }) {
             })}
             <td></td>
           </tr>
-
           {PILLARS.map(pillar => (
             <tr key={pillar} className="row-pillar">
               <td className="cell-label">
                 <span className="pillar-code">{pillar}</span>
-                <span className="pillar-label">{PILLAR_LABELS[pillar]}</span>
+                <span className="pillar-label">{PILLAR_LABELS[pillar][lang]}</span>
               </td>
               {windowYears.map(y => {
                 const st = getStatus(y)
                 return (
-                  <td key={y} className={`cell-score ${st === 'COLLECTING' ? 'collecting' : ''}`}
+                  <td key={y} className={`cell-score ${st==='COLLECTING'?'collecting':''}`}
                     style={{ color: STATUS_COLOR[st] }}>
                     {fmt(getPillar(pillar, y), st)}
                   </td>
@@ -135,14 +140,13 @@ export default function ScoreTable({ iso3, scoresData, pillarData }) {
               </td>
             </tr>
           ))}
-
           <tr className="row-trajectory">
             <td className="cell-label">{t('table.trajectory')}</td>
             {windowYears.map(y => {
               const st = getStatus(y)
               const traj = getTraj(y)
               return (
-                <td key={y} className={`cell-score ${st === 'COLLECTING' ? 'collecting' : ''}`}>
+                <td key={y} className={`cell-score ${st==='COLLECTING'?'collecting':''}`}>
                   {st === 'COLLECTING' ? '—' : (traj || '—')}
                 </td>
               )
