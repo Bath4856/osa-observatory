@@ -24,6 +24,15 @@ const NAME_TO_ISO3 = {
   'Seychelles':'SYC',
 }
 
+// Coordonnees des petites iles absentes du GeoJSON
+const ISLAND_MARKERS = [
+  { iso3:'STP', name:'Sao Tome and Principe', lon: 6.6131,  lat:  0.1864 },
+  { iso3:'CPV', name:'Cabo Verde',            lon:-23.6051, lat: 14.9318 },
+  { iso3:'COM', name:'Comoros',               lon: 43.3333, lat:-11.6455 },
+  { iso3:'MUS', name:'Mauritius',             lon: 57.5522, lat:-20.2833 },
+  { iso3:'SYC', name:'Seychelles',            lon: 55.4920, lat: -4.6796 },
+]
+
 export default function CountryMap({ scoresData }) {
   const svgRef = useRef(null)
   const navigate = useNavigate()
@@ -62,10 +71,17 @@ export default function CountryMap({ scoresData }) {
 
     const getISA = (iso3) => {
       if (!scoresData) return null
-      const entry = scoresData.find(d => d.iso3 === iso3 && d.year === 2024)
-      return entry ? (entry.isa_score ?? entry.score) : null
+      const entry = scoresData.find(d => d.country_iso3 === iso3 && d.year === 2024)
+      return entry ? (entry.isa_observed_score ?? entry.score) : null
     }
 
+    const showTooltip = (event, iso3, name) => {
+      const isa = getISA(iso3)
+      const [mx, my] = d3.pointer(event, svgRef.current.parentNode)
+      setTooltip({ iso3, name, isa, x: mx, y: my })
+    }
+
+    // Polygones continentaux
     svg.selectAll('path')
       .data(geoData.features)
       .enter()
@@ -77,11 +93,8 @@ export default function CountryMap({ scoresData }) {
       .attr('stroke-width', 0.5)
       .on('mouseenter', function(event, d) {
         const iso3 = NAME_TO_ISO3[d.properties.name]
-        const name = d.properties.name
-        const isa = getISA(iso3)
         d3.select(this).attr('fill', '#1F4E5F')
-        const [mx, my] = d3.pointer(event, svgRef.current.parentNode)
-        setTooltip({ iso3, name, isa, x: mx, y: my })
+        showTooltip(event, iso3, d.properties.name)
       })
       .on('mouseleave', function() {
         d3.select(this).attr('fill', '#2E7D6E')
@@ -91,6 +104,43 @@ export default function CountryMap({ scoresData }) {
         const iso3 = NAME_TO_ISO3[d.properties.name]
         if (iso3) navigate(`/country/${iso3}`)
       })
+
+    // Marqueurs circulaires pour les petites iles
+    const islandGroup = svg.append('g').attr('class', 'island-markers')
+
+    ISLAND_MARKERS.forEach(island => {
+      const coords = projection([island.lon, island.lat])
+      if (!coords) return
+
+      const g = islandGroup.append('g')
+        .attr('cursor', 'pointer')
+        .on('mouseenter', function(event) {
+          d3.select(this).select('circle').attr('fill', '#1F4E5F')
+          showTooltip(event, island.iso3, island.name)
+        })
+        .on('mouseleave', function() {
+          d3.select(this).select('circle').attr('fill', '#2E7D6E')
+          setTooltip(null)
+        })
+        .on('click', () => navigate(`/country/${island.iso3}`))
+
+      g.append('circle')
+        .attr('cx', coords[0])
+        .attr('cy', coords[1])
+        .attr('r', 5)
+        .attr('fill', '#2E7D6E')
+        .attr('stroke', '#ffffff')
+        .attr('stroke-width', 1.5)
+
+      g.append('text')
+        .attr('x', coords[0] + 7)
+        .attr('y', coords[1] + 4)
+        .attr('font-size', '7px')
+        .attr('fill', '#1F4E5F')
+        .attr('font-weight', '600')
+        .text(island.iso3)
+    })
+
   }, [geoData, scoresData, navigate])
 
   return (
@@ -102,7 +152,7 @@ export default function CountryMap({ scoresData }) {
           <div className="tooltip-name">{tooltip.name}</div>
           <div className="tooltip-iso">{tooltip.iso3}</div>
           {tooltip.isa != null && (
-            <div className="tooltip-isa">ISA 2024 : <strong>{Number(tooltip.isa).toFixed(2)}</strong></div>
+            <div className="tooltip-isa">ISA 2024 : <strong>{Number(tooltip.isa).toFixed(3)}</strong></div>
           )}
           <div className="tooltip-cta">View →</div>
         </div>
