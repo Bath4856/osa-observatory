@@ -53,7 +53,7 @@ export default function ScoreTable({ iso3, scoresData, pillarData }) {
   const getPillar = (pillarCode, year) => {
     if (!pillarData) return null
     const entry = pillarData.find(d => d.pillar_code === pillarCode && d.year === year)
-    return entry ? entry.strength_score : null
+    return entry ? entry.pillar_isa_score : null
   }
 
   const getTraj = (year) => {
