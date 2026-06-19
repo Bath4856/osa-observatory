@@ -22,7 +22,7 @@ export default function ProjectDetail() {
       .finally(() => setLoading(false))
   }, [iso3, id])
 
-  if (loading) return <div className="page-loading">Loading...</div>
+  if (loading) return <div className="page-loading">{t('common.loading')}</div>
   if (!project) return <div className="page-error">Project not found.</div>
 
   const name = lang === 'fr'

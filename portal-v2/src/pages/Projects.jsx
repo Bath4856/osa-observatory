@@ -57,9 +57,9 @@ export default function Projects() {
       </div>
 
       {loading ? (
-        <div className="page-loading">Loading projects...</div>
+        <div className="page-loading">{t('projects.loading')}</div>
       ) : filtered.length === 0 ? (
-        <div className="no-projects">No projects available for this selection.</div>
+        <div className="no-projects">{t('projects.no_projects')}</div>
       ) : (
         <div className="projects-grid">
           {filtered.map(project => (

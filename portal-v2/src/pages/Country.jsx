@@ -28,7 +28,7 @@ export default function Country() {
       .finally(() => setLoading(false))
   }, [iso3])
 
-  if (loading) return <div className="page-loading">Loading {iso3}...</div>
+  if (loading) return <div className="page-loading">{t('common.loading')}</div>
   if (error) return <div className="page-error">Error: {error}</div>
 
   return (

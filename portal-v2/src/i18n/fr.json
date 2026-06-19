@@ -1,32 +1,33 @@
 {
   "nav": {
     "countries": "Pays",
-    "about": "A propos",
-    "methodology": "Methodologie",
-    "data": "Donnees ouvertes",
-    "participate": "E-Participation"
+    "about": "À propos",
+    "methodology": "Méthodologie",
+    "data": "Données ouvertes",
+    "participate": "E-Participation",
+    "home": "Accueil"
   },
   "home": {
-    "tagline": "Mesurer la souverainete africaine",
-    "subtitle": "54 pays — 10 piliers — observe depuis 2010",
-    "intro": "Cliquez sur un pays pour voir son profil de souverainete a travers 10 piliers et 15 ans de donnees.",
-    "explore": "Explorer les 54 pays"
+    "tagline": "Mesurer la souveraineté africaine",
+    "subtitle": "54 pays — 10 piliers — observé depuis 2010",
+    "intro": "Cliquez sur un pays pour voir son profil de souveraineté à travers 10 piliers et 15 années de données.",
+    "explore": "Explorer les 54 pays →"
   },
   "table": {
     "indicator": "Indicateur",
     "trajectory": "Trajectoire",
     "projects": "Projets structurants",
-    "legend": "Les scores vont de 0 (souverainete faible) a 1 (souverainete forte). → navigue vers les projets souverains de ce pilier."
+    "legend": "Les scores vont de 0 (souveraineté faible) à 1 (souveraineté forte). → navigue vers les projets souverains de ce pilier."
   },
   "status": {
     "OFFICIAL": "Officiel",
-    "PRELIMINARY": "Preliminaire",
+    "PRELIMINARY": "Préliminaire",
     "COLLECTING": "Collecte"
   },
   "register": {
-    "title": "Demander l'acces",
+    "title": "Demander l'accès",
     "org": "Nom de l'organisation",
-    "type": "Type d'affilie",
+    "type": "Type d'affilié",
     "country": "Pays",
     "contact": "Nom du contact",
     "email": "Email institutionnel",
@@ -35,100 +36,107 @@
     "subtitle": "OSA Observatory — Demande d'affiliation",
     "context": "Contexte",
     "success_title": "Demande soumise",
-    "success_msg": "Merci. Votre demande d'affiliation a ete recue. Nous vous contacterons a l'adresse",
-    "back_home": "Retour a l'accueil"
+    "success_msg": "Merci. Votre demande d'affiliation a été reçue. Nous vous contacterons à l'adresse",
+    "back_home": "← Retour à l'accueil",
+    "submitting": "Envoi en cours..."
   },
   "footer": {
     "api": "API Explorer",
     "contact": "Contact"
   },
   "about": {
-    "title": "A propos de l'OSA Observatory",
-    "intro_template": "L'OSA Observatory (Observatoire de la Souverainete Africaine) est une infrastructure africaine d'observation souveraine — mesurant les trajectoires de 54 Etats a travers 10 piliers comportementaux, observe depuis 2010 ({years} ans de donnees)."
+    "title": "À propos de l'OSA Observatory",
+    "intro_template": "L'OSA Observatory (Observatoire de la Souveraineté Africaine) est une infrastructure africaine d'observation souveraine — mesurant les trajectoires de 54 États à travers 10 piliers comportementaux, observé depuis 2010 ({years} ans de données)."
   },
   "methodology": {
-    "title": "Methodologie ISA",
-    "intro": "L'Indice de Souverainete Africaine (ISA) est calcule a partir de donnees observees, primaires et auditables — jamais des sondages, jamais des estimations d'experts. La methodologie suit la doctrine consequentialiste OSA P7E.",
-    "doctrine_title": "Doctrine P7E — Consequentialiste",
-    "doctrine_text": "Depuis plusieurs decennies, l'Afrique est evaluee a travers des indices construits sur des perceptions. OSA propose une approche differente : observer les capacites reelles des Etats africains a partir de donnees comportementales verifiables, suivre leurs trajectoires dans le temps et eclairer les decisions publiques par des faits plutot que par des perceptions.",
+    "title": "Méthodologie ISA",
+    "intro": "L'Indice de Souveraineté Africaine (ISA) est calculé à partir de données observées, primaires et auditables — jamais des sondages, jamais des estimations d'experts. La méthodologie suit la doctrine conséquentialiste OSA P7E.",
+    "doctrine_title": "Doctrine P7E — Conséquentialiste",
+    "doctrine_text": "Depuis plusieurs décennies, l'Afrique est évaluée à travers des indices construits sur des perceptions. OSA propose une approche différente : observer les capacités réelles des États africains à partir de données comportementales vérifiables, suivre leurs trajectoires dans le temps et éclairer les décisions publiques par des faits plutôt que par des perceptions.",
     "pipeline_title": "Pipeline en 3 couches",
-    "normalisation_title": "Normalisation — Bornes figees v1_2026",
-    "normalisation_text": "Normalisation min-max : score = (valeur - min) / (max - min) pour les indicateurs positifs, inverse pour les negatifs. Les bornes sont figees sur la periode de reference 2010-2020 (version v1_2026) — garantissant que les nouvelles donnees ne modifient pas les scores historiques.",
-    "weighting_title": "Ponderation",
-    "weighting_text": "Equiponderation au sein de chaque pilier — chaque indicateur actif recoit un poids 1/n ou n est le nombre d'indicateurs avec des donnees observees. Les 10 piliers sont egalement ponderes dans l'ISA composite. Les poids sont automatiquement renormalises lors de l'activation ou desactivation d'indicateurs.",
+    "normalisation_title": "Normalisation — Bornes figées v1_2026",
+    "normalisation_text": "Normalisation min-max : score = (valeur - min) / (max - min) pour les indicateurs positifs, inversé pour les négatifs. Les bornes sont figées sur la période de référence 2010-2020 (version v1_2026) — garantissant que les nouvelles données ne modifient pas les scores historiques.",
+    "weighting_title": "Pondération",
+    "weighting_text": "Équipondération au sein de chaque pilier — chaque indicateur actif reçoit un poids 1/n où n est le nombre d'indicateurs avec des données observées. Les 10 piliers sont également pondérés dans l'ISA composite. Les poids sont automatiquement renormalisés lors de l'activation ou désactivation d'indicateurs.",
     "status_title": "Statut de publication",
     "pillars_title": "Les 10 piliers",
-    "sources_title": "Sources de donnees",
+    "sources_title": "Sources de données",
     "rules": [
-      "Chaque indicateur est une donnee primaire observable — collectee depuis une source auditee, geolocalisee, datee",
-      "Les indicateurs bases sur la perception (WGI, CPI) sont definitivement exclus — biais evaluateur OCDE demontre",
-      "Aucun pays n'est compare a un autre — chaque pays est observe par rapport a sa propre trajectoire souveraine",
-      "Les indicateurs sans donnees observees ne participent pas a la ponderation",
-      "Taux d'imputation superieur a 50% → indicateur inactif"
+      "Chaque indicateur est une donnée primaire observable — collectée depuis une source auditée, géolocalisée, datée",
+      "Les indicateurs basés sur la perception (WGI, CPI) sont définitivement exclus — biais évaluateur OCDE démontré",
+      "Aucun pays n'est comparé à un autre — chaque pays est observé par rapport à sa propre trajectoire souveraine",
+      "Les indicateurs sans données observées ne participent pas à la pondération",
+      "Taux d'imputation supérieur à 50% → indicateur inactif"
     ]
   },
   "data": {
-    "title": "Donnees ouvertes & API",
-    "opendata_title": "Donnees ouvertes — CC-BY-NC-4.0",
-    "opendata_text": "Les trajectoires souveraines ISA pour 54 Etats africains (2010-{year}) sont librement disponibles sous licence Creative Commons CC-BY-NC-4.0. L'attribution a l'OSA Observatory est requise. L'exploitation commerciale est interdite sans accord institutionnel ecrit.",
-    "opendata_btn": "Acceder aux donnees historiques (JSON)",
+    "title": "Données ouvertes & API",
+    "opendata_title": "Données ouvertes — CC-BY-NC-4.0",
+    "opendata_text": "Les trajectoires souveraines ISA pour 54 États africains (2010-{year}) sont librement disponibles sous licence Creative Commons CC-BY-NC-4.0. L'attribution à l'OSA Observatory est requise. L'exploitation commerciale est interdite sans accord institutionnel écrit.",
+    "opendata_btn": "Accéder aux données historiques (JSON)",
     "api_title": "API Explorer",
-    "api_text": "Documentation interactive de tous les endpoints API de l'OSA Observatory. Les chercheurs et institutions affiliees peuvent tester des requetes, explorer les structures de donnees et integrer les indicateurs souverains dans leurs propres cadres analytiques.",
+    "api_text": "Documentation interactive de tous les endpoints API de l'OSA Observatory. Les chercheurs et institutions affiliées peuvent tester des requêtes, explorer les structures de données et intégrer les indicateurs souverains dans leurs propres cadres analytiques.",
     "api_btn": "Ouvrir l'API Explorer (Swagger)",
-    "datasets_title": "Jeux de donnees disponibles",
-    "access_title": "Acces institutionnel",
-    "access_text": "Les affilies SUBSCRIBER et ADVANCED accedent aux etudes de faisabilite, documents de preuve de concept et rapports d'intelligence souveraine. Six categories d'affiliation disponibles : Etat, Organisation regionale, Organisation internationale, Institution academique, Secteur prive, Banque de developpement.",
+    "datasets_title": "Jeux de données disponibles",
+    "access_title": "Accès institutionnel",
+    "access_text": "Les affiliés SUBSCRIBER et ADVANCED accèdent aux études de faisabilité, documents de preuve de concept et rapports d'intelligence souveraine. Six catégories d'affiliation disponibles : État, Organisation régionale, Organisation internationale, Institution académique, Secteur privé, Banque de développement.",
     "access_btn": "Demander une affiliation institutionnelle"
   },
   "participate": {
     "title": "E-Participation",
-    "intro": "Contribuez a la qualite des donnees souveraines africaines. Signalez une anomalie, proposez une source primaire, ou soumettez une contribution methodologique au Comite Scientifique.",
+    "intro": "Contribuez à la qualité des données souveraines africaines. Signalez une anomalie, proposez une source primaire, ou soumettez une contribution méthodologique au Comité Scientifique.",
     "types": {
-      "DATA_SIGNAL": { "label": "Signal de donnees", "desc": "Signalez une anomalie, une valeur incorrecte, ou proposez une source primaire alternative pour un indicateur specifique." },
-      "SOURCE_PROPOSAL": { "label": "Proposition de source", "desc": "Proposez une nouvelle source de donnees primaires pour ameliorer la couverture d'un pilier souverain." },
-      "METHODOLOGICAL": { "label": "Contribution methodologique", "desc": "Proposez un nouvel indicateur, une amelioration methodologique, ou un commentaire doctrinal pour le Comite Scientifique." }
+      "DATA_SIGNAL": { "label": "Signal de données", "desc": "Signalez une anomalie, une valeur incorrecte, ou proposez une source primaire alternative pour un indicateur spécifique." },
+      "SOURCE_PROPOSAL": { "label": "Proposition de source", "desc": "Proposez une nouvelle source de données primaires pour améliorer la couverture d'un pilier souverain." },
+      "METHODOLOGICAL": { "label": "Contribution méthodologique", "desc": "Proposez un nouvel indicateur, une amélioration méthodologique, ou un commentaire doctrinal pour le Comité Scientifique." }
     },
     "fields": {
       "name": "Nom",
       "country": "Pays (ISO3)",
       "indicator": "Indicateur",
-      "year": "Annee",
+      "year": "Année",
       "pillar": "Pilier",
       "source_url": "URL de la source",
       "message": "Message"
     },
     "submit": "Soumettre",
-    "success_title": "Contribution enregistree",
-    "success_msg": "Merci. Votre contribution a ete transmise au Comite Scientifique OSA.",
+    "success_title": "Contribution enregistrée",
+    "success_msg": "Merci. Votre contribution a été transmise au Comité Scientifique OSA.",
     "back_home": "Accueil"
   },
   "pillar": {
-    "definition": "Definition",
+    "definition": "Définition",
     "indicators": "Indicateurs",
-    "sources": "Sources de donnees",
+    "sources": "Sources de données",
     "doctrine": "Doctrine",
-    "doctrine_text": "Ce pilier suit la doctrine consequentialiste OSA P7E : seules les donnees observees et verifiables sont utilisees. Les indicateurs bases sur la perception sont exclus. Une equiponderation est appliquee aux indicateurs actifs disposant de donnees.",
-    "back": "← Methodologie"
+    "doctrine_text": "Ce pilier suit la doctrine conséquentialiste OSA P7E : seules les données observées et vérifiables sont utilisées. Les indicateurs basés sur la perception sont exclus. Une équipondération est appliquée aux indicateurs actifs disposant de données.",
+    "back": "← Méthodologie"
   },
   "countries": {
     "title": "54 pays africains",
     "search": "Rechercher...",
-    "all_regions": "Toutes les regions"
+    "all_regions": "Toutes les régions"
   },
   "projects": {
     "title": "Projets structurants",
-    "no_projects": "Aucun projet disponible pour cette selection.",
+    "no_projects": "Aucun projet disponible pour cette sélection.",
     "loading": "Chargement des projets...",
-    "feasibility": "Etude de faisabilite disponible",
-    "opportunity": "Opportunite identifiee",
-    "view": "Voir le projet"
+    "feasibility": "Étude de faisabilité disponible",
+    "opportunity": "Opportunité identifiée",
+    "view": "Voir le projet →"
   },
   "project_detail": {
     "description": "Description",
-    "feasibility": "Etude de faisabilite",
+    "feasibility": "Étude de faisabilité",
     "poc": "Preuve de concept (POC)",
-    "not_available": "Non disponible.",
-    "premium_msg": "Contenu complet disponible pour les affilies SUBSCRIBER et ADVANCED.",
-    "request": "Demander l'acces"
+    "not_available": "Pas encore disponible.",
+    "premium_msg": "Contenu complet disponible pour les affiliés SUBSCRIBER et ADVANCED.",
+    "request": "Demander l'accès"
+  },
+  "common": {
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "back_countries": "← Pays",
+    "back_home": "← Accueil"
   }
 }

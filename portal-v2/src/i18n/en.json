@@ -4,13 +4,14 @@
     "about": "About",
     "methodology": "Methodology",
     "data": "Open Data",
-    "participate": "E-Participation"
+    "participate": "E-Participation",
+    "home": "Home"
   },
   "home": {
     "tagline": "Measuring African Sovereignty",
     "subtitle": "54 countries — 10 pillars — observed from 2010",
     "intro": "Click on a country to view its sovereignty profile across 10 pillars and 15 years of data.",
-    "explore": "Explore all 54 countries"
+    "explore": "Explore all 54 countries →"
   },
   "table": {
     "indicator": "Indicator",
@@ -36,7 +37,8 @@
     "context": "Context",
     "success_title": "Request submitted",
     "success_msg": "Thank you. Your affiliation request has been received. We will contact you at",
-    "back_home": "Back to home"
+    "back_home": "← Back to home",
+    "submitting": "Submitting..."
   },
   "footer": {
     "api": "API Explorer",
@@ -44,7 +46,7 @@
   },
   "about": {
     "title": "About OSA Observatory",
-    "intro_template": "The OSA Observatory (Observatoire de la Souverainete Africaine) is an African infrastructure for sovereign observation — measuring the trajectories of 54 states across 10 behavioural pillars, observed from 2010 ({years} years of data)."
+    "intro_template": "The OSA Observatory (Observatoire de la Souveraineté Africaine) is an African infrastructure for sovereign observation — measuring the trajectories of 54 states across 10 behavioural pillars, observed from 2010 ({years} years of data)."
   },
   "methodology": {
     "title": "ISA Methodology",
@@ -97,7 +99,7 @@
       "source_url": "Source URL",
       "message": "Message"
     },
-    "submit": "Submit contribution",
+    "submit": "Submit contribution →",
     "success_title": "Contribution recorded",
     "success_msg": "Thank you. Your contribution has been transmitted to the OSA Scientific Committee.",
     "back_home": "Home"
@@ -121,7 +123,7 @@
     "loading": "Loading projects...",
     "feasibility": "Feasibility study available",
     "opportunity": "Opportunity identified",
-    "view": "View project"
+    "view": "View project →"
   },
   "project_detail": {
     "description": "Description",
@@ -130,5 +132,11 @@
     "not_available": "Not yet available.",
     "premium_msg": "Full content available for SUBSCRIBER and ADVANCED affiliates.",
     "request": "Request access"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "back_countries": "← Countries",
+    "back_home": "← Home"
   }
 }

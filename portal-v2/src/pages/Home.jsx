@@ -28,10 +28,10 @@ export default function Home() {
           <CountryMap scoresData={scores} />
         </div>
         <div className="home-intro">
-          <p>Click on a country to view its sovereignty profile across 10 pillars and 15 years of data.</p>
+          <p>{t('home.intro')}</p>
           <button className="btn-explore"
             onClick={() => navigate('/countries')}>
-            Explore all 54 countries →
+            {t('home.explore')}
           </button>
         </div>
       </div>

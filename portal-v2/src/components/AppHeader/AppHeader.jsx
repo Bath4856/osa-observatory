@@ -5,15 +5,16 @@ import './AppHeader.css'
 export default function AppHeader() {
   const { lang, t, switchLang } = useLang()
   const location = useLocation()
-
   const isActive = (path) => location.pathname === path ? 'active' : ''
+  const isHome = location.pathname === '/'
 
   return (
     <header className="app-header">
       <div className="header-left">
-        <Link to="/" className="header-logo">
+        <Link to="/" className={`header-logo ${isHome ? 'logo-home-active' : ''}`} title={t('nav.home')}>
           <span className="logo-osa">OSA</span>
           <span className="logo-tagline">Observatory</span>
+          {!isHome && <span className="home-icon" title={t('nav.home')}>⌂</span>}
         </Link>
       </div>
       <nav className="header-nav">

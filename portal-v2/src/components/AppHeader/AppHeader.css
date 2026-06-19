@@ -66,3 +66,11 @@
   color: #a8cdd8;
   font-size: 0.8rem;
 }
+.home-icon {
+  font-size: 1rem;
+  color: #a8cdd8;
+  margin-left: 0.4rem;
+  transition: color 0.2s;
+}
+.header-logo:hover .home-icon { color: #ffffff; }
+.logo-home-active .logo-osa { color: #ffffff; }

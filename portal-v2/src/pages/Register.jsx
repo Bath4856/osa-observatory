@@ -67,7 +67,7 @@ export default function Register() {
         <div className="register-success">
           <h1>Request submitted</h1>
           <p>Thank you. Your affiliation request has been received. We will contact you at <strong>{form.email}</strong>.</p>
-          <Link to="/" className="btn-home">← Back to home</Link>
+          <Link to="/" className="btn-home">{t('register.back_home')}</Link>
         </div>
       </div>
     )
@@ -135,7 +135,7 @@ export default function Register() {
 
         <div className="form-actions">
           <button type="submit" className="btn-submit" disabled={submitting}>
-            {submitting ? 'Submitting...' : t('register.submit')}
+            {submitting ? t('register.submitting') : t('register.submit')}
           </button>
         </div>
       </form>
