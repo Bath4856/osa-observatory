@@ -1,0 +1,558 @@
+{
+  "audit_timestamp": "2026-06-18T14:52:37.327527+00:00",
+  "audit_duration_seconds": 2.51,
+  "iprs": 56.68,
+  "results": [
+    {
+      "module": "DNS",
+      "status": "PASS",
+      "avg_dns_latency_ms": 0.28,
+      "failed_hosts": [],
+      "https_api": {
+        "status_code": 200,
+        "ok": true,
+        "elapsed_ms": 18.3
+      },
+      "https_open": {
+        "status_code": 200,
+        "ok": true,
+        "elapsed_ms": 22.04
+      },
+      "https_results": {
+        "https_api": {
+          "status_code": 200,
+          "ok": true,
+          "elapsed_ms": 18.3
+        },
+        "https_open": {
+          "status_code": 200,
+          "ok": true,
+          "elapsed_ms": 22.04
+        }
+      },
+      "hosts": [
+        {
+          "host": "osa-observatory.africa",
+          "status": "PASS",
+          "ipv4": "179.237.69.94",
+          "elapsed_ms": 0.62
+        },
+        {
+          "host": "api.osa-observatory.africa",
+          "status": "PASS",
+          "ipv4": "179.237.69.94",
+          "elapsed_ms": 0.13
+        },
+        {
+          "host": "open.osa-observatory.africa",
+          "status": "PASS",
+          "ipv4": "179.237.69.94",
+          "elapsed_ms": 0.09
+        }
+      ]
+    },
+    {
+      "module": "OPENAPI",
+      "status": "PASS",
+      "elapsed_ms": 13.04,
+      "openapi_version": "3.1.0",
+      "title": "OSA Observatory -- African Sovereignty Observatory",
+      "api_version": "2.0.0-production",
+      "nb_paths": 74,
+      "missing_paths": [],
+      "obsolete_paths": []
+    },
+    {
+      "module": "API",
+      "status": "FAIL",
+      "avg_latency_ms": 15.73,
+      "failed_checks": [
+        "scores",
+        "swot"
+      ],
+      "checks": {
+        "root": {
+          "status_code": 200,
+          "elapsed_ms": 12.0,
+          "ok": true
+        },
+        "health": {
+          "status_code": 200,
+          "elapsed_ms": 13.72,
+          "ok": true
+        },
+        "docs": {
+          "status_code": 200,
+          "elapsed_ms": 12.36,
+          "ok": true
+        },
+        "openapi": {
+          "status_code": 200,
+          "elapsed_ms": 14.4,
+          "ok": true
+        },
+        "scores": {
+          "status_code": 429,
+          "elapsed_ms": 22.57,
+          "ok": false
+        },
+        "swot": {
+          "status_code": 429,
+          "elapsed_ms": 19.34,
+          "ok": false
+        }
+      }
+    },
+    {
+      "module": "DATABASE",
+      "status": "PASS",
+      "elapsed_ms": 229.85,
+      "ref_year": 2024,
+      "countries": 54,
+      "regions": 5,
+      "regional_blocs": 11,
+      "tables": 235,
+      "indicator_values": 317245,
+      "indicator_values_ref_year": 19991,
+      "avg_confidence": 0.7971,
+      "null_confidence_scores": 17254,
+      "estimated_values": 0,
+      "quality_flagged": 317245,
+      "ops_audit_runs": 4,
+      "ops_audit_results": 59,
+      "ops_audit_publication_gate": 4,
+      "ops_latest_audit": 1
+    },
+    {
+      "module": "ISA",
+      "status": "FAIL",
+      "status_code": 429,
+      "elapsed_ms": 19.67
+    },
+    {
+      "module": "SWOT",
+      "status": "FAIL",
+      "status_code": 429,
+      "elapsed_ms": 16.08
+    },
+    {
+      "module": "P7I",
+      "status": "FAIL",
+      "status_code": 429,
+      "elapsed_ms": 17.73
+    },
+    {
+      "module": "TRAJECTORY",
+      "status": "WARNING",
+      "target_year": 2024,
+      "elapsed_ms": 64.89,
+      "declared_count": 10,
+      "active_count": 9,
+      "inactive_count": 1,
+      "missing_count": 0,
+      "coverage_pct": 90.0,
+      "total_rows": 814,
+      "avg_confidence": 0.8849,
+      "active": [
+        "ECO_FORMAL_TRAJECTORY",
+        "ECO_PUBLIC_LEAKAGE",
+        "ECO_TAX_EFFICIENCY",
+        "MON_IFF_PRESSURE",
+        "PHUM_VALUE_CAPTURE",
+        "PMIN_VALUE_CAPTURE",
+        "PMIN_VALUE_LEAKAGE",
+        "PMON_RESERVE_CAPTURE",
+        "PNUM_DIGITAL_CAPTURE"
+      ],
+      "inactive": [
+        "PMIN_SMUGGLING_SIGNAL_RANK"
+      ],
+      "missing": [],
+      "indicator_stats": {
+        "ECO_FORMAL_TRAJECTORY": {
+          "exists": true,
+          "count": 14,
+          "avg_confidence": null
+        },
+        "ECO_PUBLIC_LEAKAGE": {
+          "exists": true,
+          "count": 54,
+          "avg_confidence": 0.85
+        },
+        "ECO_TAX_EFFICIENCY": {
+          "exists": true,
+          "count": 53,
+          "avg_confidence": 0.85
+        },
+        "MON_IFF_PRESSURE": {
+          "exists": true,
+          "count": 147,
+          "avg_confidence": 0.9054
+        },
+        "PHUM_VALUE_CAPTURE": {
+          "exists": true,
+          "count": 125,
+          "avg_confidence": 0.8408
+        },
+        "PMIN_SMUGGLING_SIGNAL_RANK": {
+          "exists": true,
+          "count": 0,
+          "avg_confidence": null
+        },
+        "PMIN_VALUE_CAPTURE": {
+          "exists": true,
+          "count": 161,
+          "avg_confidence": 0.9317
+        },
+        "PMIN_VALUE_LEAKAGE": {
+          "exists": true,
+          "count": 161,
+          "avg_confidence": 0.9317
+        },
+        "PMON_RESERVE_CAPTURE": {
+          "exists": true,
+          "count": 48,
+          "avg_confidence": null
+        },
+        "PNUM_DIGITAL_CAPTURE": {
+          "exists": true,
+          "count": 51,
+          "avg_confidence": null
+        }
+      },
+      "indicators_source": "rf.indicators (TRAJECTOIRE)"
+    },
+    {
+      "module": "audit.audits.audit_scientific_drift",
+      "status": "FAIL",
+      "error": "RATE_LIMITED_429"
+    },
+    {
+      "module": "DOCUMENTATION",
+      "status": "PASS",
+      "elapsed_ms": 0.26,
+      "required_count": 4,
+      "existing_count": 4,
+      "empty_count": 0,
+      "missing_count": 0,
+      "presence_pct": 100.0,
+      "content_pct": 100.0,
+      "existing": [
+        "README.md",
+        "audit/config/audit_config.yaml",
+        "audit/config/publication_rules.yaml",
+        "audit/config/trajectory_rules.yaml"
+      ],
+      "empty": [],
+      "missing": [],
+      "files": {
+        "README.md": {
+          "exists": true,
+          "size_bytes": 6318
+        },
+        "audit/config/audit_config.yaml": {
+          "exists": true,
+          "size_bytes": 5664
+        },
+        "audit/config/publication_rules.yaml": {
+          "exists": true,
+          "size_bytes": 3237
+        },
+        "audit/config/trajectory_rules.yaml": {
+          "exists": true,
+          "size_bytes": 4552
+        }
+      }
+    },
+    {
+      "module": "PERFORMANCE",
+      "status": "PASS",
+      "api_elapsed_ms": 14.86,
+      "database_elapsed_ms": 54.44,
+      "total_elapsed_ms": 76.36,
+      "target_year": 2024,
+      "countries": 54,
+      "indicator_values": 317245,
+      "indicator_values_year": 19991,
+      "avg_confidence": 0.7971,
+      "api_limit_ms": 300,
+      "database_limit_ms": 500,
+      "total_limit_ms": 500,
+      "warnings": []
+    },
+    {
+      "module": "REPOSITORY_STRUCTURE",
+      "status": "PASS",
+      "elapsed_ms": 0.26,
+      "missing_dirs": [],
+      "missing_files": [],
+      "warnings": []
+    },
+    {
+      "module": "SECURITY",
+      "status": "WARNING",
+      "elapsed_ms": 5.57,
+      "scanned_dirs": [
+        "audit",
+        "api"
+      ],
+      "findings": [
+        {
+          "file": "audit/sprint17_security_audit_20260528_125245.json",
+          "pattern": "token"
+        },
+        {
+          "file": "audit/sprint17_security_audit_20260528_165214.json",
+          "pattern": "token"
+        },
+        {
+          "file": "audit/sprint17_security_audit_20260528_115555.json",
+          "pattern": "token"
+        },
+        {
+          "file": "audit/sprint17_security_audit_20260528_171956.json",
+          "pattern": "token"
+        },
+        {
+          "file": "audit/sprint17_security_audit_20260528_135703.json",
+          "pattern": "token"
+        },
+        {
+          "file": "audit/sprint17_security_audit_20260528_142828.json",
+          "pattern": "token"
+        },
+        {
+          "file": "api/.env",
+          "pattern": "password"
+        },
+        {
+          "file": "api/.env",
+          "pattern": "secret"
+        }
+      ]
+    },
+    {
+      "module": "METHODOLOGY",
+      "status": "FAIL",
+      "score": 34,
+      "findings": [
+        "SOV_PECO/2020 weight sum=0.93750000",
+        "SOV_PMON/2014 weight sum=0.93333338",
+        "SOV_PECO/2011 weight sum=0.93750000",
+        "SOV_PECO/2015 weight sum=0.93750000",
+        "SOV_PECO/2024 weight sum=0.93750000",
+        "SOV_PMON/2015 weight sum=0.93333338",
+        "SOV_PMON/2013 weight sum=0.93333338",
+        "SOV_PMON/2011 weight sum=0.93333338",
+        "SOV_PMON/2020 weight sum=0.93333338",
+        "SOV_PECO/2012 weight sum=0.93750000",
+        "SOV_PMON/2012 weight sum=0.93333338",
+        "SOV_PMON/2022 weight sum=0.93333338",
+        "SOV_PECO/2010 weight sum=0.93750000",
+        "SOV_PECO/2021 weight sum=0.93750000",
+        "SOV_PECO/2016 weight sum=0.93750000",
+        "SOV_PMON/2023 weight sum=0.93333338",
+        "SOV_PMON/2024 weight sum=0.93333338",
+        "SOV_PECO/2022 weight sum=0.93750000",
+        "SOV_PMON/2016 weight sum=0.93333338",
+        "SOV_PECO/2017 weight sum=0.93750000",
+        "SOV_PECO/2019 weight sum=0.93750000",
+        "SOV_PECO/2018 weight sum=0.93750000",
+        "SOV_PECO/2023 weight sum=0.93750000",
+        "SOV_PECO/2013 weight sum=0.93750000",
+        "SOV_PMON/2010 weight sum=0.93333338",
+        "SOV_PMON/2019 weight sum=0.93333338",
+        "SOV_PECO/2014 weight sum=0.93750000",
+        "SOV_PMON/2021 weight sum=0.93333338",
+        "SOV_PMON/2018 weight sum=0.93333338",
+        "SOV_PMON/2017 weight sum=0.93333338",
+        "PECO: ECO_LOG not linked and not excluded",
+        "PMON: MON_AUT not linked and not excluded"
+      ],
+      "recommendations": [
+        "Review weights for SOV_PECO",
+        "Review weights for SOV_PMON",
+        "Review weights for SOV_PECO",
+        "Review weights for SOV_PECO",
+        "Review weights for SOV_PECO",
+        "Review weights for SOV_PMON",
+        "Review weights for SOV_PMON",
+        "Review weights for SOV_PMON",
+        "Review weights for SOV_PMON",
+        "Review weights for SOV_PECO",
+        "Review weights for SOV_PMON",
+        "Review weights for SOV_PMON",
+        "Review weights for SOV_PECO",
+        "Review weights for SOV_PECO",
+        "Review weights for SOV_PECO",
+        "Review weights for SOV_PMON",
+        "Review weights for SOV_PMON",
+        "Review weights for SOV_PECO",
+        "Review weights for SOV_PMON",
+        "Review weights for SOV_PECO",
+        "Review weights for SOV_PECO",
+        "Review weights for SOV_PECO",
+        "Review weights for SOV_PECO",
+        "Review weights for SOV_PECO",
+        "Review weights for SOV_PMON",
+        "Review weights for SOV_PMON",
+        "Review weights for SOV_PECO",
+        "Review weights for SOV_PMON",
+        "Review weights for SOV_PMON",
+        "Review weights for SOV_PMON",
+        "Review mapping of ECO_LOG",
+        "Review mapping of MON_AUT"
+      ]
+    },
+    {
+      "module": "DATA_QUALITY",
+      "status": "WARNING",
+      "elapsed_ms": 121.75,
+      "null_values": 1590,
+      "negative_confidence": 0,
+      "out_of_range_l3": 0,
+      "out_of_range_scope": "layer_id = 3 (L3 normalisé uniquement)",
+      "warnings": [
+        "NULL_VALUES"
+      ]
+    },
+    {
+      "module": "API_CONTRACT_ADVANCED",
+      "status": "WARNING",
+      "elapsed_ms": 282.18,
+      "missing_endpoints": [],
+      "slow_endpoints": [],
+      "warnings": [
+        "UNEXPECTED_STATUS 429: /api/v2/countries",
+        "UNEXPECTED_STATUS 429: /api/v2/scores",
+        "UNEXPECTED_STATUS 429: /api/v2/predictive/readiness",
+        "UNEXPECTED_STATUS 429: /api/v2/predictive/signals",
+        "UNEXPECTED_STATUS 429: /api/v2/predictive/fragility",
+        "UNEXPECTED_STATUS 429: /api/v2/release",
+        "UNEXPECTED_STATUS 429: /api/v2/opportunities",
+        "UNEXPECTED_STATUS 429: /api/v2/methodology",
+        "UNEXPECTED_STATUS 429: /api/v2/sovereign-projects",
+        "UNEXPECTED_STATUS 429: /api/v2/early-warning/civilian-protection",
+        "UNEXPECTED_STATUS 429: /api/v2/early-warning/conflict-economy",
+        "UNEXPECTED_STATUS 429: /api/v2/early-warning/composite",
+        "UNEXPECTED_STATUS 429: /api/v2/sovereignty/swot",
+        "UNEXPECTED_STATUS 429: /api/v2/sovereignty/fiscal-margin",
+        "UNEXPECTED_STATUS 429: /opendata/"
+      ],
+      "thresholds": {
+        "slow_ms": 10000,
+        "timeout_s": 30
+      }
+    },
+    {
+      "module": "API_SCHEMA",
+      "status": "WARNING",
+      "elapsed_ms": 74.27,
+      "failures": [],
+      "warnings": [
+        {
+          "endpoint": "/api/v2/countries",
+          "detail": "rate limit (429)"
+        },
+        {
+          "endpoint": "/api/v2/scores",
+          "detail": "rate limit (429)"
+        },
+        {
+          "endpoint": "/api/v2/sovereignty/swot",
+          "detail": "rate limit (429)"
+        },
+        {
+          "endpoint": "/opendata/",
+          "detail": "rate limit (429)"
+        }
+      ]
+    },
+    {
+      "module": "API_PERMISSIONS",
+      "status": "WARNING",
+      "elapsed_ms": 107.52,
+      "failures": [],
+      "warnings": [
+        "RATE_LIMITED (429): /opendata/ — résultat non concluant",
+        "RATE_LIMITED (429): /api/v2/countries — résultat non concluant",
+        "RATE_LIMITED (429): /api/v2/scores — résultat non concluant",
+        "RATE_LIMITED (429): /api/v2/predictive/readiness — résultat non concluant",
+        "RATE_LIMITED (429): /api/v2/predictive/signals — résultat non concluant",
+        "RATE_LIMITED (429): /api/v2/predictive/fragility — résultat non concluant",
+        "Passe B ignorée : aucun api_key ni auth_token dans cfg"
+      ]
+    },
+    {
+      "module": "API_PERFORMANCE_ADVANCED",
+      "status": "PASS",
+      "elapsed_ms": 74.14,
+      "results": [
+        {
+          "endpoint": "/api/v2/countries",
+          "elapsed_ms": 18.38
+        },
+        {
+          "endpoint": "/api/v2/scores",
+          "elapsed_ms": 19.0
+        },
+        {
+          "endpoint": "/api/v2/sovereignty/swot",
+          "elapsed_ms": 18.72
+        },
+        {
+          "endpoint": "/opendata/",
+          "elapsed_ms": 17.96
+        }
+      ],
+      "warnings": [],
+      "failures": [],
+      "thresholds": {
+        "fail_ms": 15000,
+        "warn_high_ms": 10000,
+        "warn_med_ms": 5000
+      }
+    }
+  ],
+  "publication": {
+    "publication_status": "REVIEW_REQUIRED",
+    "reason": "FAIL_MODULES_DETECTED",
+    "iprs": 56.68,
+    "health_ratio": 0.3684,
+    "total_modules": 19,
+    "pass_modules": [
+      "DNS",
+      "OPENAPI",
+      "DATABASE",
+      "DOCUMENTATION",
+      "PERFORMANCE",
+      "REPOSITORY_STRUCTURE",
+      "API_PERFORMANCE_ADVANCED"
+    ],
+    "warning_modules": [
+      "TRAJECTORY",
+      "SECURITY",
+      "DATA_QUALITY",
+      "API_CONTRACT_ADVANCED",
+      "API_SCHEMA",
+      "API_PERMISSIONS"
+    ],
+    "fail_modules": [
+      "API",
+      "ISA",
+      "SWOT",
+      "P7I",
+      "audit.audits.audit_scientific_drift",
+      "METHODOLOGY"
+    ],
+    "unknown_modules": [],
+    "pass_count": 7,
+    "warning_count": 6,
+    "fail_count": 6,
+    "unknown_count": 0,
+    "review_threshold": 70,
+    "ready_threshold": 85
+  },
+  "skipped_imports": [],
+  "audit_id": "45127355-f584-4095-b657-916533747b8e"
+}

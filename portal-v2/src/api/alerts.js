@@ -1,17 +1,29 @@
+// alerts.js
 const API = import.meta.env.VITE_API_URL || 'https://api.osa-observatory.africa'
 
-export async function getAmarAlert(iso3) {
-  const res = await fetch(`${API}/opendata/alerts/amar`)
-  if (!res.ok) return null
-  const data = await res.json()
-  const arr = Array.isArray(data) ? data : data.data || []
-  return arr.find(d => d.country_iso3 === iso3 && d.year === 2024) || null
+function toArray(data) {
+  if (Array.isArray(data)) return data
+  if (Array.isArray(data?.data)) return data.data
+  if (Array.isArray(data?.results)) return data.results
+  if (data && typeof data === 'object') return [data]
+  return []
 }
 
-export async function getConflictEconomy(iso3) {
-  const res = await fetch(`${API}/api/v2/early-warning/conflict-economy?iso3=${iso3}`)
-  if (!res.ok) return null
+// Historique AMAR (civilian protection), 2020-2024 -- perimetre doctrinal
+// (le SWOT, intrant du moteur AMAR, n'existe pas avant 2020).
+// Vue persistee mg.v_public_p7i_amar_alerts -- rapide.
+export async function getAmarHistory(iso3) {
+  const res = await fetch(`${API}/opendata/alerts/amar/${iso3}`)
+  if (!res.ok) return []
   const data = await res.json()
-  const arr = Array.isArray(data) ? data : []
-  return arr.find(d => d.country_iso3 === iso3) || null
+  return toArray(data)
+}
+
+// Historique Conflict Economy (GENECO), 2020-2024 -- meme perimetre doctrinal.
+// Vue persistee mg.v_public_p7i_amar_geneco_alerts -- rapide.
+export async function getConflictEconomyHistory(iso3) {
+  const res = await fetch(`${API}/opendata/alerts/geneco/${iso3}`)
+  if (!res.ok) return []
+  const data = await res.json()
+  return toArray(data)
 }

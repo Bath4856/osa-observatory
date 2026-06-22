@@ -52,7 +52,7 @@ logging.basicConfig(
 log = logging.getLogger("osa_export_opendata")
 
 _DISCLAIMER = (
-    "OSA Observatory -- Observatoire de la Souverainete Africaine. "
+    "OSA Observatory -- Observatoire de la Souveraineté Africaine. "
     "Published under CC-BY-4.0. "
     "Early-warning analytical tool -- not a legal or diplomatic qualification. "
     "Subscribe at open.osa-observatory.org for full scores and analytics."

@@ -1,0 +1,452 @@
+{
+  "audit_timestamp": "2026-06-16T13:04:21.965315+00:00",
+  "audit_duration_seconds": 98.02,
+  "iprs": 62.35,
+  "results": [
+    {
+      "module": "DNS",
+      "status": "PASS",
+      "avg_dns_latency_ms": 7.32,
+      "failed_hosts": [],
+      "https_api": {
+        "status_code": 200,
+        "ok": true,
+        "elapsed_ms": 16.19
+      },
+      "https_open": {
+        "status_code": 200,
+        "ok": true,
+        "elapsed_ms": 21.48
+      },
+      "https_results": {
+        "https_api": {
+          "status_code": 200,
+          "ok": true,
+          "elapsed_ms": 16.19
+        },
+        "https_open": {
+          "status_code": 200,
+          "ok": true,
+          "elapsed_ms": 21.48
+        }
+      },
+      "hosts": [
+        {
+          "host": "osa-observatory.africa",
+          "status": "PASS",
+          "ipv4": "179.237.69.94",
+          "elapsed_ms": 11.41
+        },
+        {
+          "host": "api.osa-observatory.africa",
+          "status": "PASS",
+          "ipv4": "179.237.69.94",
+          "elapsed_ms": 0.24
+        },
+        {
+          "host": "open.osa-observatory.africa",
+          "status": "PASS",
+          "ipv4": "179.237.69.94",
+          "elapsed_ms": 10.32
+        }
+      ]
+    },
+    {
+      "module": "OPENAPI",
+      "status": "PASS",
+      "elapsed_ms": 13.49,
+      "openapi_version": "3.1.0",
+      "title": "OSA Observatory -- African Sovereignty Observatory",
+      "api_version": "2.0.0-production",
+      "nb_paths": 74,
+      "missing_paths": [],
+      "obsolete_paths": []
+    },
+    {
+      "module": "API",
+      "status": "WARNING",
+      "avg_latency_ms": 1609.88,
+      "failed_checks": [],
+      "checks": {
+        "root": {
+          "status_code": 200,
+          "elapsed_ms": 11.54,
+          "ok": true
+        },
+        "health": {
+          "status_code": 200,
+          "elapsed_ms": 11.5,
+          "ok": true
+        },
+        "docs": {
+          "status_code": 200,
+          "elapsed_ms": 10.7,
+          "ok": true
+        },
+        "openapi": {
+          "status_code": 200,
+          "elapsed_ms": 12.31,
+          "ok": true
+        },
+        "scores": {
+          "status_code": 200,
+          "elapsed_ms": 17.66,
+          "ok": true
+        },
+        "swot": {
+          "status_code": 200,
+          "elapsed_ms": 9595.58,
+          "ok": true
+        }
+      }
+    },
+    {
+      "module": "DATABASE",
+      "status": "FAIL",
+      "error": "connection to server at \"172.18.0.3\", port 5432 failed: FATAL:  password authentication failed for user \"postgres\"\n"
+    },
+    {
+      "module": "ISA",
+      "status": "PASS",
+      "elapsed_ms": 19.93,
+      "api_year": 2024,
+      "expected_year": 2024,
+      "api_count": 54,
+      "countries": 54,
+      "years": [
+        2024
+      ],
+      "valid_scores": 54,
+      "min_score": 0.076,
+      "max_score": 0.168,
+      "avg_confidence": 0.7967,
+      "publication_statuses": [
+        "OFFICIAL"
+      ],
+      "trajectories": [
+        "DECLINING_TRAJECTORY",
+        "IMPROVING_TRAJECTORY",
+        "MIXED_TRAJECTORY"
+      ],
+      "warnings": []
+    },
+    {
+      "module": "SWOT",
+      "status": "PASS",
+      "elapsed_ms": 599.21,
+      "target_year": 2024,
+      "rows": 540,
+      "countries": 54,
+      "pillars": [
+        "PECO",
+        "PENV",
+        "PGEO",
+        "PHUM",
+        "PMIL",
+        "PMIN",
+        "PMON",
+        "PNUM",
+        "PRES",
+        "PTRA"
+      ],
+      "publication_statuses": [
+        "OFFICIAL_CONSOLIDATED"
+      ],
+      "strategic_classes": [
+        "HIGH_STRATEGIC_ATTENTION",
+        "MEDIUM_HIGH_STRATEGIC_ATTENTION"
+      ],
+      "strategic_roles": [
+        "THREAT_TO_MITIGATE",
+        "WEAKNESS_TO_FIX"
+      ],
+      "avg_risk": 0.3398,
+      "avg_upside": 0.2148,
+      "min_risk": 0.025,
+      "max_risk": 0.463,
+      "min_upside": 0.001,
+      "max_upside": 0.613
+    },
+    {
+      "module": "P7I",
+      "status": "WARNING",
+      "elapsed_ms": 20.94,
+      "total_alerts": 54,
+      "countries": 54,
+      "missing_country_count": 1,
+      "missing_countries": [
+        "LCA"
+      ],
+      "years": [
+        2024
+      ],
+      "avg_confidence": 0.8108,
+      "min_confidence": 0.751,
+      "max_confidence": 0.85,
+      "low_confidence": 0,
+      "confidence_threshold": 0.5,
+      "min_score": 0.359,
+      "max_score": 0.459
+    },
+    {
+      "module": "TRAJECTORY",
+      "status": "FAIL",
+      "error": "connection to server at \"172.18.0.3\", port 5432 failed: FATAL:  password authentication failed for user \"postgres\"\n"
+    },
+    {
+      "module": "SCIENTIFIC_DRIFT",
+      "status": "PASS",
+      "current_year": 2024,
+      "previous_year": 2023,
+      "countries_current": 54,
+      "countries_previous": 54,
+      "avg_current": 0.1148,
+      "avg_previous": 0.1278,
+      "std_current": 0.0206,
+      "std_previous": 0.0229,
+      "drift": 0.013,
+      "warning_threshold": 0.05,
+      "fail_threshold": 0.15
+    },
+    {
+      "module": "DOCUMENTATION",
+      "status": "PASS",
+      "elapsed_ms": 0.18,
+      "required_count": 4,
+      "existing_count": 4,
+      "empty_count": 0,
+      "missing_count": 0,
+      "presence_pct": 100.0,
+      "content_pct": 100.0,
+      "existing": [
+        "README.md",
+        "audit/config/audit_config.yaml",
+        "audit/config/publication_rules.yaml",
+        "audit/config/trajectory_rules.yaml"
+      ],
+      "empty": [],
+      "missing": [],
+      "files": {
+        "README.md": {
+          "exists": true,
+          "size_bytes": 6318
+        },
+        "audit/config/audit_config.yaml": {
+          "exists": true,
+          "size_bytes": 5674
+        },
+        "audit/config/publication_rules.yaml": {
+          "exists": true,
+          "size_bytes": 3237
+        },
+        "audit/config/trajectory_rules.yaml": {
+          "exists": true,
+          "size_bytes": 4552
+        }
+      }
+    },
+    {
+      "module": "PERFORMANCE",
+      "status": "FAIL",
+      "error": "connection to server at \"172.18.0.3\", port 5432 failed: FATAL:  password authentication failed for user \"postgres\"\n"
+    },
+    {
+      "module": "REPOSITORY_STRUCTURE",
+      "status": "PASS",
+      "elapsed_ms": 0.21,
+      "missing_dirs": [],
+      "missing_files": [],
+      "warnings": []
+    },
+    {
+      "module": "SECURITY",
+      "status": "WARNING",
+      "elapsed_ms": 5.72,
+      "scanned_dirs": [
+        "audit",
+        "api"
+      ],
+      "findings": [
+        {
+          "file": "audit/sprint17_security_audit_20260528_125245.json",
+          "pattern": "token"
+        },
+        {
+          "file": "audit/sprint17_security_audit_20260528_165214.json",
+          "pattern": "token"
+        },
+        {
+          "file": "audit/sprint17_security_audit_20260528_115555.json",
+          "pattern": "token"
+        },
+        {
+          "file": "audit/sprint17_security_audit_20260528_171956.json",
+          "pattern": "token"
+        },
+        {
+          "file": "audit/sprint17_security_audit_20260528_135703.json",
+          "pattern": "token"
+        },
+        {
+          "file": "audit/sprint17_security_audit_20260528_142828.json",
+          "pattern": "token"
+        },
+        {
+          "file": "api/.env",
+          "pattern": "password"
+        },
+        {
+          "file": "api/.env",
+          "pattern": "secret"
+        }
+      ]
+    },
+    {
+      "module": "API_CONTRACT_ADVANCED",
+      "status": "WARNING",
+      "elapsed_ms": 68655.51,
+      "missing_endpoints": [],
+      "slow_endpoints": [
+        {
+          "endpoint": "/api/v2/early-warning/civilian-protection",
+          "elapsed_ms": 28784.77
+        }
+      ],
+      "warnings": [
+        "TIMEOUT: /api/v2/early-warning/conflict-economy"
+      ],
+      "thresholds": {
+        "slow_ms": 10000,
+        "timeout_s": 30
+      }
+    },
+    {
+      "module": "API_SCHEMA",
+      "status": "WARNING",
+      "elapsed_ms": 9361.78,
+      "failures": [],
+      "warnings": [
+        {
+          "endpoint": "/api/v2/countries",
+          "detail": "non vérifié (HTTP 401)"
+        },
+        {
+          "endpoint": "/api/v2/scores",
+          "missing_fields": [
+            "iso3",
+            "isa_score",
+            "position"
+          ],
+          "expected_fields": [
+            "iso3",
+            "isa_score",
+            "position"
+          ]
+        },
+        {
+          "endpoint": "/api/v2/sovereignty/swot",
+          "missing_fields": [
+            "iso3",
+            "pillar",
+            "signal_type"
+          ],
+          "expected_fields": [
+            "iso3",
+            "pillar",
+            "signal_type"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "API_PERMISSIONS",
+      "status": "FAIL",
+      "elapsed_ms": 106.02,
+      "failures": [
+        {
+          "pass": "unauthenticated",
+          "endpoint": "/api/v2/countries",
+          "expected": 200,
+          "got": 401
+        }
+      ],
+      "warnings": [
+        "Passe B ignorée : aucun api_key ni auth_token dans cfg"
+      ]
+    },
+    {
+      "module": "API_PERFORMANCE_ADVANCED",
+      "status": "WARNING",
+      "elapsed_ms": 9421.77,
+      "results": [
+        {
+          "endpoint": "/api/v2/countries",
+          "elapsed_ms": 19.11
+        },
+        {
+          "endpoint": "/api/v2/scores",
+          "elapsed_ms": 21.72
+        },
+        {
+          "endpoint": "/api/v2/sovereignty/swot",
+          "elapsed_ms": 9361.05
+        },
+        {
+          "endpoint": "/opendata/",
+          "elapsed_ms": 19.8
+        }
+      ],
+      "warnings": [
+        {
+          "endpoint": "/api/v2/sovereignty/swot",
+          "elapsed_ms": 9361.05,
+          "severity": "MEDIUM"
+        }
+      ],
+      "failures": [],
+      "thresholds": {
+        "fail_ms": 15000,
+        "warn_high_ms": 10000,
+        "warn_med_ms": 5000
+      }
+    }
+  ],
+  "publication": {
+    "publication_status": "REVIEW_REQUIRED",
+    "reason": "FAIL_MODULES_DETECTED",
+    "iprs": 62.35,
+    "health_ratio": 0.4118,
+    "total_modules": 17,
+    "pass_modules": [
+      "DNS",
+      "OPENAPI",
+      "ISA",
+      "SWOT",
+      "SCIENTIFIC_DRIFT",
+      "DOCUMENTATION",
+      "REPOSITORY_STRUCTURE"
+    ],
+    "warning_modules": [
+      "API",
+      "P7I",
+      "SECURITY",
+      "API_CONTRACT_ADVANCED",
+      "API_SCHEMA",
+      "API_PERFORMANCE_ADVANCED"
+    ],
+    "fail_modules": [
+      "DATABASE",
+      "TRAJECTORY",
+      "PERFORMANCE",
+      "API_PERMISSIONS"
+    ],
+    "unknown_modules": [],
+    "pass_count": 7,
+    "warning_count": 6,
+    "fail_count": 4,
+    "unknown_count": 0,
+    "review_threshold": 70,
+    "ready_threshold": 85
+  },
+  "skipped_imports": []
+}

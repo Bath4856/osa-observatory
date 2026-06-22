@@ -1,0 +1,1125 @@
+{
+  "uid": "osa-trajectory",
+  "title": "OSA ISA – Trajectoire Souveraine",
+  "description": "Suivi des indicateurs TRAJECTOIRE OSA. Produit 3 — Intelligence souveraine.",
+  "tags": [
+    "osa",
+    "trajectory",
+    "trajectoire",
+    "pmin",
+    "phum"
+  ],
+  "schemaVersion": 36,
+  "version": 1,
+  "refresh": "5m",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "UTC",
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 2
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "## OSA ISA — Trajectoire Souveraine\nSuivi des indicateurs TRAJECTOIRE · Produit 3 · Module `TRAJECTORY`"
+      },
+      "targets": []
+    },
+    {
+      "id": 2,
+      "type": "row",
+      "title": "Vue d'ensemble TRAJECTOIRE",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 2,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 3,
+      "type": "gauge",
+      "title": "Couverture indicateurs (%)",
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 5,
+        "h": 6
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": null
+              },
+              {
+                "color": "#F2CC0C",
+                "value": 80
+              },
+              {
+                "color": "#5AA64B",
+                "value": 100
+              }
+            ]
+          },
+          "unit": "none",
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "coverage_pct",
+              "jsonPath": "$.module_results[?module=='TRAJECTORY'].coverage_pct | [0]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Indicateurs actifs",
+      "gridPos": {
+        "x": 5,
+        "y": 3,
+        "w": 4,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5AA64B",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "active_count",
+              "jsonPath": "$.module_results[?module=='TRAJECTORY'].active_count | [0]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Indicateurs inactifs",
+      "gridPos": {
+        "x": 9,
+        "y": 3,
+        "w": 4,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#F2CC0C",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "inactive_count",
+              "jsonPath": "$.module_results[?module=='TRAJECTORY'].inactive_count | [0]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Indicateurs manquants",
+      "gridPos": {
+        "x": 13,
+        "y": 3,
+        "w": 4,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "missing_count",
+              "jsonPath": "$.module_results[?module=='TRAJECTORY'].missing_count | [0]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "gauge",
+      "title": "Confiance moyenne",
+      "gridPos": {
+        "x": 17,
+        "y": 3,
+        "w": 7,
+        "h": 6
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": null
+              },
+              {
+                "color": "#F2CC0C",
+                "value": 0.5
+              },
+              {
+                "color": "#5AA64B",
+                "value": 0.75
+              }
+            ]
+          },
+          "unit": "none",
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "avg_confidence",
+              "jsonPath": "$.module_results[?module=='TRAJECTORY'].avg_confidence | [0]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "Total valeurs",
+      "gridPos": {
+        "x": 5,
+        "y": 6,
+        "w": 4,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": null
+              },
+              {
+                "color": "#5AA64B",
+                "value": 500
+              }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "total_rows",
+              "jsonPath": "$.module_results[?module=='TRAJECTORY'].total_rows | [0]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "stat",
+      "title": "Année de référence",
+      "gridPos": {
+        "x": 9,
+        "y": 6,
+        "w": 4,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#1F60C4",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "target_year",
+              "jsonPath": "$.module_results[?module=='TRAJECTORY'].target_year | [0]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "Statut TRAJECTORY",
+      "gridPos": {
+        "x": 13,
+        "y": 6,
+        "w": 4,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": null
+              },
+              {
+                "color": "#F2CC0C",
+                "value": 70
+              },
+              {
+                "color": "#5AA64B",
+                "value": 85
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "PASS": {
+                  "text": "✅ PASS",
+                  "color": "#5AA64B",
+                  "index": 0
+                },
+                "WARNING": {
+                  "text": "⚠ WARNING",
+                  "color": "#F2CC0C",
+                  "index": 1
+                },
+                "FAIL": {
+                  "text": "❌ FAIL",
+                  "color": "#E02F44",
+                  "index": 2
+                }
+              }
+            }
+          ]
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "traj_status",
+              "jsonPath": "$.module_results[?module=='TRAJECTORY'].status | [0]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "row",
+      "title": "Indicateurs TRAJECTOIRE Sprint 21",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 20,
+      "type": "stat",
+      "title": "PMIN Value Capture — Valeurs",
+      "gridPos": {
+        "x": 0,
+        "y": 10,
+        "w": 6,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": null
+              },
+              {
+                "color": "#5AA64B",
+                "value": 50
+              }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "count",
+              "jsonPath": "$.module_results[?module=='TRAJECTORY'].indicator_stats.PMIN_VALUE_CAPTURE.count | [0]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "type": "stat",
+      "title": "PMIN Value Leakage — Valeurs",
+      "gridPos": {
+        "x": 6,
+        "y": 10,
+        "w": 6,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": null
+              },
+              {
+                "color": "#5AA64B",
+                "value": 50
+              }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "count",
+              "jsonPath": "$.module_results[?module=='TRAJECTORY'].indicator_stats.PMIN_VALUE_LEAKAGE.count | [0]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "type": "stat",
+      "title": "PMIN Smuggling Signal — Valeurs",
+      "gridPos": {
+        "x": 12,
+        "y": 10,
+        "w": 6,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": null
+              },
+              {
+                "color": "#5AA64B",
+                "value": 50
+              }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "count",
+              "jsonPath": "$.module_results[?module=='TRAJECTORY'].indicator_stats.PMIN_SMUGGLING_SIGNAL_RANK.count | [0]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "type": "stat",
+      "title": "PHUM Value Capture — Valeurs",
+      "gridPos": {
+        "x": 18,
+        "y": 10,
+        "w": 6,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": null
+              },
+              {
+                "color": "#5AA64B",
+                "value": 50
+              }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "count",
+              "jsonPath": "$.module_results[?module=='TRAJECTORY'].indicator_stats.PHUM_VALUE_CAPTURE.count | [0]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "type": "stat",
+      "title": "PMIN Value Capture — Confiance",
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 6,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": null
+              },
+              {
+                "color": "#F2CC0C",
+                "value": 0.5
+              },
+              {
+                "color": "#5AA64B",
+                "value": 0.75
+              }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "avg_confidence",
+              "jsonPath": "$.module_results[?module=='TRAJECTORY'].indicator_stats.PMIN_VALUE_CAPTURE.avg_confidence | [0]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "type": "stat",
+      "title": "PMIN Value Leakage — Confiance",
+      "gridPos": {
+        "x": 6,
+        "y": 13,
+        "w": 6,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": null
+              },
+              {
+                "color": "#F2CC0C",
+                "value": 0.5
+              },
+              {
+                "color": "#5AA64B",
+                "value": 0.75
+              }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "avg_confidence",
+              "jsonPath": "$.module_results[?module=='TRAJECTORY'].indicator_stats.PMIN_VALUE_LEAKAGE.avg_confidence | [0]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 32,
+      "type": "stat",
+      "title": "PMIN Smuggling Signal — Confiance",
+      "gridPos": {
+        "x": 12,
+        "y": 13,
+        "w": 6,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": null
+              },
+              {
+                "color": "#F2CC0C",
+                "value": 0.5
+              },
+              {
+                "color": "#5AA64B",
+                "value": 0.75
+              }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "avg_confidence",
+              "jsonPath": "$.module_results[?module=='TRAJECTORY'].indicator_stats.PMIN_SMUGGLING_SIGNAL_RANK.avg_confidence | [0]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 33,
+      "type": "stat",
+      "title": "PHUM Value Capture — Confiance",
+      "gridPos": {
+        "x": 18,
+        "y": 13,
+        "w": 6,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": null
+              },
+              {
+                "color": "#F2CC0C",
+                "value": 0.5
+              },
+              {
+                "color": "#5AA64B",
+                "value": 0.75
+              }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "avg_confidence",
+              "jsonPath": "$.module_results[?module=='TRAJECTORY'].indicator_stats.PHUM_VALUE_CAPTURE.avg_confidence | [0]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 40,
+      "type": "text",
+      "title": "Note doctrine",
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 24,
+        "h": 2
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "> **PMIN_SMUGGLING_SIGNAL_RANK** — L1 uniquement (imputation >50% interdite — doctrine P7E).  \n> *Absence de signal ≠ absence de fraude.*"
+      },
+      "targets": []
+    },
+    {
+      "id": 41,
+      "type": "row",
+      "title": "Contexte de publication",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 18,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 42,
+      "type": "table",
+      "title": "Statuts publication OSA",
+      "gridPos": {
+        "x": 0,
+        "y": 19,
+        "w": 24,
+        "h": 6
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "showHeader": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "status"
+            },
+            "properties": [
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "PASS": {
+                        "color": "#5AA64B",
+                        "index": 0
+                      }
+                    }
+                  },
+                  {
+                    "type": "value",
+                    "options": {
+                      "WARNING": {
+                        "color": "#F2CC0C",
+                        "index": 1
+                      }
+                    }
+                  },
+                  {
+                    "type": "value",
+                    "options": {
+                      "FAIL": {
+                        "color": "#E02F44",
+                        "index": 2
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "module",
+              "jsonPath": "$.module_results[*].module"
+            },
+            {
+              "name": "status",
+              "jsonPath": "$.module_results[*].status"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "liveNow": false
+}

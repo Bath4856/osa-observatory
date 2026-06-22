@@ -1,0 +1,698 @@
+{
+  "uid": "osa-scientific-alerts",
+  "title": "OSA ISA – Scientific Alerts",
+  "description": "Détection de dérive scientifique entre publications successives. Module SCIENTIFIC_DRIFT.",
+  "tags": [
+    "osa",
+    "scientific",
+    "drift",
+    "alerts"
+  ],
+  "schemaVersion": 36,
+  "version": 1,
+  "refresh": "5m",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "UTC",
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 2
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "## OSA ISA — Scientific Alerts\nSurveillance de la dérive ISA entre années de publication · Module `SCIENTIFIC_DRIFT`"
+      },
+      "targets": []
+    },
+    {
+      "id": 2,
+      "type": "row",
+      "title": "Drift ISA",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 2,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 3,
+      "type": "gauge",
+      "title": "Drift ISA (absolu)",
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 6,
+        "h": 6
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 0.3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5AA64B",
+                "value": null
+              },
+              {
+                "color": "#F2CC0C",
+                "value": 0.05
+              },
+              {
+                "color": "#E02F44",
+                "value": 0.15
+              }
+            ]
+          },
+          "unit": "none",
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "drift",
+              "jsonPath": "$.module_results[?module=='SCIENTIFIC_DRIFT'].drift"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Moyenne ISA année N",
+      "gridPos": {
+        "x": 6,
+        "y": 3,
+        "w": 4,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#1F60C4",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "avg_current",
+              "jsonPath": "$.module_results[?module=='SCIENTIFIC_DRIFT'].avg_current | [0]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Moyenne ISA année N-1",
+      "gridPos": {
+        "x": 10,
+        "y": 3,
+        "w": 4,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#64748B",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "avg_previous",
+              "jsonPath": "$.module_results[?module=='SCIENTIFIC_DRIFT'].avg_previous | [0]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Statut Drift",
+      "gridPos": {
+        "x": 14,
+        "y": 3,
+        "w": 5,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": null
+              },
+              {
+                "color": "#F2CC0C",
+                "value": 70
+              },
+              {
+                "color": "#5AA64B",
+                "value": 85
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "PASS": {
+                  "text": "✅ STABLE",
+                  "color": "#5AA64B",
+                  "index": 0
+                },
+                "WARNING": {
+                  "text": "⚠ DRIFT",
+                  "color": "#F2CC0C",
+                  "index": 1
+                },
+                "FAIL": {
+                  "text": "❌ RUPTURE",
+                  "color": "#E02F44",
+                  "index": 2
+                }
+              }
+            }
+          ]
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "drift_status",
+              "jsonPath": "$.module_results[?module=='SCIENTIFIC_DRIFT'].status | [0]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Seuil WARNING",
+      "gridPos": {
+        "x": 19,
+        "y": 3,
+        "w": 5,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#F2CC0C",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "warn_thresh",
+              "jsonPath": "$.module_results[?module=='SCIENTIFIC_DRIFT'].warning_threshold | [0]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "row",
+      "title": "Détail Scientifique",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 9,
+      "type": "stat",
+      "title": "Pays (année N)",
+      "gridPos": {
+        "x": 0,
+        "y": 10,
+        "w": 4,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": null
+              },
+              {
+                "color": "#5AA64B",
+                "value": 54
+              }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "countries_current",
+              "jsonPath": "$.module_results[?module=='SCIENTIFIC_DRIFT'].countries_current | [0]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "Pays (année N-1)",
+      "gridPos": {
+        "x": 4,
+        "y": 10,
+        "w": 4,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": null
+              },
+              {
+                "color": "#5AA64B",
+                "value": 54
+              }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "countries_previous",
+              "jsonPath": "$.module_results[?module=='SCIENTIFIC_DRIFT'].countries_previous | [0]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "stat",
+      "title": "Écart-type (N)",
+      "gridPos": {
+        "x": 8,
+        "y": 10,
+        "w": 4,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#1F60C4",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "std_current",
+              "jsonPath": "$.module_results[?module=='SCIENTIFIC_DRIFT'].std_current | [0]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "stat",
+      "title": "Écart-type (N-1)",
+      "gridPos": {
+        "x": 12,
+        "y": 10,
+        "w": 4,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#64748B",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "std_previous",
+              "jsonPath": "$.module_results[?module=='SCIENTIFIC_DRIFT'].std_previous | [0]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "type": "row",
+      "title": "Tous les modules — aperçu rapide",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 14,
+      "type": "table",
+      "title": "Statuts modules (dernier audit)",
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "showHeader": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "status"
+            },
+            "properties": [
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "PASS": {
+                        "color": "#5AA64B",
+                        "index": 0
+                      }
+                    }
+                  },
+                  {
+                    "type": "value",
+                    "options": {
+                      "WARNING": {
+                        "color": "#F2CC0C",
+                        "index": 1
+                      }
+                    }
+                  },
+                  {
+                    "type": "value",
+                    "options": {
+                      "FAIL": {
+                        "color": "#E02F44",
+                        "index": 2
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "module",
+              "jsonPath": "$.module_results[*].module"
+            },
+            {
+              "name": "status",
+              "jsonPath": "$.module_results[*].status"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "liveNow": false
+}

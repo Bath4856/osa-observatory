@@ -5,12 +5,12 @@ import { useLang } from '../i18n/useLang'
 import './Register.css'
 
 const AFFILIATE_TYPES = [
-  { value: 'STATE',             label: { en: 'State / Government',         fr: 'Etat / Gouvernement' } },
-  { value: 'REGIONAL_ORG',      label: { en: 'Regional Organisation',      fr: 'Organisation regionale' } },
-  { value: 'ACADEMIC',          label: { en: 'Academic Institution',       fr: 'Institution academique' } },
-  { value: 'PRIVATE',           label: { en: 'Private Sector',             fr: 'Secteur prive' } },
+  { value: 'STATE',             label: { en: 'State / Government',         fr: 'État / Gouvernement' } },
+  { value: 'REGIONAL_ORG',      label: { en: 'Regional Organisation',      fr: 'Organisation régionale' } },
+  { value: 'ACADEMIC',          label: { en: 'Academic Institution',       fr: 'Institution académique' } },
+  { value: 'PRIVATE',           label: { en: 'Private Sector',             fr: 'Secteur privé' } },
   { value: 'INTERNATIONAL_ORG', label: { en: 'International Organisation', fr: 'Organisation internationale' } },
-  { value: 'DEVELOPMENT_BANK',  label: { en: 'Development Bank',           fr: 'Banque de developpement' } },
+  { value: 'DEVELOPMENT_BANK',  label: { en: 'Development Bank',           fr: 'Banque de développement' } },
 ]
 
 export default function Register() {

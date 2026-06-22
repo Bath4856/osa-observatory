@@ -1,0 +1,399 @@
+{
+  "audit_timestamp": "2026-06-16T12:35:13.720801+00:00",
+  "audit_duration_seconds": 0.91,
+  "iprs": 36.47,
+  "results": [
+    {
+      "module": "DNS",
+      "status": "PASS",
+      "avg_dns_latency_ms": 12.67,
+      "failed_hosts": [],
+      "https_api": {
+        "status_code": 200,
+        "ok": true,
+        "elapsed_ms": 27.77
+      },
+      "https_open": {
+        "status_code": 200,
+        "ok": true,
+        "elapsed_ms": 21.94
+      },
+      "https_results": {
+        "https_api": {
+          "status_code": 200,
+          "ok": true,
+          "elapsed_ms": 27.77
+        },
+        "https_open": {
+          "status_code": 200,
+          "ok": true,
+          "elapsed_ms": 21.94
+        }
+      },
+      "hosts": [
+        {
+          "host": "osa-observatory.africa",
+          "status": "PASS",
+          "ipv4": "179.237.69.94",
+          "elapsed_ms": 0.72
+        },
+        {
+          "host": "api.osa-observatory.africa",
+          "status": "PASS",
+          "ipv4": "179.237.69.94",
+          "elapsed_ms": 36.98
+        },
+        {
+          "host": "open.osa-observatory.africa",
+          "status": "PASS",
+          "ipv4": "179.237.69.94",
+          "elapsed_ms": 0.32
+        }
+      ]
+    },
+    {
+      "module": "OPENAPI",
+      "status": "PASS",
+      "elapsed_ms": 13.15,
+      "openapi_version": "3.1.0",
+      "title": "OSA Observatory -- African Sovereignty Observatory",
+      "api_version": "2.0.0-production",
+      "nb_paths": 74,
+      "missing_paths": [],
+      "obsolete_paths": []
+    },
+    {
+      "module": "API",
+      "status": "FAIL",
+      "avg_latency_ms": 15.19,
+      "failed_checks": [
+        "scores",
+        "swot"
+      ],
+      "checks": {
+        "root": {
+          "status_code": 200,
+          "elapsed_ms": 12.29,
+          "ok": true
+        },
+        "health": {
+          "status_code": 200,
+          "elapsed_ms": 12.66,
+          "ok": true
+        },
+        "docs": {
+          "status_code": 200,
+          "elapsed_ms": 12.11,
+          "ok": true
+        },
+        "openapi": {
+          "status_code": 200,
+          "elapsed_ms": 12.56,
+          "ok": true
+        },
+        "scores": {
+          "status_code": 429,
+          "elapsed_ms": 21.01,
+          "ok": false
+        },
+        "swot": {
+          "status_code": 429,
+          "elapsed_ms": 20.53,
+          "ok": false
+        }
+      }
+    },
+    {
+      "module": "DATABASE",
+      "status": "FAIL",
+      "error": "connection to server at \"172.18.0.3\", port 5432 failed: FATAL:  password authentication failed for user \"postgres\"\n"
+    },
+    {
+      "module": "ISA",
+      "status": "FAIL",
+      "status_code": 429,
+      "elapsed_ms": 18.62
+    },
+    {
+      "module": "SWOT",
+      "status": "FAIL",
+      "status_code": 429,
+      "elapsed_ms": 17.85
+    },
+    {
+      "module": "P7I",
+      "status": "FAIL",
+      "status_code": 429,
+      "elapsed_ms": 18.4
+    },
+    {
+      "module": "TRAJECTORY",
+      "status": "FAIL",
+      "error": "connection to server at \"172.18.0.3\", port 5432 failed: FATAL:  password authentication failed for user \"postgres\"\n"
+    },
+    {
+      "module": "audit.audits.audit_scientific_drift",
+      "status": "FAIL",
+      "error": "429 Client Error: Too Many Requests for url: https://api.osa-observatory.africa/api/v2/scores?year=2024"
+    },
+    {
+      "module": "DOCUMENTATION",
+      "status": "PASS",
+      "elapsed_ms": 0.2,
+      "required_count": 4,
+      "existing_count": 4,
+      "empty_count": 0,
+      "missing_count": 0,
+      "presence_pct": 100.0,
+      "content_pct": 100.0,
+      "existing": [
+        "README.md",
+        "audit/config/audit_config.yaml",
+        "audit/config/publication_rules.yaml",
+        "audit/config/trajectory_rules.yaml"
+      ],
+      "empty": [],
+      "missing": [],
+      "files": {
+        "README.md": {
+          "exists": true,
+          "size_bytes": 6318
+        },
+        "audit/config/audit_config.yaml": {
+          "exists": true,
+          "size_bytes": 5674
+        },
+        "audit/config/publication_rules.yaml": {
+          "exists": true,
+          "size_bytes": 3237
+        },
+        "audit/config/trajectory_rules.yaml": {
+          "exists": true,
+          "size_bytes": 4552
+        }
+      }
+    },
+    {
+      "module": "PERFORMANCE",
+      "status": "FAIL",
+      "error": "connection to server at \"172.18.0.3\", port 5432 failed: FATAL:  password authentication failed for user \"postgres\"\n"
+    },
+    {
+      "module": "REPOSITORY_STRUCTURE",
+      "status": "PASS",
+      "elapsed_ms": 0.2,
+      "missing_dirs": [],
+      "missing_files": [],
+      "warnings": []
+    },
+    {
+      "module": "SECURITY",
+      "status": "WARNING",
+      "elapsed_ms": 6.85,
+      "scanned_dirs": [
+        "audit",
+        "api"
+      ],
+      "findings": [
+        {
+          "file": "audit/sprint17_security_audit_20260528_125245.json",
+          "pattern": "token"
+        },
+        {
+          "file": "audit/sprint17_security_audit_20260528_165214.json",
+          "pattern": "token"
+        },
+        {
+          "file": "audit/sprint17_security_audit_20260528_115555.json",
+          "pattern": "token"
+        },
+        {
+          "file": "audit/sprint17_security_audit_20260528_171956.json",
+          "pattern": "token"
+        },
+        {
+          "file": "audit/sprint17_security_audit_20260528_135703.json",
+          "pattern": "token"
+        },
+        {
+          "file": "audit/sprint17_security_audit_20260528_142828.json",
+          "pattern": "token"
+        },
+        {
+          "file": "api/.env",
+          "pattern": "password"
+        },
+        {
+          "file": "api/.env",
+          "pattern": "secret"
+        }
+      ]
+    },
+    {
+      "module": "API_CONTRACT_ADVANCED",
+      "status": "WARNING",
+      "elapsed_ms": 298.31,
+      "missing_endpoints": [],
+      "slow_endpoints": [],
+      "warnings": [
+        "UNEXPECTED_STATUS 429: /api/v2/countries",
+        "UNEXPECTED_STATUS 429: /api/v2/scores",
+        "UNEXPECTED_STATUS 429: /api/v2/predictive/readiness",
+        "UNEXPECTED_STATUS 429: /api/v2/predictive/signals",
+        "UNEXPECTED_STATUS 429: /api/v2/predictive/fragility",
+        "UNEXPECTED_STATUS 429: /api/v2/release",
+        "UNEXPECTED_STATUS 429: /api/v2/opportunities",
+        "UNEXPECTED_STATUS 429: /api/v2/methodology",
+        "UNEXPECTED_STATUS 429: /api/v2/sovereign-projects",
+        "UNEXPECTED_STATUS 429: /api/v2/early-warning/civilian-protection",
+        "UNEXPECTED_STATUS 429: /api/v2/early-warning/conflict-economy",
+        "UNEXPECTED_STATUS 429: /api/v2/early-warning/composite",
+        "UNEXPECTED_STATUS 429: /api/v2/sovereignty/swot",
+        "UNEXPECTED_STATUS 429: /api/v2/sovereignty/fiscal-margin",
+        "UNEXPECTED_STATUS 429: /opendata/"
+      ],
+      "thresholds": {
+        "slow_ms": 10000,
+        "timeout_s": 30
+      }
+    },
+    {
+      "module": "API_SCHEMA",
+      "status": "FAIL",
+      "elapsed_ms": 77.12,
+      "failures": [
+        {
+          "endpoint": "/api/v2/countries",
+          "status": 429
+        },
+        {
+          "endpoint": "/api/v2/scores",
+          "status": 429
+        },
+        {
+          "endpoint": "/api/v2/sovereignty/swot",
+          "status": 429
+        },
+        {
+          "endpoint": "/opendata/",
+          "status": 429
+        }
+      ],
+      "warnings": []
+    },
+    {
+      "module": "API_PERMISSIONS",
+      "status": "FAIL",
+      "elapsed_ms": 116.4,
+      "failures": [
+        {
+          "pass": "unauthenticated",
+          "endpoint": "/opendata/",
+          "expected": 200,
+          "got": 429
+        },
+        {
+          "pass": "unauthenticated",
+          "endpoint": "/api/v2/countries",
+          "expected": 200,
+          "got": 429
+        },
+        {
+          "pass": "unauthenticated",
+          "endpoint": "/api/v2/scores",
+          "expected": 200,
+          "got": 429
+        },
+        {
+          "pass": "unauthenticated",
+          "endpoint": "/api/v2/predictive/readiness",
+          "expected": 401,
+          "got": 429
+        },
+        {
+          "pass": "unauthenticated",
+          "endpoint": "/api/v2/predictive/signals",
+          "expected": 401,
+          "got": 429
+        },
+        {
+          "pass": "unauthenticated",
+          "endpoint": "/api/v2/predictive/fragility",
+          "expected": 401,
+          "got": 429
+        }
+      ],
+      "warnings": [
+        "Passe B ignorée : aucun api_key ni auth_token dans cfg"
+      ]
+    },
+    {
+      "module": "API_PERFORMANCE_ADVANCED",
+      "status": "PASS",
+      "elapsed_ms": 79.91,
+      "results": [
+        {
+          "endpoint": "/api/v2/countries",
+          "elapsed_ms": 17.82
+        },
+        {
+          "endpoint": "/api/v2/scores",
+          "elapsed_ms": 22.22
+        },
+        {
+          "endpoint": "/api/v2/sovereignty/swot",
+          "elapsed_ms": 20.06
+        },
+        {
+          "endpoint": "/opendata/",
+          "elapsed_ms": 19.72
+        }
+      ],
+      "warnings": [],
+      "failures": [],
+      "thresholds": {
+        "fail_ms": 15000,
+        "warn_high_ms": 10000,
+        "warn_med_ms": 5000
+      }
+    }
+  ],
+  "publication": {
+    "publication_status": "REVIEW_REQUIRED",
+    "reason": "FAIL_MODULES_DETECTED",
+    "iprs": 36.47,
+    "health_ratio": 0.2941,
+    "total_modules": 17,
+    "pass_modules": [
+      "DNS",
+      "OPENAPI",
+      "DOCUMENTATION",
+      "REPOSITORY_STRUCTURE",
+      "API_PERFORMANCE_ADVANCED"
+    ],
+    "warning_modules": [
+      "SECURITY",
+      "API_CONTRACT_ADVANCED"
+    ],
+    "fail_modules": [
+      "API",
+      "DATABASE",
+      "ISA",
+      "SWOT",
+      "P7I",
+      "TRAJECTORY",
+      "audit.audits.audit_scientific_drift",
+      "PERFORMANCE",
+      "API_SCHEMA",
+      "API_PERMISSIONS"
+    ],
+    "unknown_modules": [],
+    "pass_count": 5,
+    "warning_count": 2,
+    "fail_count": 10,
+    "unknown_count": 0,
+    "review_threshold": 70,
+    "ready_threshold": 85
+  },
+  "skipped_imports": []
+}

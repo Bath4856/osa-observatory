@@ -20,10 +20,9 @@ router = APIRouter(
 )
 
 _DISCLAIMER = (
-    "OSA Observatory -- Observatoire de la Souverainete Africaine. "
+    "OSA Observatory -- Observatoire de la Souveraineté Africaine. "
     "Published under CC-BY-NC-4.0. "
     "Early-warning analytical tool -- not a legal or diplomatic qualification. "
-    "Request institutional access at open.osa-observatory.org for full scores and analytics."
 )
 
 class _OSAEncoder(json.JSONEncoder):
@@ -305,7 +304,7 @@ async def get_amar_alerts(
     Licence : CC-BY-NC-4.0
     """
     data = _rows(db, """
-        SELECT country_iso3, year, risk_code, risk_band, source_engine, public_narrative
+        SELECT country_iso3, year, risk_code, risk_band, risk_score, confidence_score, source_engine, public_narrative
         FROM mg.v_public_p7i_amar_alerts
         WHERE (:band IS NULL OR risk_band = :band)
           AND (:year IS NULL OR year      = :year)
@@ -331,7 +330,7 @@ async def get_country_amar(iso3: str, db: Session = Depends(get_db)):
     Licence : CC-BY-NC-4.0
     """
     data = _rows(db, """
-        SELECT country_iso3, year, risk_code, risk_band, source_engine, public_narrative
+        SELECT country_iso3, year, risk_code, risk_band, risk_score, confidence_score, source_engine, public_narrative
         FROM mg.v_public_p7i_amar_alerts
         WHERE country_iso3 = :iso3 AND year >= 2020
         ORDER BY year
@@ -339,6 +338,62 @@ async def get_country_amar(iso3: str, db: Session = Depends(get_db)):
     if not data:
         return JSONResponse(status_code=404, content={"error": f"Country {iso3.upper()} not found"})
     return _wrap(data, "ISA_AMAR_ALERTS")
+
+
+# ── 6bis. Alertes GENECO (economie de conflit) ────────────────
+@router.get("/alerts/geneco", summary="Alertes exposition economie de conflit GENECO 2020-2024")
+async def get_geneco_alerts(
+    db:        Session       = Depends(get_db),
+    risk_band: Optional[str] = Query(default=None),
+    year:      Optional[int] = Query(default=None),
+):
+    """
+    Alertes GENECO (Conflict Economy Exposure) — 54 pays, 2020-2024.
+
+    Exposition aux dynamiques economiques susceptibles d'alimenter ou de
+    prolonger un conflit (captation de ressources, logistique, institutions).
+    Bandes : BLACK (critique) > RED > ORANGE > YELLOW > GREEN.
+    Filtres optionnels :
+    - risk_band : BLACK, RED, ORANGE, YELLOW, GREEN
+    - year : 2020-2024
+    Doctrine : observation economique pure — jamais une attribution de responsabilite.
+    Licence : CC-BY-NC-4.0
+    """
+    data = _rows(db, """
+        SELECT country_iso3, year, risk_code, risk_band, risk_score, confidence_score, source_engine, public_narrative
+        FROM mg.v_public_p7i_amar_geneco_alerts
+        WHERE (:band IS NULL OR risk_band = :band)
+          AND (:year IS NULL OR year      = :year)
+          AND year >= 2020
+        ORDER BY year DESC, risk_band, country_iso3
+    """, {
+        "band": risk_band.upper() if risk_band else None,
+        "year": year,
+    })
+    return _wrap(data, "ISA_GENECO_ALERTS")
+
+
+@router.get("/alerts/geneco/{iso3}", summary="Alertes GENECO -- un pays")
+async def get_country_geneco(iso3: str, db: Session = Depends(get_db)):
+    """
+    Alertes GENECO pour un pays africain.
+
+    Le moteur GENECO mesure l'exposition aux dynamiques d'economie de conflit.
+    Bandes : BLACK > RED > ORANGE > YELLOW > GREEN.
+    Doctrine : observation economique pure — jamais une attribution de responsabilite.
+
+    Parametre : iso3 — code ISO 3166-1 alpha-3 (ex: GHA, SEN, ZAF)
+    Licence : CC-BY-NC-4.0
+    """
+    data = _rows(db, """
+        SELECT country_iso3, year, risk_code, risk_band, risk_score, confidence_score, source_engine, public_narrative
+        FROM mg.v_public_p7i_amar_geneco_alerts
+        WHERE country_iso3 = :iso3 AND year >= 2020
+        ORDER BY year
+    """, {"iso3": iso3.upper()})
+    if not data:
+        return JSONResponse(status_code=404, content={"error": f"Country {iso3.upper()} not found"})
+    return _wrap(data, "ISA_GENECO_ALERTS")
 
 
 # ── 7. Trajectoires P7J ──────────────────────────────────────

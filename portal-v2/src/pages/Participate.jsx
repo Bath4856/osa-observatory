@@ -7,20 +7,20 @@ import './Participate.css'
 const CONTRIBUTION_TYPES = [
   {
     value: 'DATA_SIGNAL',
-    label: { en: 'Data signal', fr: 'Signal de donnees' },
+    label: { en: 'Data signal', fr: 'Signal de données' },
     desc: { en: 'Report an anomaly, incorrect value, or suggest an alternative primary source for a specific indicator.', fr: 'Signalez une anomalie, une valeur incorrecte, ou proposez une source primaire alternative pour un indicateur.' },
     fields: ['country', 'indicator', 'year', 'message']
   },
   {
     value: 'SOURCE_PROPOSAL',
     label: { en: 'Source proposal', fr: 'Proposition de source' },
-    desc: { en: 'Suggest a new primary data source that could improve coverage of a sovereign pillar.', fr: 'Proposez une nouvelle source de donnees primaires pour ameliorer la couverture d un pilier souverain.' },
+    desc: { en: 'Suggest a new primary data source that could improve coverage of a sovereign pillar.', fr: 'Proposez une nouvelle source de données primaires pour améliorer la couverture d\'un pilier souverain.' },
     fields: ['pillar', 'source_url', 'message']
   },
   {
     value: 'METHODOLOGICAL',
-    label: { en: 'Methodological contribution', fr: 'Contribution methodologique' },
-    desc: { en: 'Propose a new indicator, a methodological improvement, or a doctrinal comment for Scientific Committee review.', fr: 'Proposez un nouvel indicateur, une amelioration methodologique, ou un commentaire doctrinal pour le Comite Scientifique.' },
+    label: { en: 'Methodological contribution', fr: 'Contribution méthodologique' },
+    desc: { en: 'Propose a new indicator, a methodological improvement, or a doctrinal comment for Scientific Committee review.', fr: 'Proposez un nouvel indicateur, une amélioration méthodologique, ou un commentaire doctrinal pour le Comité Scientifique.' },
     fields: ['pillar', 'message']
   }
 ]
@@ -57,8 +57,8 @@ export default function Participate() {
   if (status === 'success') return (
     <div className="participate-page">
       <div className="participate-success">
-        <h1>{lang === 'fr' ? 'Contribution enregistree' : 'Contribution recorded'}</h1>
-        <p>{lang === 'fr' ? 'Merci. Votre contribution a ete transmise au Comite Scientifique OSA.' : 'Thank you. Your contribution has been transmitted to the OSA Scientific Committee.'}</p>
+        <h1>{lang === 'fr' ? 'Contribution enregistrée' : 'Contribution recorded'}</h1>
+        <p>{lang === 'fr' ? 'Merci. Votre contribution a été transmise au Comité Scientifique OSA.' : 'Thank you. Your contribution has been transmitted to the OSA Scientific Committee.'}</p>
         <Link to="/" className="btn-home">← {lang === 'fr' ? 'Accueil' : 'Home'}</Link>
       </div>
     </div>
@@ -71,7 +71,7 @@ export default function Participate() {
       </h1>
       <p className="participate-intro">
         {lang === 'fr'
-          ? 'Contribuez a la qualite des donnees souveraines africaines. Signalez une anomalie, proposez une source primaire, ou soumettez une contribution methodologique au Comite Scientifique.'
+          ? 'Contribuez à la qualité des données souveraines africaines. Signalez une anomalie, proposez une source primaire, ou soumettez une contribution méthodologique au Comité Scientifique.'
           : 'Contribute to the quality of African sovereign data. Report an anomaly, propose a primary source, or submit a methodological contribution to the Scientific Committee.'}
       </p>
 
@@ -108,7 +108,7 @@ export default function Participate() {
             </label>
           )}
           {selectedType?.fields.includes('year') && (
-            <label>{lang === 'fr' ? 'Annee' : 'Year'}
+            <label>{lang === 'fr' ? 'Année' : 'Year'}
               <input name="year" value={form.year} onChange={handleChange} placeholder="e.g. 2022" />
             </label>
           )}
@@ -125,7 +125,7 @@ export default function Participate() {
 
           <label>{lang === 'fr' ? 'Message *' : 'Message *'}
             <textarea name="message" value={form.message} onChange={handleChange} rows={5} required
-              placeholder={lang === 'fr' ? 'Decrivez votre contribution...' : 'Describe your contribution...'} />
+              placeholder={lang === 'fr' ? 'Décrivez votre contribution...' : 'Describe your contribution...'} />
           </label>
 
           {status === 'error' && <div className="form-error">Submission failed. Please try again.</div>}

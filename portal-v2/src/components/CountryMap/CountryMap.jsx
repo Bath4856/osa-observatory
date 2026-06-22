@@ -24,13 +24,14 @@ const NAME_TO_ISO3 = {
   'Seychelles':'SYC',
 }
 
-// Coordonnees des petites iles absentes du GeoJSON
+// Coordonnees des petites iles (et exclave) absentes du GeoJSON continental
 const ISLAND_MARKERS = [
-  { iso3:'STP', name:'Sao Tome and Principe', lon: 6.6131,  lat:  0.1864 },
-  { iso3:'CPV', name:'Cabo Verde',            lon:-23.6051, lat: 14.9318 },
-  { iso3:'COM', name:'Comoros',               lon: 43.3333, lat:-11.6455 },
-  { iso3:'MUS', name:'Mauritius',             lon: 57.5522, lat:-20.2833 },
-  { iso3:'SYC', name:'Seychelles',            lon: 55.4920, lat: -4.6796 },
+  { iso3:'STP', name:'Sao Tome and Principe',        lon:  6.6131, lat:  0.1864 },
+  { iso3:'CPV', name:'Cabo Verde',                    lon:-23.6051, lat: 14.9318 },
+  { iso3:'COM', name:'Comoros',                       lon: 43.3333, lat:-11.6455 },
+  { iso3:'MUS', name:'Mauritius',                     lon: 57.5522, lat:-20.2833 },
+  { iso3:'SYC', name:'Seychelles',                    lon: 55.4920, lat: -4.6796 },
+  { iso3:'GNQ', name:'Equatorial Guinea (Bioko)',      lon:  8.7833, lat:  3.7500 },
 ]
 
 export default function CountryMap({ scoresData }) {
@@ -61,11 +62,28 @@ export default function CountryMap({ scoresData }) {
 
     const width = 500
     const height = 560
+    const PAD = 20
 
     svg.attr('viewBox', `0 0 ${width} ${height}`)
 
+    // Points des iles/exclave injectes dans le calcul d'emprise, pour que la
+    // projection zoome/centre de façon a inclure les territoires hors continent
+    const islandPoints = {
+      type: 'FeatureCollection',
+      features: ISLAND_MARKERS.map(isl => ({
+        type: 'Feature',
+        properties: { iso3: isl.iso3 },
+        geometry: { type: 'Point', coordinates: [isl.lon, isl.lat] }
+      }))
+    }
+
+    const fitCollection = {
+      type: 'FeatureCollection',
+      features: [...geoData.features, ...islandPoints.features]
+    }
+
     const projection = d3.geoMercator()
-      .fitSize([width, height], geoData)
+      .fitExtent([[PAD, PAD], [width - PAD, height - PAD]], fitCollection)
 
     const path = d3.geoPath().projection(projection)
 
@@ -105,7 +123,7 @@ export default function CountryMap({ scoresData }) {
         if (iso3) navigate(`/country/${iso3}`)
       })
 
-    // Marqueurs circulaires pour les petites iles
+    // Marqueurs circulaires pour les petites iles + exclave
     const islandGroup = svg.append('g').attr('class', 'island-markers')
 
     ISLAND_MARKERS.forEach(island => {

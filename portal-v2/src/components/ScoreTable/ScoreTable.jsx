@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLang } from '../../i18n/useLang'
+import { RISK_COLOR, RISK_LABEL } from '../../constants/risk'
 import './ScoreTable.css'
 
 const PILLARS = ['PGEO','PECO','PMIN','PHUM','PENV','PMIL','PMON','PNUM','PRES','PTRA']
@@ -42,7 +43,7 @@ function fmt(val, status) {
   return isNaN(n) ? '—' : n.toFixed(3)
 }
 
-export default function ScoreTable({ iso3, scoresData, pillarData, historyData }) {
+export default function ScoreTable({ iso3, scoresData, pillarData, historyData, amarData, conflictData }) {
   const { t, lang } = useLang()
   const navigate = useNavigate()
 
@@ -75,6 +76,22 @@ export default function ScoreTable({ iso3, scoresData, pillarData, historyData }
     if (!entry || !entry.annual_direction) return null
     return DIRECTION_ICON[entry.annual_direction] || '→'
   }
+
+  const getAmarYear = (year) => {
+    if (!amarData) return null
+    return amarData.find(d => d.year === year) || null
+  }
+
+  const getConflictYear = (year) => {
+    if (!conflictData) return null
+    return conflictData.find(d => d.year === year) || null
+  }
+
+  const RiskBadge = ({ band }) => (
+    <span className="risk-badge" style={{ background: RISK_COLOR[band] || '#888' }}>
+      {RISK_LABEL[lang]?.[band] || band}
+    </span>
+  )
 
   return (
     <div className="score-table-wrapper">
@@ -115,7 +132,12 @@ export default function ScoreTable({ iso3, scoresData, pillarData, historyData }
                 </td>
               )
             })}
-            <td></td>
+            <td className="cell-action">
+              <button className="btn-pillar"
+                onClick={() => navigate(`/country/${iso3}/projects`)}>
+                →
+              </button>
+            </td>
           </tr>
           {PILLARS.map(pillar => (
             <tr key={pillar} className="row-pillar">
@@ -152,6 +174,40 @@ export default function ScoreTable({ iso3, scoresData, pillarData, historyData }
               )
             })}
             <td></td>
+          </tr>
+          <tr className="row-alert">
+            <td className="cell-label">AMAR</td>
+            {windowYears.map(y => {
+              const entry = getAmarYear(y)
+              return (
+                <td key={y} className="cell-score">
+                  {entry ? <RiskBadge band={entry.risk_band} /> : '—'}
+                </td>
+              )
+            })}
+            <td className="cell-action">
+              <button className="btn-pillar"
+                onClick={() => navigate(`/country/${iso3}/amar`)}>
+                →
+              </button>
+            </td>
+          </tr>
+          <tr className="row-alert">
+            <td className="cell-label">{lang === 'fr' ? 'Économie de conflit' : 'Conflict economy'}</td>
+            {windowYears.map(y => {
+              const entry = getConflictYear(y)
+              return (
+                <td key={y} className="cell-score">
+                  {entry ? <RiskBadge band={entry.risk_band} /> : '—'}
+                </td>
+              )
+            })}
+            <td className="cell-action">
+              <button className="btn-pillar"
+                onClick={() => navigate(`/country/${iso3}/conflict-economy`)}>
+                →
+              </button>
+            </td>
           </tr>
         </tbody>
       </table>

@@ -16,7 +16,7 @@ import json
 router = APIRouter(prefix="/api/v2/scores", tags=["Scores"])
 
 _DISCLAIMER = (
-    "OSA Observatory -- Observatoire de la Souverainete Africaine. "
+    "OSA Observatory -- Observatoire de la Souveraineté Africaine. "
     "ISA scores are computed from official international data sources. "
     "Positions are computed for reference purposes and do not constitute "
     "a political qualification of sovereign states."

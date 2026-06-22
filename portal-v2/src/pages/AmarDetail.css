@@ -1,0 +1,50 @@
+.amar-detail-page { max-width: 760px; margin: 0 auto; }
+.amar-detail-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+.amar-detail-title { font-size: 1.6rem; font-weight: 700; color: #1F4E5F; }
+.back-link { color: #1F4E5F; text-decoration: none; font-size: 0.9rem; }
+.back-link:hover { text-decoration: underline; }
+.page-loading, .page-error { padding: 2rem; text-align: center; color: #666; }
+.amar-detail-empty { color: #888; padding: 1rem 0; }
+
+.amar-block { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+.amar-block-title { font-size: 1rem; font-weight: 700; color: #1F4E5F; margin: 0 0 0.7rem 0; }
+.amar-block-text { font-size: 0.9rem; color: #333; line-height: 1.6; margin: 0; }
+
+.amar-block-situation { border-width: 2px; }
+.amar-situation-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+.risk-badge-lg { color: #fff; font-size: 0.85rem; font-weight: 700; padding: 0.35rem 0.9rem; border-radius: 20px; }
+.amar-detail-year { font-size: 0.85rem; color: #888; }
+.amar-situation-metrics { display: flex; gap: 2rem; }
+.metric { display: flex; flex-direction: column; }
+.metric-label { font-size: 0.72rem; color: #888; text-transform: uppercase; letter-spacing: 0.04em; }
+.metric-value { font-size: 1.3rem; font-weight: 700; color: #2d3748; }
+
+.amar-factors-list { margin: 0 0 0.7rem 0; padding-left: 1.2rem; font-size: 0.9rem; color: #333; line-height: 1.7; }
+.amar-factors-note { font-size: 0.78rem; color: #999; margin: 0; }
+
+.amar-trajectory-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-bottom: 0.8rem; }
+.amar-trajectory-table th, .amar-trajectory-table td { padding: 0.4rem 0.6rem; text-align: left; border-bottom: 1px solid #eee; }
+.risk-badge-sm { display: inline-block; color: #fff; font-size: 0.72rem; font-weight: 700; padding: 0.18rem 0.55rem; border-radius: 16px; white-space: nowrap; }
+.amar-variation { font-size: 0.9rem; color: #2d3748; margin-bottom: 0.6rem; }
+
+.amar-rv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.amar-rv-col h3 { font-size: 0.85rem; font-weight: 700; margin: 0 0 0.4rem 0; }
+.amar-rv-col p { font-size: 0.86rem; color: #333; line-height: 1.5; margin: 0; }
+.amar-rv-resilience h3 { color: #1B5E20; }
+.amar-rv-vulnerability h3 { color: #7D4800; }
+
+.amar-block-about { background: #f8f9fa; }
+
+.amar-disclaimer { font-size: 0.78rem; color: #999; border-top: 1px solid #eee; padding-top: 0.8rem; text-align: center; }
+
+.amar-dimensions { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 0.8rem; }
+.dimension-row { display: flex; align-items: center; gap: 0.7rem; }
+.dimension-label { flex: 0 0 180px; font-size: 0.8rem; color: #555; }
+.dimension-bar-track { flex: 1; height: 6px; background: #eee; border-radius: 3px; overflow: hidden; }
+.dimension-bar-fill { height: 100%; background: #1F4E5F; }
+.dimension-value { flex: 0 0 36px; text-align: right; font-size: 0.8rem; font-weight: 600; color: #2d3748; }
+
+@media (max-width: 600px) {
+  .amar-rv-grid { grid-template-columns: 1fr; }
+  .dimension-label { flex-basis: 130px; }
+}

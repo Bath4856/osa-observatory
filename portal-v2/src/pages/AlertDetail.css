@@ -1,0 +1,19 @@
+.alert-detail-page { max-width: 700px; margin: 0 auto; }
+.alert-detail-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+.alert-detail-title { font-size: 1.6rem; font-weight: 700; color: #1F4E5F; }
+.back-link { color: #1F4E5F; text-decoration: none; font-size: 0.9rem; }
+.back-link:hover { text-decoration: underline; }
+.page-loading, .page-error { padding: 2rem; text-align: center; color: #666; }
+.alert-detail-empty { color: #888; padding: 1rem 0; }
+.alert-detail-card { border: 2px solid #888; border-radius: 8px; padding: 1.4rem 1.6rem; background: #fff; }
+.alert-detail-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+.risk-badge-lg { color: #fff; font-size: 0.85rem; font-weight: 700; padding: 0.35rem 0.9rem; border-radius: 20px; }
+.alert-detail-year { font-size: 0.85rem; color: #888; }
+.alert-detail-narrative { font-size: 0.95rem; color: #333; line-height: 1.6; margin-bottom: 1.2rem; }
+.alert-detail-dimensions { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.2rem; }
+.dimension-row { display: flex; align-items: center; gap: 0.7rem; }
+.dimension-label { flex: 0 0 170px; font-size: 0.8rem; color: #555; }
+.dimension-bar-track { flex: 1; height: 6px; background: #eee; border-radius: 3px; overflow: hidden; }
+.dimension-bar-fill { height: 100%; background: #1F4E5F; }
+.dimension-value { flex: 0 0 36px; text-align: right; font-size: 0.8rem; font-weight: 600; color: #2d3748; }
+.alert-detail-disclaimer { font-size: 0.78rem; color: #999; border-top: 1px solid #eee; padding-top: 0.8rem; }

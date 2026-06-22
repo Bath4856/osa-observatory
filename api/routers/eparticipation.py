@@ -34,7 +34,7 @@ from api.security import (
 router = APIRouter(prefix="/api/v1/consultation", tags=["E-participation"])
 
 _DISCLAIMER = (
-    "OSA Observatory -- Observatoire de la Souverainete Africaine. "
+    "OSA Observatory -- Observatoire de la Souveraineté Africaine. "
     "Citizen contributions are moderated before publication. "
     "Scientific and doctrinal reviews feed the OSA Scientific Council agenda. "
     "open.osa-observatory.org/consult"

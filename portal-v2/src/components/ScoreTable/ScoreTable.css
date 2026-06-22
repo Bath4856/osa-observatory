@@ -78,6 +78,9 @@
   background: #f8f9fa;
   font-style: italic;
 }
+.row-alert td {
+  background: #fffaf0;
+}
 .row-pillar:hover td {
   background: #f0f7f4;
 }
@@ -98,6 +101,15 @@
 .btn-pillar:hover {
   background: #1F4E5F;
   color: #ffffff;
+}
+.risk-badge {
+  display: inline-block;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 20px;
+  white-space: nowrap;
 }
 .score-legend {
   font-size: 0.78rem;

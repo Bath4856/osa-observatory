@@ -4,9 +4,9 @@ import { useLang } from '../i18n/useLang'
 import './Countries.css'
 
 const COUNTRIES = [
-  {iso3:'DZA',name:{en:'Algeria',fr:'Algerie'},region:'North Africa'},
+  {iso3:'DZA',name:{en:'Algeria',fr:'Algérie'},region:'North Africa'},
   {iso3:'AGO',name:{en:'Angola',fr:'Angola'},region:'Central Africa'},
-  {iso3:'BEN',name:{en:'Benin',fr:'Benin'},region:'West Africa'},
+  {iso3:'BEN',name:{en:'Benin',fr:'Bénin'},region:'West Africa'},
   {iso3:'BWA',name:{en:'Botswana',fr:'Botswana'},region:'Southern Africa'},
   {iso3:'BFA',name:{en:'Burkina Faso',fr:'Burkina Faso'},region:'West Africa'},
   {iso3:'BDI',name:{en:'Burundi',fr:'Burundi'},region:'East Africa'},
@@ -17,21 +17,21 @@ const COUNTRIES = [
   {iso3:'COM',name:{en:'Comoros',fr:'Comores'},region:'East Africa'},
   {iso3:'COD',name:{en:'DR Congo',fr:'RD Congo'},region:'Central Africa'},
   {iso3:'COG',name:{en:'Republic of Congo',fr:'Congo'},region:'Central Africa'},
-  {iso3:'CIV',name:{en:"Cote d'Ivoire",fr:"Cote d'Ivoire"},region:'West Africa'},
+  {iso3:'CIV',name:{en:"Cote d'Ivoire",fr:"Côte d'Ivoire"},region:'West Africa'},
   {iso3:'DJI',name:{en:'Djibouti',fr:'Djibouti'},region:'East Africa'},
-  {iso3:'EGY',name:{en:'Egypt',fr:'Egypte'},region:'North Africa'},
-  {iso3:'GNQ',name:{en:'Equatorial Guinea',fr:'Guinee equatoriale'},region:'Central Africa'},
-  {iso3:'ERI',name:{en:'Eritrea',fr:'Erythree'},region:'East Africa'},
+  {iso3:'EGY',name:{en:'Egypt',fr:'Égypte'},region:'North Africa'},
+  {iso3:'GNQ',name:{en:'Equatorial Guinea',fr:'Guinée équatoriale'},region:'Central Africa'},
+  {iso3:'ERI',name:{en:'Eritrea',fr:'Érythrée'},region:'East Africa'},
   {iso3:'SWZ',name:{en:'Eswatini',fr:'Eswatini'},region:'Southern Africa'},
-  {iso3:'ETH',name:{en:'Ethiopia',fr:'Ethiopie'},region:'East Africa'},
+  {iso3:'ETH',name:{en:'Ethiopia',fr:'Éthiopie'},region:'East Africa'},
   {iso3:'GAB',name:{en:'Gabon',fr:'Gabon'},region:'Central Africa'},
   {iso3:'GMB',name:{en:'Gambia',fr:'Gambie'},region:'West Africa'},
   {iso3:'GHA',name:{en:'Ghana',fr:'Ghana'},region:'West Africa'},
-  {iso3:'GIN',name:{en:'Guinea',fr:'Guinee'},region:'West Africa'},
-  {iso3:'GNB',name:{en:'Guinea-Bissau',fr:'Guinee-Bissau'},region:'West Africa'},
+  {iso3:'GIN',name:{en:'Guinea',fr:'Guinée'},region:'West Africa'},
+  {iso3:'GNB',name:{en:'Guinea-Bissau',fr:'Guinée-Bissau'},region:'West Africa'},
   {iso3:'KEN',name:{en:'Kenya',fr:'Kenya'},region:'East Africa'},
   {iso3:'LSO',name:{en:'Lesotho',fr:'Lesotho'},region:'Southern Africa'},
-  {iso3:'LBR',name:{en:'Liberia',fr:'Liberia'},region:'West Africa'},
+  {iso3:'LBR',name:{en:'Liberia',fr:'Libéria'},region:'West Africa'},
   {iso3:'LBY',name:{en:'Libya',fr:'Libye'},region:'North Africa'},
   {iso3:'MDG',name:{en:'Madagascar',fr:'Madagascar'},region:'East Africa'},
   {iso3:'MWI',name:{en:'Malawi',fr:'Malawi'},region:'East Africa'},
@@ -44,8 +44,8 @@ const COUNTRIES = [
   {iso3:'NER',name:{en:'Niger',fr:'Niger'},region:'West Africa'},
   {iso3:'NGA',name:{en:'Nigeria',fr:'Nigeria'},region:'West Africa'},
   {iso3:'RWA',name:{en:'Rwanda',fr:'Rwanda'},region:'East Africa'},
-  {iso3:'STP',name:{en:'Sao Tome and Principe',fr:'Sao Tome-et-Principe'},region:'Central Africa'},
-  {iso3:'SEN',name:{en:'Senegal',fr:'Senegal'},region:'West Africa'},
+  {iso3:'STP',name:{en:'Sao Tome and Principe',fr:'São Tomé-et-Principe'},region:'Central Africa'},
+  {iso3:'SEN',name:{en:'Senegal',fr:'Sénégal'},region:'West Africa'},
   {iso3:'SLE',name:{en:'Sierra Leone',fr:'Sierra Leone'},region:'West Africa'},
   {iso3:'SOM',name:{en:'Somalia',fr:'Somalie'},region:'East Africa'},
   {iso3:'ZAF',name:{en:'South Africa',fr:'Afrique du Sud'},region:'Southern Africa'},
@@ -66,15 +66,23 @@ const REGION_LABELS = {
   fr: { 'All':'Toutes les régions', 'North Africa':'Afrique du Nord', 'West Africa':"Afrique de l'Ouest", 'Central Africa':'Afrique Centrale', 'East Africa':"Afrique de l'Est", 'Southern Africa':'Afrique Australe' }
 }
 
+// Retire les accents/diacritiques pour permettre une recherche insensible aux accents
+// (ex: "egypte" ou "cote d ivoire" doit trouver "Égypte" / "Côte d'Ivoire")
+function foldAccents(str) {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+}
+
 export default function Countries() {
   const { lang, t } = useLang()
   const [filter, setFilter] = useState('All')
   const [search, setSearch] = useState('')
 
+  const foldedSearch = foldAccents(search)
+
   const filtered = COUNTRIES.filter(c => {
     const matchRegion = filter === 'All' || c.region === filter
-    const matchSearch = c.name[lang].toLowerCase().includes(search.toLowerCase()) ||
-                        c.iso3.toLowerCase().includes(search.toLowerCase())
+    const matchSearch = foldAccents(c.name[lang]).includes(foldedSearch) ||
+                        c.iso3.toLowerCase().includes(foldedSearch)
     return matchRegion && matchSearch
   }).sort((a,b) => a.name[lang].localeCompare(b.name[lang]))
 

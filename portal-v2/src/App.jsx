@@ -12,6 +12,8 @@ import About from './pages/About'
 import Methodology from './pages/Methodology'
 import Participate from './pages/Participate'
 import Data from './pages/Data'
+import AmarDetail from './pages/AmarDetail'
+import ConflictEconomyDetail from './pages/ConflictEconomyDetail'
 import './App.css'
 
 function Layout() {
@@ -30,17 +32,19 @@ const router = createBrowserRouter([
   {
     element: <Layout />,
     children: [
-      { path: '/',                            element: <Home /> },
-      { path: '/countries',                   element: <Countries /> },
-      { path: '/country/:iso3',               element: <Country /> },
-      { path: '/country/:iso3/projects',      element: <Projects /> },
-      { path: '/country/:iso3/projects/:id',  element: <ProjectDetail /> },
-      { path: '/register',                    element: <Register /> },
-      { path: '/pillar/:code',                element: <Pillar /> },
-      { path: '/about',                       element: <About /> },
-      { path: '/methodology',                 element: <Methodology /> },
-      { path: '/participate',                 element: <Participate /> },
-      { path: '/data',                        element: <Data /> },
+      { path: '/',                               element: <Home /> },
+      { path: '/countries',                      element: <Countries /> },
+      { path: '/country/:iso3',                  element: <Country /> },
+      { path: '/country/:iso3/projects',         element: <Projects /> },
+      { path: '/country/:iso3/projects/:id',     element: <ProjectDetail /> },
+      { path: '/country/:iso3/amar',             element: <AmarDetail /> },
+      { path: '/country/:iso3/conflict-economy', element: <ConflictEconomyDetail /> },
+      { path: '/register',                       element: <Register /> },
+      { path: '/pillar/:code',                   element: <Pillar /> },
+      { path: '/about',                          element: <About /> },
+      { path: '/methodology',                    element: <Methodology /> },
+      { path: '/participate',                    element: <Participate /> },
+      { path: '/data',                           element: <Data /> },
     ]
   }
 ])

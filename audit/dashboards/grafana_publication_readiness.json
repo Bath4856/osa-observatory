@@ -1,0 +1,785 @@
+{
+  "uid": "osa-pub-readiness",
+  "title": "OSA ISA – Publication Readiness",
+  "description": "État de préparation à la publication institutionnelle OSA. Source : latest_audit.json",
+  "tags": [
+    "osa",
+    "publication",
+    "ops",
+    "iprs"
+  ],
+  "schemaVersion": 36,
+  "version": 1,
+  "refresh": "5m",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "UTC",
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 2
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "## OSA ISA — Publication Readiness\nTableau de bord OPS P8 · Source : `latest_audit.json` · Rafraîchi toutes les 5 min"
+      },
+      "targets": []
+    },
+    {
+      "id": 2,
+      "type": "row",
+      "title": "Indicateurs clés",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 2,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 3,
+      "type": "gauge",
+      "title": "IPRS",
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 6,
+        "h": 6
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": null
+              },
+              {
+                "color": "#F2CC0C",
+                "value": 70
+              },
+              {
+                "color": "#5AA64B",
+                "value": 85
+              }
+            ]
+          },
+          "unit": "none",
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "iprs",
+              "jsonPath": "$.iprs"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Statut Publication",
+      "gridPos": {
+        "x": 6,
+        "y": 3,
+        "w": 6,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": null
+              },
+              {
+                "color": "#F2CC0C",
+                "value": 70
+              },
+              {
+                "color": "#5AA64B",
+                "value": 85
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "READY_FOR_PUBLICATION": {
+                  "text": "✅ READY",
+                  "color": "#5AA64B",
+                  "index": 0
+                },
+                "CONDITIONAL_PUBLICATION": {
+                  "text": "⚠ CONDITIONAL",
+                  "color": "#F2CC0C",
+                  "index": 1
+                },
+                "REVIEW_REQUIRED": {
+                  "text": "❌ REVIEW",
+                  "color": "#E02F44",
+                  "index": 2
+                }
+              }
+            }
+          ]
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "publication_status",
+              "jsonPath": "$.publication_status"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Durée Audit",
+      "gridPos": {
+        "x": 12,
+        "y": 3,
+        "w": 4,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5AA64B",
+                "value": null
+              },
+              {
+                "color": "#F2CC0C",
+                "value": 30
+              },
+              {
+                "color": "#E02F44",
+                "value": 60
+              }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "duration",
+              "jsonPath": "$.audit_duration_seconds"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Dernier Audit",
+      "gridPos": {
+        "x": 16,
+        "y": 3,
+        "w": 8,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "dateTimeAsIso",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#1F60C4",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "timestamp",
+              "jsonPath": "$.timestamp"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "row",
+      "title": "Résultats modules",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "PASS",
+      "gridPos": {
+        "x": 0,
+        "y": 10,
+        "w": 4,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5AA64B",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "pass_count",
+              "jsonPath": "$.pass_count"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "stat",
+      "title": "WARNING",
+      "gridPos": {
+        "x": 4,
+        "y": 10,
+        "w": 4,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#F2CC0C",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "warning_count",
+              "jsonPath": "$.warning_count"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "FAIL",
+      "gridPos": {
+        "x": 8,
+        "y": 10,
+        "w": 4,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "fail_count",
+              "jsonPath": "$.fail_count"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "table",
+      "title": "Modules en FAIL",
+      "gridPos": {
+        "x": 12,
+        "y": 10,
+        "w": 12,
+        "h": 3
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "showHeader": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "status"
+            },
+            "properties": [
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "PASS": {
+                        "color": "#5AA64B",
+                        "index": 0
+                      }
+                    }
+                  },
+                  {
+                    "type": "value",
+                    "options": {
+                      "WARNING": {
+                        "color": "#F2CC0C",
+                        "index": 1
+                      }
+                    }
+                  },
+                  {
+                    "type": "value",
+                    "options": {
+                      "FAIL": {
+                        "color": "#E02F44",
+                        "index": 2
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "module",
+              "jsonPath": "$.fail_modules[*]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "row",
+      "title": "Détail des modules",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 13,
+      "type": "table",
+      "title": "Résultats par module",
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 24,
+        "h": 10
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "showHeader": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "status"
+            },
+            "properties": [
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "PASS": {
+                        "color": "#5AA64B",
+                        "index": 0
+                      }
+                    }
+                  },
+                  {
+                    "type": "value",
+                    "options": {
+                      "WARNING": {
+                        "color": "#F2CC0C",
+                        "index": 1
+                      }
+                    }
+                  },
+                  {
+                    "type": "value",
+                    "options": {
+                      "FAIL": {
+                        "color": "#E02F44",
+                        "index": 2
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "module",
+              "jsonPath": "$.module_results[*].module"
+            },
+            {
+              "name": "status",
+              "jsonPath": "$.module_results[*].status"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "type": "row",
+      "title": "Modules en WARNING",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 15,
+      "type": "table",
+      "title": "Modules en WARNING",
+      "gridPos": {
+        "x": 0,
+        "y": 25,
+        "w": 24,
+        "h": 4
+      },
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "osa-json-ds"
+      },
+      "options": {
+        "showHeader": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "status"
+            },
+            "properties": [
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "PASS": {
+                        "color": "#5AA64B",
+                        "index": 0
+                      }
+                    }
+                  },
+                  {
+                    "type": "value",
+                    "options": {
+                      "WARNING": {
+                        "color": "#F2CC0C",
+                        "index": 1
+                      }
+                    }
+                  },
+                  {
+                    "type": "value",
+                    "options": {
+                      "FAIL": {
+                        "color": "#E02F44",
+                        "index": 2
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "fields": [
+            {
+              "name": "module",
+              "jsonPath": "$.warning_modules[*]"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "liveNow": false
+}

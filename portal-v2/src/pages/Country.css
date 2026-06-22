@@ -3,13 +3,4 @@
 .country-title { font-size: 2rem; font-weight: 700; color: #1F4E5F; }
 .back-link { color: #1F4E5F; text-decoration: none; font-size: 0.9rem; }
 .back-link:hover { text-decoration: underline; }
-.country-actions { margin-top: 2rem; display: flex; justify-content: flex-end; }
-.btn-projects { background: #1F4E5F; color: #fff; padding: 0.6rem 1.4rem; border-radius: 6px; text-decoration: none; font-weight: 600; transition: background 0.2s; }
-.btn-projects:hover { background: #2E7D6E; }
 .page-loading, .page-error { padding: 2rem; text-align: center; color: #666; }
-.country-alerts { display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1.5rem; }
-.alert-card { border: 2px solid #888; border-radius: 8px; padding: 1rem 1.2rem; background: #fff; }
-.alert-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
-.alert-badge { color: #fff; font-size: 0.78rem; font-weight: 700; padding: 0.25rem 0.7rem; border-radius: 20px; }
-.alert-year { font-size: 0.78rem; color: #888; }
-.alert-text { font-size: 0.85rem; color: #444; line-height: 1.5; }
