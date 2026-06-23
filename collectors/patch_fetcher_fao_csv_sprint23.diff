@@ -1,0 +1,81 @@
+diff --git a/collectors/fetcher_fao_csv.py b/collectors/fetcher_fao_csv.py
+index 5134a12..afdc8ab 100644
+--- a/collectors/fetcher_fao_csv.py
++++ b/collectors/fetcher_fao_csv.py
+@@ -61,21 +61,27 @@ logging.basicConfig(
+ 
+ # ── Mapping code FAO -> ISO-3 ─────────────────────────────
+ # Source : FAOSTAT AreaCodes (code FAO numerique, pas M49)
++# Sprint 23 -- correction de 16 codes errones (decales par rapport au
++# referentiel FAOSTAT "Area Code" reel utilise dans les fichiers bulk
++# RL/FBS/FS/QCL/OA/GT). Les anciens codes (23,68,74,86,119,122,132,144,
++# 146,149,153,220,243,249,253,260) ne correspondent a AUCUNE ligne dans
++# ces fichiers -- correction strictement additive, aucune donnee deja
++# ingeree ne s'appuyait sur ces codes (cf. diagnostic ENV_FOR Sprint 23).
+ FAO_AREA_TO_ISO3: dict[str, str] = {
+-    "4":   "DZA",  "59":  "EGY",  "124": "LBY",  "143": "MAR",
+-    "144": "MRT",  "206": "SDN",  "249": "TUN",  "23":  "BEN",
+-    "233": "BFA",  "107": "CIV",  "35":  "CPV",  "74":  "GMB",
+-    "81":  "GHA",  "86":  "GIN",  "175": "GNB",  "122": "LBR",
+-    "132": "MLI",  "158": "NER",  "159": "NGA",  "220": "SLE",
+-    "195": "SEN",  "243": "TGO",  "29":  "BDI",  "45":  "COM",
+-    "72":  "DJI",  "178": "ERI",  "238": "ETH",  "114": "KEN",
+-    "129": "MDG",  "130": "MWI",  "146": "MUS",  "149": "MOZ",
+-    "184": "RWA",  "196": "SYC",  "201": "SOM",  "277": "SSD",
+-    "215": "TZA",  "253": "UGA",  "260": "ZMB",  "181": "ZWE",
+-    "7":   "AGO",  "32":  "CMR",  "37":  "CAF",  "39":  "TCD",
+-    "46":  "COG",  "250": "COD",  "61":  "GNQ",  "68":  "GAB",
+-    "193": "STP",  "20":  "BWA",  "209": "SWZ",  "119": "LSO",
+-    "153": "NAM",  "202": "ZAF",
++    "4": "DZA",    "7": "AGO",    "20": "BWA",   "29": "BDI",
++    "32": "CMR",   "35": "CPV",   "37": "CAF",   "39": "TCD",
++    "45": "COM",   "46": "COG",   "53": "BEN",   "59": "EGY",
++    "61": "GNQ",   "72": "DJI",   "74": "GAB",   "75": "GMB",
++    "81": "GHA",   "90": "GIN",   "107": "CIV",  "114": "KEN",
++    "122": "LSO",  "123": "LBR",  "124": "LBY",  "129": "MDG",
++    "130": "MWI",  "133": "MLI",  "136": "MRT",  "137": "MUS",
++    "143": "MAR",  "144": "MOZ",  "147": "NAM",  "158": "NER",
++    "159": "NGA",  "175": "GNB",  "178": "ERI",  "181": "ZWE",
++    "184": "RWA",  "193": "STP",  "195": "SEN",  "196": "SYC",
++    "197": "SLE",  "201": "SOM",  "202": "ZAF",  "206": "SDN",
++    "209": "SWZ",  "215": "TZA",  "217": "TGO",  "222": "TUN",
++    "226": "UGA",  "233": "BFA",  "238": "ETH",  "250": "COD",
++    "251": "ZMB",  "277": "SSD",
+ }
+ 
+ # ── URLs bulk FAOSTAT ─────────────────────────────────────
+@@ -104,14 +110,28 @@ FAO_BULK_CSV: dict[str, str] = {
+ FAO_INDICATOR_MAP: dict = {
+     "ENV_FOR": {
+         "dataset":      "RL",
+-        "element_code": "5110",
+-        "item_code":    "6646",    # Forest land (1000 ha)
+-        "name_fr":      "Superficie forestiere (1000 ha)",
+-        "unit_code":    "INDEX",
++        "element_code": "7209",
++        "item_code":    "6646",    # Forest land -- Share in Land area (%)
++        "name_fr":      "Couvert forestier (% superficie totale)",
++        "unit_code":    "PERCENT",
+         "direction":    "+",
+         "multiplier":   1.0,
+-        "agg":          "sum",
+-        "notes":        "GF -- superficie forets. Ramener a superficie totale pour %.",
++        "agg":          "avg",
++        "min_valid":    0.0,
++        "max_valid":    100.0,
++        # Sprint 23 -- correction bug d'unite (ancien element 5110 =
++        # "Forest land" en 1000 ha, etiquete a tort PERCENT/INDEX,
++        # bornes [0,100] violees -- valeurs jusqu'a 283340).
++        # Element 7209 = ratio deja calcule par FAO (%).
++        # ATTENTION P7E : la serie 7209 est une INTERPOLATION LINEAIRE
++        # FAO entre points d'ancrage FRA quinquennaux (2010, 2015, 2020).
++        # Doctrine "pas de donnees interpolees collectees comme
++        # observations" -> seules les annees 2010/2015/2020 doivent
++        # etre inserees en L1 (collect.raw_data). Les annees
++        # intermediaires sont laissees absentes ; imputer_v3.step1_duckdb
++        # les produit en L2 avec FLAG_INTERPOLATED / confidence reduite
++        # (step2_mice sera skip : taux imputation 80% > 50%).
++        "notes":        "GF -- couvert forestier (%). L1 = 2010/2015/2020 uniquement (cf. doctrine P7E).",
+     },
+     "ENV_LAN": {
+         "dataset":      "RL",

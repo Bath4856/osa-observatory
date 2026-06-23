@@ -1,0 +1,22 @@
+# OSA ISA – P8 OPS V2
+# Dépendances Python du pack audit
+# Corrections (AUDIT OSA-2026-001) :
+# - Le fichier requirements.txt original contenait en réalité un
+#   docker-compose (contenu interverti avec docker-compose.audit.yml).
+#   Ce fichier est le requirements.txt correct.
+
+# HTTP
+requests==2.32.3
+
+# PostgreSQL
+psycopg2-binary==2.9.9
+
+# PDF generation
+reportlab==4.4.0
+
+# YAML parsing
+PyYAML==6.0.2
+
+# Grafana / JSON export (stdlib — pas de dépendance tierce)
+
+# Email (stdlib smtplib — pas de dépendance tierce)

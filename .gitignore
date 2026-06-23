@@ -1,30 +1,77 @@
-﻿r_*.txt
-result*.txt
-q_*.sql
-query*.sql
-.env
-.venv/
+﻿# ============================================================
+# OSA Observatory — .gitignore
+# Mis a jour : Sprint 26 — 23 juin 2026
+# ============================================================
+
+# ── Archives de travail ──────────────────────────────────────
+*.zip
+*.tar.gz
+*.tar.bz2
+
+# ── Fichiers de diagnostic temporaires ──────────────────────
+*_b64.txt
+check_l3_b64.txt
+pre_audit_check.sh
+
+# ── Patches de travail ──────────────────────────────────────
+*.diff
+*.patch
+
+# ── Variantes de routers non integrees ──────────────────────
+api/routers/*_FIXED.py
+api/routers/*_GENECO*.py
+
+# ── Sorties d'execution (non livrables) ─────────────────────
+audit/reports/json/
+audit/reports/*.json
+audit/reports/*.csv
+
+# ── Python ──────────────────────────────────────────────────
 __pycache__/
-collectors/__pycache__/
-osa-data/scripts/__pycache__/
-scripts/__pycache__/
-logs/
-data/
-backup_*.csv
-project_tree.csv
-mapping/activation/test_apis_p1_results.json
-mapping/activation/*.xlsx
-exports/*.xlsx
-db/patch_db/patch_p7b2_semantic_confidence_engine_old.sql
-api/.env
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
 
-audit_p7i_long_search.txt
-osa_p8_v2_foundation.sql
-*.log
-*_long_search.txt
+# ── Environnements virtuels ──────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
 
+# ── IDE ──────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── OS ───────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+Thumbs.db
+desktop.ini
+
+# ── Secrets / credentials ────────────────────────────────────
+# (defense en profondeur — les cles ne doivent jamais etre
+#  dans le depot, meme accidentellement)
 *.pem
-.env.production
-portal/index.html.bak.*
-audit/__init__.py
-audit/scripts/
+*.key
+*.p12
+.env
+.env.*
+!.env.example
+secrets/
+credentials/
+
+# ── Logs ─────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Node (portal) ────────────────────────────────────────────
+node_modules/
+npm-debug.log*
