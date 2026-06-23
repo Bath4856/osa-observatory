@@ -10,8 +10,12 @@
 
 # ── Fichiers de diagnostic temporaires ──────────────────────
 *_b64.txt
-check_l3_b64.txt
 pre_audit_check.sh
+r_*.txt
+result*.txt
+audit_p7i_long_search.txt
+project_tree.csv
+r_endpoints.txt
 
 # ── Patches de travail ──────────────────────────────────────
 *.diff
@@ -20,6 +24,29 @@ pre_audit_check.sh
 # ── Variantes de routers non integrees ──────────────────────
 api/routers/*_FIXED.py
 api/routers/*_GENECO*.py
+
+# ── Fichiers SQL de travail a la racine ──────────────────────
+/*.sql
+
+# ── Exports temporaires ──────────────────────────────────────
+exports/
+backup_*.csv
+
+# ── Donnees de collecte (non versionnees) ───────────────────
+# Les donnees sources brutes sont gerees hors depot.
+# Reproductibilite assuree par les collecteurs (collectors/).
+data/raw/
+data/manual/
+data/osa-data/
+collectors/data/
+
+# ── Mapping / activation (fichiers de travail) ───────────────
+mapping/activation/
+
+# ── Requetes de diagnostic DB ────────────────────────────────
+# Conserver db/patch_db/ et db/to_indicator_value/ (commites)
+# Exclure les requetes ad hoc
+db/requete_db/
 
 # ── Sorties d'execution (non livrables) ─────────────────────
 audit/reports/json/
@@ -31,11 +58,9 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.Python
 *.egg-info/
 dist/
 build/
-.eggs/
 
 # ── Environnements virtuels ──────────────────────────────────
 .venv/
@@ -52,13 +77,10 @@ ENV/
 
 # ── OS ───────────────────────────────────────────────────────
 .DS_Store
-.DS_Store?
 Thumbs.db
 desktop.ini
 
 # ── Secrets / credentials ────────────────────────────────────
-# (defense en profondeur — les cles ne doivent jamais etre
-#  dans le depot, meme accidentellement)
 *.pem
 *.key
 *.p12
