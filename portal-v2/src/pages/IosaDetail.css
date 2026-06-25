@@ -1,0 +1,215 @@
+.iosa-detail-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 16px 60px;
+}
+
+.iosa-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.iosa-detail-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #0b3d6e;
+  margin: 0;
+}
+
+.iosa-detail-empty {
+  color: #777;
+  font-style: italic;
+  margin-top: 32px;
+}
+
+.iosa-block {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+}
+
+.iosa-block-about {
+  border-left: 4px solid #0b5aa0;
+}
+
+.iosa-block-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0b3d6e;
+  margin: 0 0 12px;
+}
+
+.iosa-block-text {
+  color: #444;
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* Tableau des observations */
+.iosa-obs-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  font-size: .92rem;
+}
+
+.iosa-obs-table th {
+  background: #0b5aa0;
+  color: #fff;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+}
+
+.iosa-obs-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e8edf2;
+  vertical-align: middle;
+}
+
+.iosa-obs-table tr:last-child td {
+  border-bottom: none;
+}
+
+.iosa-obs-table tr:hover td {
+  background: #f4f8fc;
+}
+
+.iosa-obs-name {
+  font-weight: 500;
+  color: #1a3c5e;
+}
+
+.iosa-obs-pillar {
+  font-size: .78rem;
+  color: #888;
+  display: block;
+  margin-top: 2px;
+}
+
+.iosa-status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: .78rem;
+  font-weight: 600;
+}
+
+.iosa-status-OBSERVED  { background: #e8f5e9; color: #1B5E20; }
+.iosa-status-PARTIAL   { background: #fff8e1; color: #7D4800; }
+.iosa-status-COLLECTING{ background: #f5f5f5; color: #888; }
+
+.iosa-btn-voir {
+  background: #0b5aa0;
+  color: #fff;
+  border: none;
+  padding: 5px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: .85rem;
+  white-space: nowrap;
+}
+
+.iosa-btn-voir:hover {
+  background: #0a4a85;
+}
+
+/* Fiche indicateur */
+.iosa-indicator-block {
+  border-left: 4px solid #2E75B6;
+  margin-bottom: 28px;
+}
+
+.iosa-indicator-meta {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.iosa-indicator-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.iosa-meta-label {
+  font-size: .75rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.iosa-meta-value {
+  font-size: .95rem;
+  font-weight: 600;
+  color: #1a3c5e;
+}
+
+/* Trajectoire */
+.iosa-trajectory-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .9rem;
+}
+
+.iosa-trajectory-table th {
+  background: #f2f5f8;
+  color: #444;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid #dde3ea;
+}
+
+.iosa-trajectory-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #e8edf2;
+}
+
+.iosa-trajectory-table tr.row-official td { color: #1B5E20; }
+.iosa-trajectory-table tr.row-partial  td { color: #7D4800; }
+.iosa-trajectory-table tr.row-outside  td { color: #aaa; font-style: italic; }
+
+.iosa-pub-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 8px;
+  font-size: .75rem;
+  font-weight: 600;
+}
+
+.iosa-pub-OFFICIAL    { background: #e8f5e9; color: #1B5E20; }
+.iosa-pub-PRELIMINARY { background: #fff8e1; color: #7D4800; }
+.iosa-pub-null        { background: #f5f5f5; color: #aaa; }
+
+.iosa-variation {
+  margin-top: 10px;
+  font-size: .9rem;
+  color: #555;
+}
+
+.iosa-disclaimer {
+  font-size: .8rem;
+  color: #aaa;
+  margin-top: 32px;
+  font-style: italic;
+  border-top: 1px solid #eee;
+  padding-top: 12px;
+}
+
+.iosa-back-top {
+  display: inline-block;
+  margin-bottom: 16px;
+  font-size: .85rem;
+  color: #0b5aa0;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  text-decoration: underline;
+}
