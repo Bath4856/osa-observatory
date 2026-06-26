@@ -89,16 +89,19 @@ export default function Methodology() {
 
       <section className="method-section">
         <h2>{t('methodology.pillars_title')}</h2>
-        <div className="pillars-grid">
-          {PILLARS.map(p => (
-            <Link key={p.code} to={`/pillar/${p.code}`} className="pillar-card">
-              <span className="pillar-icon">{p.icon}</span>
-              <span className="pillar-code">{p.code}</span>
-              <span className="pillar-name">{p.name[lang]}</span>
-              <span className="pillar-desc">{p.desc[lang]}</span>
-            </Link>
-          ))}
-        </div>
+        <p style={{marginBottom: '16px', color: 'var(--color-muted)'}}>
+          {lang === 'fr'
+            ? 'Chaque pilier dispose d’une fiche scientifique detaillee avec ses indicateurs, ses sources et sa doctrine.'
+            : 'Each pillar has a detailed scientific page with its indicators, sources and doctrine.'}
+        </p>
+        <Link to="/pillars" style={{
+          display: 'inline-flex', alignItems: 'center', gap: '8px',
+          padding: '10px 20px', background: 'var(--color-primary)',
+          color: 'white', borderRadius: '5px', fontWeight: '600',
+          textDecoration: 'none', fontSize: '0.9rem'
+        }}>
+          {lang === 'fr' ? 'Explorer les 10 piliers souverains →' : 'Explore the 10 sovereignty pillars →'}
+        </Link>
       </section>
 
       <section className="method-section">
