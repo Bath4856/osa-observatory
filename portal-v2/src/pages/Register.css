@@ -22,3 +22,6 @@
 .register-success h1 { color: #1B5E20; font-size: 2rem; margin-bottom: 1rem; }
 .register-success p { color: #555; margin-bottom: 2rem; }
 .btn-home { background: #1F4E5F; color: #fff; padding: 0.6rem 1.4rem; border-radius: 6px; text-decoration: none; font-weight: 600; }
+
+/* Sections formulaire */
+.form-section-title { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--color-primary); margin-top: 1.5rem; margin-bottom: .5rem; padding-bottom: .3rem; border-bottom: 2px solid var(--color-border); }
