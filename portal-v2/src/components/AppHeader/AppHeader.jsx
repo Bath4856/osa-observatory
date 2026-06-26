@@ -32,6 +32,7 @@ export default function AppHeader() {
       <nav className="header-nav">
         <Link to="/countries" className={isActive('/countries')}>{t('nav.countries')}</Link>
         <Link to="/about" className={isActive('/about')}>{t('nav.about')}</Link>
+        <Link to="/pillars" className={isActive('/pillars')}>{lang === 'fr' ? 'Piliers' : 'Pillars'}</Link>
         <Link to="/methodology" className={isActive('/methodology')}>{t('nav.methodology')}</Link>
         <Link to="/data" className={isActive('/data')}>{t('nav.data')}</Link>
         <Link to="/participate" className={isActive('/participate')}>{t('nav.participate')}</Link>
