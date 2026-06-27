@@ -549,3 +549,50 @@ async def get_predictive_status(db: Session = Depends(get_db)):
     """
     data = _rows(db, "SELECT * FROM pub.v_p7z_readiness_status")
     return _wrap(data, "OSA_P7Z_READINESS_STATUS")
+
+
+# ── Sprint 30 Lot F -- Fiche identite pays ────────────────────────────────────
+
+@router.get("/countries/{iso3}/identity",
+    summary="Fiche identite pays",
+    description="Nom, region, population, devise, enclave. CC-BY-NC-4.0.")
+def get_country_identity(iso3: str, db: Session = Depends(get_db)):
+    iso3 = iso3.upper()
+    row = db.execute(text("""
+        SELECT
+            c.iso3,
+            c.name_fr,
+            c.name_en,
+            c.region_code,
+            reg.name_fr   AS region_fr,
+            reg.name_en   AS region_en,
+            c.currency_code,
+            c.is_landlocked,
+            pop.value_raw AS population
+        FROM rf.countries c
+        LEFT JOIN rf.regions reg ON reg.code = c.region_code
+        LEFT JOIN (
+            SELECT country_iso3, value_raw
+            FROM collect.raw_data
+            WHERE indicator_code = 'HUM_POP' AND year = 2024
+        ) pop ON pop.country_iso3 = c.iso3
+        WHERE c.iso3 = :iso3
+        AND c.is_active = true
+    """), {"iso3": iso3}).mappings().first()
+
+    if not row:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail=f"Country {iso3} not found.")
+
+    return {
+        "iso3":          row["iso3"],
+        "name_fr":       row["name_fr"],
+        "name_en":       row["name_en"],
+        "region_code":   row["region_code"],
+        "region_fr":     row["region_fr"],
+        "region_en":     row["region_en"],
+        "currency_code": row["currency_code"],
+        "is_landlocked": row["is_landlocked"],
+        "population":    int(row["population"]) if row["population"] else None,
+        "disclaimer":    _DISCLAIMER,
+    }
