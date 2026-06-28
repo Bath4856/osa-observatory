@@ -4,6 +4,7 @@ import { getCountryScores, getCountryPillarScores, getCountryHistory } from '../
 import { getAmarBadges, getConflictBadges } from '../api/alerts'
 import { getStructuralObs } from '../api/structural'
 import { getCountryIdentity } from '../api/countries'
+import ScoreTable from '../components/ScoreTable/ScoreTable'
 import { useLang } from '../i18n/useLang'
 import './Country.css'
 
@@ -134,7 +135,7 @@ export default function Country() {
             </div>
           )}
           <button className="product-btn product-btn--isa"
-            onClick={() => navigate(`/country/${iso3}/isa`)}>
+            onClick={() => document.getElementById('score-table')?.scrollIntoView({ behavior: 'smooth' })}>
             {lang === 'fr' ? 'Détail →' : 'Detail →'}
           </button>
         </div>
@@ -195,6 +196,21 @@ export default function Country() {
         </div>
 
       </div>
-</div>
+
+      {/* Tableau ISA détaillé */}
+      <div id="score-table">
+        <ScoreTable
+          iso3={iso3}
+          scoresData={scores}
+          pillarData={pillarScores}
+          historyData={history}
+          amarData={amarHistory}
+          conflictData={conflictHistory}
+          iosaData={iosaData}
+          identity={identity}
+        />
+      </div>
+
+    </div>
   )
 }
