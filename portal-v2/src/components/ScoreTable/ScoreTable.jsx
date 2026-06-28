@@ -43,7 +43,7 @@ function fmt(val, status) {
   return isNaN(n) ? '—' : n.toFixed(3)
 }
 
-export default function ScoreTable({ iso3, scoresData, pillarData, historyData, amarData, conflictData }) {
+export default function ScoreTable({ iso3, scoresData, pillarData, historyData, amarData, conflictData, iosaData }) {
   const { t, lang } = useLang()
   const navigate = useNavigate()
 
@@ -87,6 +87,15 @@ export default function ScoreTable({ iso3, scoresData, pillarData, historyData, 
     return conflictData.find(d => d.year === year) || null
   }
 
+  // Nombre d'observations IOSA distinctes pour une année donnée
+  const getIosaCount = (year) => {
+    if (!iosaData || iosaData.length === 0) return 0
+    return [...new Set(iosaData.filter(d => d.year === year).map(d => d.indicator_code))].length
+  }
+
+  // Indicateur de présence IOSA globale (au moins une observation dans la fenêtre)
+  const hasIosa = iosaData && iosaData.length > 0
+
   const RiskBadge = ({ band }) => (
     <span className="risk-badge" style={{ background: RISK_COLOR[band] || '#888' }}>
       {RISK_LABEL[lang]?.[band] || band}
@@ -121,6 +130,7 @@ export default function ScoreTable({ iso3, scoresData, pillarData, historyData, 
           </tr>
         </thead>
         <tbody>
+          {/* ISA */}
           <tr className="row-isa">
             <td className="cell-label">ISA</td>
             {windowYears.map(y => {
@@ -139,6 +149,24 @@ export default function ScoreTable({ iso3, scoresData, pillarData, historyData, 
               </button>
             </td>
           </tr>
+
+
+
+          {/* Trajectoire */}
+          <tr className="row-trajectory">
+            <td className="cell-label">{t('table.trajectory')}</td>
+            {windowYears.map(y => {
+              const st = getStatus(y)
+              const traj = getTraj(y)
+              return (
+                <td key={y} className={`cell-score ${st==='COLLECTING'?'collecting':''}`}>
+                  {st === 'COLLECTING' ? '—' : (traj || '—')}
+                </td>
+              )
+            })}
+            <td></td>
+          </tr>
+          {/* 10 piliers */}
           {PILLARS.map(pillar => (
             <tr key={pillar} className="row-pillar">
               <td className="cell-label">
@@ -162,53 +190,6 @@ export default function ScoreTable({ iso3, scoresData, pillarData, historyData, 
               </td>
             </tr>
           ))}
-          <tr className="row-trajectory">
-            <td className="cell-label">{t('table.trajectory')}</td>
-            {windowYears.map(y => {
-              const st = getStatus(y)
-              const traj = getTraj(y)
-              return (
-                <td key={y} className={`cell-score ${st==='COLLECTING'?'collecting':''}`}>
-                  {st === 'COLLECTING' ? '—' : (traj || '—')}
-                </td>
-              )
-            })}
-            <td></td>
-          </tr>
-          <tr className="row-alert">
-            <td className="cell-label">AMAR</td>
-            {windowYears.map(y => {
-              const entry = getAmarYear(y)
-              return (
-                <td key={y} className="cell-score">
-                  {entry ? <RiskBadge band={entry.risk_band} /> : '—'}
-                </td>
-              )
-            })}
-            <td className="cell-action">
-              <button className="btn-pillar"
-                onClick={() => navigate(`/country/${iso3}/amar`)}>
-                →
-              </button>
-            </td>
-          </tr>
-          <tr className="row-alert">
-            <td className="cell-label">{lang === 'fr' ? 'Économie de conflit' : 'Conflict economy'}</td>
-            {windowYears.map(y => {
-              const entry = getConflictYear(y)
-              return (
-                <td key={y} className="cell-score">
-                  {entry ? <RiskBadge band={entry.risk_band} /> : '—'}
-                </td>
-              )
-            })}
-            <td className="cell-action">
-              <button className="btn-pillar"
-                onClick={() => navigate(`/country/${iso3}/conflict-economy`)}>
-                →
-              </button>
-            </td>
-          </tr>
         </tbody>
       </table>
     </div>
