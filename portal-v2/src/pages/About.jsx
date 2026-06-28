@@ -9,7 +9,7 @@ export default function About() {
 
   return (
     <div className="about-page">
-      <h1 className="about-title">About OSA Observatory</h1>
+      <h1 className="about-title">{lang === "fr" ? "À propos de l'OSA Observatory" : "About OSA Observatory"}</h1>
       <p className="about-intro">
         {lang === 'fr'
           ? `OSA Observatory (Observatoire de la Souveraineté Africaine) est une infrastructure africaine d'observation souveraine — mesurant les trajectoires de 54 États à travers 10 piliers comportementaux, observées depuis 2010 (${yearsObserved} ans de données).`
