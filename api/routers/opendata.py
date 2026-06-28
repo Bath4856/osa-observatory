@@ -651,3 +651,45 @@ def get_pillar_indicators(pillar: str, db: Session = Depends(get_db)):
         ],
         "disclaimer": _DISCLAIMER,
     }
+
+
+# ── Sprint 30 Lot G -- Indicateurs pilier dynamiques ─────────────────────────
+
+@router.get("/indicators/{pillar}",
+    summary="Indicateurs actifs par pilier",
+    description="Liste des indicateurs actifs avec flag has_data (donnees L3 observees). Exclut IOSA. CC-BY-NC-4.0.")
+def get_pillar_indicators(pillar: str, db: Session = Depends(get_db)):
+    pillar = pillar.upper()
+    rows = db.execute(text("""
+        SELECT
+            i.code,
+            i.name_fr,
+            i.name_en,
+            i.unit_code,
+            i.direction,
+            i.description_fr,
+            i.description_en,
+            CASE WHEN iv.indicator_code IS NOT NULL THEN true ELSE false END AS has_data
+        FROM rf.indicators i
+        LEFT JOIN (
+            SELECT DISTINCT indicator_code
+            FROM ma.indicator_values
+            WHERE layer_id = 3
+            AND value_status = 'OBSERVED'
+        ) iv ON iv.indicator_code = i.code
+        WHERE i.pillar_code = :pillar
+        AND i.is_active = true
+        AND (i.indicator_group != 'IOSA' OR i.indicator_group IS NULL)
+        ORDER BY i.display_order, i.code
+    """), {"pillar": pillar}).mappings().all()
+
+    if not rows:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail=f"Pillar {pillar} not found or no active indicators.")
+
+    return {
+        "pillar":     pillar,
+        "count":      len(rows),
+        "indicators": [dict(r) for r in rows],
+        "disclaimer": _DISCLAIMER,
+    }
