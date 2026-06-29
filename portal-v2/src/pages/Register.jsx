@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
-import { submitAccessRequest } from '../api/tickets'
+import { submitAffiliationRequest } from '../api/tickets'
 import { useLang } from '../i18n/useLang'
 import './Register.css'
 
@@ -42,20 +42,15 @@ export default function Register() {
     e.preventDefault()
     setSubmitting(true)
     try {
-      await submitAccessRequest({
-        name:           form.last_name + ' ' + form.first_name,
+      await submitAffiliationRequest({
+        last_name:      form.last_name,
+        first_name:     form.first_name,
+        function_title: form.function_title || null,
+        email:          form.email,
         org_name:       form.org_name,
         affiliate_type: form.affiliate_type,
-        function_title: form.function_title,
-        country:        form.country,
-        email:          form.email,
-        message:        form.motivation,
-        contribution_type: 'DEMANDE_AFFILIATION',
-        context: {
-          project_id:  form.project_id  || null,
-          country_ref: form.country_ref || null,
-          pillar_ref:  form.pillar_ref  || null,
-        }
+        country:        form.country || null,
+        motivation:     form.motivation || null,
       })
       setStatus('success')
     } catch {
