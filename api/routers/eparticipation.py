@@ -1,376 +1,155 @@
 """
-OSA Observatory -- Sprint 15
-Router E-participation -- Consultation souveraine africaine
-
-Endpoints publics (Couche 0) :
-  GET  /api/v1/consultation/topics              -- sujets ouverts
-  GET  /api/v1/consultation/topics/{iso3}       -- sujets par pays
-  GET  /api/v1/consultation/topics/type/{type}  -- sujets par type
-  POST /api/v1/consultation/submit              -- soumettre une reponse
-
-Endpoints affilies (Couche 1) :
-  GET  /api/v1/consultation/queue               -- file prioritaire complete
-  GET  /api/v1/consultation/queue/{iso3}        -- file par pays
-  GET  /api/v1/consultation/priorities          -- agregat engagement par pays
-
-Endpoints admin (Expert) :
-  GET  /api/v1/consultation/admin/pending       -- reponses en attente moderation
-  POST /api/v1/consultation/admin/moderate/{id} -- approuver ou rejeter
+OSA Observatory -- Sprint 30 Lot D1
+Router E-Participation -- Contributions tracables affilies authentifies
+GET /api/v1/consultation/my-contributions
 """
-
-import json
-from fastapi import APIRouter, Depends, Query, HTTPException
-from fastapi.responses import JSONResponse, Response
-from pydantic import BaseModel
-from sqlalchemy import text
+from typing import Optional, List
+from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy.orm import Session
-from typing import Optional
+from sqlalchemy import text
+from pydantic import BaseModel
 from api.db import get_db
-from api.security import (
-    validate_standard_access,
-    validate_expert_access,
+from api.routers.auth_affiliates import get_current_affiliate
+
+router = APIRouter(
+    prefix="/api/v1/consultation",
+    tags=["E-participation"],
 )
 
-router = APIRouter(prefix="/api/v1/consultation", tags=["E-participation"])
+# Roles avec acces a l'historique complet (D1)
+FULL_HISTORY_ROLES = {"ADMIN", "COMITE_TECH", "COMITE_SCI", "COMITE_ETHIQUE"}
 
-_DISCLAIMER = (
-    "OSA Observatory -- Observatoire de la Souveraineté Africaine. "
-    "Citizen contributions are moderated before publication. "
-    "Scientific and doctrinal reviews feed the OSA Scientific Council agenda. "
-    "open.osa-observatory.org/consult"
-)
-
-_VALID_TYPES = {
-    "RISK_EVIDENCE_REVIEW",
-    "OPPORTUNITY_EXPLORATION_FEEDBACK",
-    "WEAKNESS_DIAGNOSTIC_REVIEW",
-    "STRENGTH_REPLICATION_FEEDBACK",
-    "GENERAL_OBSERVATORY_FEEDBACK",
-    "SCIENTIFIC_FRAMEWORK_REVIEW",
-    "DOCTRINE_REVIEW",
-}
-
-_VALID_POSITIONS = {"SUPPORT", "CHALLENGE", "NEUTRAL", "EVIDENCE"}
+class TicketHistoryItem(BaseModel):
+    ticket_ref:   str
+    ticket_type:  str
+    status:       str
+    subject:      Optional[str] = None
+    submitter_name: Optional[str] = None
+    country_iso3: Optional[str] = None
+    pillar_code:  Optional[str] = None
+    created_at:   str
+    resolved_at:  Optional[str] = None
 
 
-def _json(data) -> Response:
-    return Response(
-        content=json.dumps(data, ensure_ascii=False, default=str),
-        media_type="application/json; charset=utf-8"
-    )
-
-def _rows(db: Session, sql: str, params: dict = None) -> list:
-    result = db.execute(text(sql), params or {})
-    return [dict(r) for r in result.mappings().all()]
-
-
-# ── Schemas Pydantic ──────────────────────────────────────────
-class ConsultationSubmit(BaseModel):
-    country_iso3:       str
-    year:               int
-    pillar_code:        Optional[str] = None
-    consultation_type:  str
-    response_text:      str
-    evidence_url:       Optional[str] = None
-    position:           Optional[str] = None
-    submitter_label:    Optional[str] = None
-    is_anonymous:       bool = True
-
-
-class ModerationDecision(BaseModel):
-    decision:       str   # APPROVED ou REJECTED
-    moderation_note: Optional[str] = None
-
-
-# ── COUCHE 0 -- ENDPOINTS PUBLICS ─────────────────────────────
-
-@router.get(
-    "/topics",
-    summary="Sujets de consultation ouverts -- 54 pays",
+@router.get("/my-contributions",
+    response_model=List[TicketHistoryItem],
+    summary="Historique des contributions -- D1",
     description=(
-        "Retourne les sujets de consultation souveraine ouverts. "
-        "Inclut consultations scientifiques et doctrinales OSA. "
-        "Acces libre -- Couche 0."
+        "Retourne l'historique des contributions. "
+        "AFFILIE : ses propres contributions uniquement. "
+        "ADMIN/COMITE_TECH/COMITE_SCI/COMITE_ETHIQUE : historique complet."
     ),
 )
-async def get_topics(
-    db:           Session       = Depends(get_db),
-    topic_type:   Optional[str] = Query(default=None, description="Type de consultation"),
-    region:       Optional[str] = Query(default=None),
-    priority:     Optional[int] = Query(default=None, description="Priorite 1=CRITICAL 2=HIGH 3=STANDARD"),
-):
-    data = _rows(db, """
-        SELECT *
-        FROM pub.v_isa_public_consultation_topics
-        WHERE (:type     IS NULL OR consultation_type = :type)
-          AND (:region   IS NULL OR region_code       = :region)
-          AND (:priority IS NULL OR queue_priority    = :priority)
-        ORDER BY queue_priority, country_iso3, pillar_code
-    """, {
-        "type":     topic_type.upper() if topic_type else None,
-        "region":   region.upper()     if region     else None,
-        "priority": priority,
-    })
-    return _json({
-        "count":       len(data),
-        "disclaimer":  _DISCLAIMER,
-        "consultation_types": sorted(_VALID_TYPES),
-        "data":        data,
-    })
-
-
-@router.get(
-    "/topics/{iso3}",
-    summary="Sujets de consultation -- un pays",
-)
-async def get_country_topics(iso3: str, db: Session = Depends(get_db)):
-    data = _rows(db, """
-        SELECT * FROM pub.v_isa_public_consultation_topics
-        WHERE country_iso3 = :iso3
-        ORDER BY queue_priority, pillar_code
-    """, {"iso3": iso3.upper()})
-    if not data:
-        return JSONResponse(status_code=404,
-            content={"error": f"Country {iso3.upper()} not found"})
-    return _json({"country_iso3": iso3.upper(), "disclaimer": _DISCLAIMER, "data": data})
-
-
-@router.get(
-    "/topics/type/{consultation_type}",
-    summary="Sujets par type de consultation",
-    description=(
-        "Types disponibles : RISK_EVIDENCE_REVIEW, OPPORTUNITY_EXPLORATION_FEEDBACK, "
-        "WEAKNESS_DIAGNOSTIC_REVIEW, STRENGTH_REPLICATION_FEEDBACK, "
-        "GENERAL_OBSERVATORY_FEEDBACK, SCIENTIFIC_FRAMEWORK_REVIEW, DOCTRINE_REVIEW"
-    ),
-)
-async def get_topics_by_type(
-    consultation_type: str,
+def get_my_contributions(
+    limit: int = 50,
+    payload: dict = Depends(get_current_affiliate),
     db: Session = Depends(get_db),
 ):
-    ctype = consultation_type.upper()
-    if ctype not in _VALID_TYPES:
-        raise HTTPException(status_code=400,
-            detail=f"Invalid consultation type. Valid types: {sorted(_VALID_TYPES)}")
-    data = _rows(db, """
-        SELECT * FROM pub.v_isa_public_consultation_topics
-        WHERE consultation_type = :type
-        ORDER BY queue_priority, country_iso3
-    """, {"type": ctype})
-    return _json({
-        "consultation_type": ctype,
-        "count":             len(data),
-        "disclaimer":        _DISCLAIMER,
-        "data":              data,
-    })
+    affiliate_id = int(payload["sub"])
+    role = payload.get("role", "AFFILIE")
 
-
-@router.post(
-    "/submit",
-    summary="Soumettre une reponse de consultation",
-    description=(
-        "Soumet une reponse citoyenne ou institutionnelle. "
-        "La reponse est en attente de moderation avant publication. "
-        "Les retours SCIENTIFIC_FRAMEWORK_REVIEW et DOCTRINE_REVIEW "
-        "alimentent l agenda du Conseil scientifique OSA."
-    ),
-)
-async def submit_response(
-    data: ConsultationSubmit,
-    db:   Session = Depends(get_db),
-):
-    # Validation type
-    if data.consultation_type not in _VALID_TYPES:
-        raise HTTPException(status_code=400,
-            detail=f"Invalid consultation_type. Valid: {sorted(_VALID_TYPES)}")
-    if data.position and data.position.upper() not in _VALID_POSITIONS:
-        raise HTTPException(status_code=400,
-            detail=f"Invalid position. Valid: {sorted(_VALID_POSITIONS)}")
-    if len(data.response_text.strip()) < 20:
-        raise HTTPException(status_code=400,
-            detail="response_text must be at least 20 characters")
-
-    row = db.execute(text("""
-        INSERT INTO mg.consultation_responses
-            (country_iso3, year, pillar_code, consultation_type,
-             response_text, evidence_url, position,
-             submitter_label, is_anonymous,
-             moderation_status, is_public)
-        VALUES
-            (:iso3, :year, :pillar, :ctype,
-             :text, :url, :position,
-             :label, :anon,
-             'PENDING', FALSE)
-        RETURNING response_id, created_at
-    """), {
-        "iso3":     data.country_iso3.upper(),
-        "year":     data.year,
-        "pillar":   data.pillar_code.upper() if data.pillar_code else None,
-        "ctype":    data.consultation_type.upper(),
-        "text":     data.response_text.strip(),
-        "url":      data.evidence_url,
-        "position": data.position.upper() if data.position else None,
-        "label":    data.submitter_label if not data.is_anonymous else None,
-        "anon":     data.is_anonymous,
-    }).mappings().fetchone()
-    db.commit()
-
-    # Message specifique pour consultations scientifiques/doctrinales
-    if data.consultation_type in ("SCIENTIFIC_FRAMEWORK_REVIEW", "DOCTRINE_REVIEW"):
-        note = (
-            "Your contribution will be reviewed by the OSA moderation team "
-            "and submitted to the OSA Scientific Council agenda."
-        )
+    if role in FULL_HISTORY_ROLES:
+        rows = db.execute(text("""
+            SELECT ticket_ref, ticket_type, status, subject,
+                   submitter_name, country_iso3, pillar_code,
+                   created_at, resolved_at
+            FROM mg.pilot_tickets
+            ORDER BY created_at DESC
+            LIMIT :limit
+        """), {"limit": limit}).mappings().all()
     else:
-        note = (
-            "Your contribution will be reviewed by the OSA moderation team "
-            "before publication."
+        rows = db.execute(text("""
+            SELECT ticket_ref, ticket_type, status, subject,
+                   submitter_name, country_iso3, pillar_code,
+                   created_at, resolved_at
+            FROM mg.pilot_tickets
+            WHERE affiliate_id = :affiliate_id
+            ORDER BY created_at DESC
+            LIMIT :limit
+        """), {"affiliate_id": affiliate_id, "limit": limit}).mappings().all()
+
+    return [
+        {
+            "ticket_ref":     r["ticket_ref"],
+            "ticket_type":    r["ticket_type"],
+            "status":         r["status"],
+            "subject":        r["subject"],
+            "submitter_name": r["submitter_name"],
+            "country_iso3":   r["country_iso3"],
+            "pillar_code":    r["pillar_code"],
+            "created_at":     str(r["created_at"]),
+            "resolved_at":    str(r["resolved_at"]) if r["resolved_at"] else None,
+        }
+        for r in rows
+    ]
+
+
+class ContributionCreate(BaseModel):
+    ticket_type:    str
+    subject:        str
+    description:    str
+    country_iso3:   Optional[str] = None
+    pillar_code:    Optional[str] = None
+    indicator_code: Optional[str] = None
+    year_concerned: Optional[int] = None
+    evidence_url:   Optional[str] = None
+
+
+@router.post("/contributions",
+    summary="Soumettre une contribution tracable -- D1",
+    description="Soumission authentifiee liee a affiliate_id. Roles : tous affilies actifs.")
+def submit_contribution(
+    data: ContributionCreate,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+    email = payload.get("email", "")
+
+    allowed_types = ("QUESTION", "SUGGESTION")
+    if data.ticket_type not in allowed_types:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Type {data.ticket_type} non autorise. Utiliser QUESTION ou SUGGESTION."
         )
 
-    return _json({
-        "status":       "SUBMITTED",
-        "response_id":  row["response_id"],
-        "created_at":   str(row["created_at"]),
-        "moderation":   "PENDING",
-        "note":         note,
-    })
-
-
-# ── COUCHE 1 -- ENDPOINTS AFFILIÉS ───────────────────────────
-
-@router.get(
-    "/queue",
-    summary="File de consultation prioritaire -- Couche 1",
-    description="Retourne la file de consultation complete avec priorites P7J. Affilie standard requis.",
-)
-async def get_queue(
-    db:     Session       = Depends(get_db),
-    auth:   dict          = Depends(validate_standard_access),
-    region: Optional[str] = Query(default=None),
-    ctype:  Optional[str] = Query(default=None, alias="type"),
-):
-    data = _rows(db, """
-        SELECT * FROM ma.v_isa_eparticipation_queue
-        WHERE (:region IS NULL OR region_code        = :region)
-          AND (:type   IS NULL OR consultation_type  = :type)
-        ORDER BY queue_priority, intervention_priority_score DESC
-    """, {
-        "region": region.upper() if region else None,
-        "type":   ctype.upper()  if ctype  else None,
-    })
-    return _json({
-        "count":  len(data),
-        "access": "Couche 1 -- Affilie Standard",
-        "data":   data,
-    })
-
-
-@router.get(
-    "/queue/{iso3}",
-    summary="File de consultation -- un pays -- Couche 1",
-)
-async def get_country_queue(
-    iso3: str,
-    db:   Session = Depends(get_db),
-    auth: dict    = Depends(validate_standard_access),
-):
-    data = _rows(db, """
-        SELECT * FROM ma.v_isa_eparticipation_queue
-        WHERE country_iso3 = :iso3
-        ORDER BY queue_priority, intervention_priority_score DESC
-    """, {"iso3": iso3.upper()})
-    if not data:
-        return JSONResponse(status_code=404,
-            content={"error": f"Country {iso3.upper()} not found"})
-    return _json({"country_iso3": iso3.upper(), "access": "Couche 1 -- Affilie Standard", "data": data})
-
-
-@router.get(
-    "/priorities",
-    summary="Priorites engagement e-participation -- Couche 1",
-)
-async def get_priorities(
-    db:     Session       = Depends(get_db),
-    auth:   dict          = Depends(validate_standard_access),
-    region: Optional[str] = Query(default=None),
-):
-    data = _rows(db, """
-        SELECT * FROM ma.v_isa_eparticipation_priorities
-        WHERE (:region IS NULL OR region_code = :region)
-        ORDER BY nb_priority_critical DESC, total_consultations DESC
-    """, {"region": region.upper() if region else None})
-    return _json({
-        "count":  len(data),
-        "access": "Couche 1 -- Affilie Standard",
-        "data":   data,
-    })
-
-
-# ── ADMIN -- ENDPOINTS EXPERT ─────────────────────────────────
-
-@router.get(
-    "/admin/pending",
-    summary="Reponses en attente de moderation -- Expert",
-)
-async def get_pending(
-    db:   Session = Depends(get_db),
-    auth: dict    = Depends(validate_expert_access),
-):
-    data = _rows(db, """
-        SELECT
-            response_id, country_iso3, year, pillar_code,
-            consultation_type, response_text, position,
-            evidence_url, submitter_label, is_anonymous,
-            created_at
-        FROM mg.consultation_responses
-        WHERE moderation_status = 'PENDING'
-        ORDER BY created_at ASC
-    """)
-    return _json({"count": len(data), "access": "Expert -- OSA Internal", "data": data})
-
-
-@router.post(
-    "/admin/moderate/{response_id}",
-    summary="Approuver ou rejeter une reponse -- Expert",
-)
-async def moderate_response(
-    response_id: int,
-    decision:    ModerationDecision,
-    db:          Session = Depends(get_db),
-    auth:        dict    = Depends(validate_expert_access),
-):
-    if decision.decision.upper() not in ("APPROVED", "REJECTED"):
-        raise HTTPException(status_code=400,
-            detail="decision must be APPROVED or REJECTED")
-
-    is_public = decision.decision.upper() == "APPROVED"
+    affiliate = db.execute(
+        text("SELECT first_name, last_name FROM mg.affiliates WHERE id = :id"),
+        {"id": affiliate_id}
+    ).mappings().first()
+    full_name = f"{affiliate['first_name']} {affiliate['last_name']}" if affiliate else email
 
     row = db.execute(text("""
-        UPDATE mg.consultation_responses
-        SET moderation_status = :decision,
-            moderated_at      = NOW(),
-            moderation_note   = :note,
-            is_public         = :public,
-            updated_at        = NOW()
-        WHERE response_id = :id
-        RETURNING response_id, country_iso3, consultation_type, moderation_status
+        INSERT INTO mg.pilot_tickets
+            (ticket_type, subject, description,
+             submitter_email, submitter_name, affiliate_id,
+             country_iso3, pillar_code, indicator_code, year_concerned,
+             evidence_url)
+        VALUES
+            (:type, :subject, :description,
+             :email, :name, :affiliate_id,
+             :iso3, :pillar, :indicator, :year,
+             :evidence)
+        RETURNING ticket_id, ticket_ref, status, created_at
     """), {
-        "decision": decision.decision.upper(),
-        "note":     decision.moderation_note,
-        "public":   is_public,
-        "id":       response_id,
-    }).mappings().fetchone()
+        "type":        data.ticket_type,
+        "subject":     data.subject,
+        "description": data.description,
+        "email":       email,
+        "name":        full_name,
+        "affiliate_id": affiliate_id,
+        "iso3":        data.country_iso3.upper() if data.country_iso3 else None,
+        "pillar":      data.pillar_code.upper() if data.pillar_code else None,
+        "indicator":   data.indicator_code.upper() if data.indicator_code else None,
+        "year":        data.year_concerned,
+        "evidence":    data.evidence_url,
+    }).mappings().one()
     db.commit()
 
-    if not row:
-        raise HTTPException(status_code=404,
-            detail=f"Response {response_id} not found")
-
-    return _json({
-        "status":       "MODERATED",
-        "response_id":  row["response_id"],
-        "country_iso3": row["country_iso3"],
-        "consultation_type": row["consultation_type"],
-        "moderation_status": row["moderation_status"],
-        "is_public":    is_public,
-    })
+    return {
+        "ticket_ref": row["ticket_ref"],
+        "ticket_id":  row["ticket_id"],
+        "status":     row["status"],
+        "created_at": str(row["created_at"]),
+        "message":    f"Contribution {row['ticket_ref']} enregistree et liee a votre profil affilie.",
+    }

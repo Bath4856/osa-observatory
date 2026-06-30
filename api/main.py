@@ -23,8 +23,10 @@ from api.routers.tokens import router as tokens_router, public_router as tokens_
 from api.routers.tickets import public_router as tickets_public_router, admin_router as tickets_admin_router
 from api.routers.affiliation import router as affiliation_router
 from api.routers.auth_affiliates import router as auth_affiliates_router
+from api.routers.eparticipation import router as eparticipation_router
 # SPRINT17 -- Authentification JWT
 from api.routers.auth_affiliates import router as auth_affiliates_router
+from api.routers.eparticipation import router as eparticipation_router
 # SPRINT17 -- Rate limiting
 from api.middleware.rate_limiter import rate_limit_middleware
 # SPRINT17 -- Metriques Prometheus
@@ -135,8 +137,10 @@ app.include_router(tokens_public_router)
 app.include_router(tickets_public_router)
 app.include_router(affiliation_router)
 app.include_router(auth_affiliates_router)
+app.include_router(eparticipation_router)
 app.include_router(tickets_admin_router)
-app.include_router(auth_affiliates_router)          # SPRINT17 -- JWT /auth/*
+app.include_router(auth_affiliates_router)
+app.include_router(eparticipation_router)          # SPRINT17 -- JWT /auth/*
 
 # ── Redirection 301 -- compatibilite endpoint rankings (Sprint 19 -- suppression Sprint 21)
 @app.get("/api/v2/rankings", include_in_schema=False)
