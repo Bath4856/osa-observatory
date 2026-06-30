@@ -137,7 +137,7 @@ def submit_affiliation_request(
     ticket = db.execute(text("""
         INSERT INTO mg.pilot_tickets
             (ticket_type, subject, description,
-             submitter_email, submitter_name, affiliation_id)
+             submitter_email, submitter_name, affiliate_id)
         VALUES
             ('QUESTION',
              'DEMANDE_AFFILIATION -- ' || :org_name,
