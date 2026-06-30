@@ -159,12 +159,12 @@ def submit_affiliation_request(
     if existing:
         if existing["status"] in ("ACTIVE", "AFFILIATED"):
             raise HTTPException(status_code=409, detail={
-                "fr": "Un compte actif existe deja pour cet email.",
+                "fr": "Un compte actif existe déjà pour cet email.",
                 "en": "An active account already exists for this email."
             })
         elif existing["status"] in ("PENDING", "PENDING_EMAIL"):
             raise HTTPException(status_code=409, detail={
-                "fr": "Une demande est deja en cours pour cet email. Verifiez votre boite mail.",
+                "fr": "Une demande est déjà en cours pour cet email. Vérifiez votre boîte mail.",
                 "en": "A request is already pending for this email. Please check your inbox."
             })
 
@@ -216,7 +216,7 @@ def submit_affiliation_request(
         "status":       "PENDING_EMAIL",
         "email_sent":   email_sent,
         "message": {
-            "fr": "Verifiez votre boite mail pour confirmer votre adresse et activer votre compte affilie.",
+            "fr": "Vérifiez votre boîte mail pour confirmer votre adresse et activer votre compte affilié.",
             "en": "Please check your inbox to confirm your email and activate your affiliate account."
         },
     }
@@ -246,14 +246,14 @@ def confirm_email(token: str, db: Session = Depends(get_db)):
 
     if token_row["used_at"]:
         raise HTTPException(status_code=400, detail={
-            "fr": "Ce lien a deja ete utilise.",
+            "fr": "Ce lien a déjà été utilisé.",
             "en": "This link has already been used."
         })
 
     import datetime
     if token_row["expires_at"] < datetime.datetime.utcnow():
         raise HTTPException(status_code=400, detail={
-            "fr": "Ce lien a expire. Veuillez soumettre une nouvelle demande d'affiliation.",
+            "fr": "Ce lien a expiré. Veuillez soumettre une nouvelle demande d'affiliation.",
             "en": "This link has expired. Please submit a new affiliation request."
         })
 
@@ -280,7 +280,7 @@ def confirm_email(token: str, db: Session = Depends(get_db)):
         "affiliate_id": token_row["affiliate_id"],
         "status":       "AFFILIATED",
         "message": {
-            "fr": "Votre email a ete confirme. Votre compte affilie est desormais actif.",
+            "fr": "Votre email a été confirmé. Votre compte affilié est désormais actif.",
             "en": "Your email has been confirmed. Your affiliate account is now active."
         },
     }

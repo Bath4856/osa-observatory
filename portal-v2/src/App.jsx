@@ -8,6 +8,7 @@ import CountryISA from './pages/CountryISA'
 import Projects from './pages/Projects'
 import ProjectDetail from './pages/ProjectDetail'
 import Register from './pages/Register'
+import ConfirmEmail from './pages/ConfirmEmail'
 import Pillar from './pages/Pillar'
 import Pillars from './pages/Pillars'
 import About from './pages/About'
@@ -45,6 +46,7 @@ const router = createBrowserRouter([
       { path: '/country/:iso3/conflict-economy', element: <ConflictEconomyDetail /> },
       { path: '/country/:iso3/iosa',             element: <IosaDetail /> },
       { path: '/register',                       element: <Register /> },
+      { path: '/confirm-email',                  element: <ConfirmEmail /> },
       { path: '/pillars',                        element: <Pillars /> },
       { path: '/pillar/:code',                   element: <Pillar /> },
       { path: '/about',                          element: <About /> },
