@@ -511,3 +511,301 @@ def close_proposal(
 
     db.commit()
     return {"id": proposal_id, "status": "CLOSED", "message": {"fr": "Proposition cloturee. Resultats desormais visibles.", "en": "Proposal closed. Results now visible."}}
+
+
+# ── Sprint 30 R2 -- File d'examen des contributions ───────────────────────────
+
+DECISION_ROLES = {"ADMIN", "COMITE_TECH"}
+GOVERNANCE_ROLES = {"ADMIN", "COMITE_TECH", "COMITE_SCI", "COMITE_ETHIQUE"}
+
+
+class ReviewCreate(BaseModel):
+    contribution_type: str
+    contribution_id:   int
+    step_number:       int
+    verdict_code:      str
+    comment:           Optional[str] = None
+
+
+class DecisionCreate(BaseModel):
+    contribution_type: str
+    contribution_id:   int
+    final_decision:    str
+    justification:     Optional[str] = None
+
+
+@router.post("/reviews",
+    summary="Evaluer une contribution -- R2",
+    description="Evaluation pilotee par les referentiels mg.review_steps et mg.review_verdicts.")
+def submit_review(
+    data: ReviewCreate,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    role = payload.get("role", "")
+
+    # Charger l'etape depuis le referentiel
+    step = db.execute(text("""
+        SELECT step_number, criterion, evaluator_role
+        FROM mg.review_steps
+        WHERE step_number = :step AND is_active = TRUE
+    """), {"step": data.step_number}).mappings().first()
+
+    if not step:
+        raise HTTPException(status_code=400, detail={
+            "fr": f"Etape {data.step_number} invalide ou inactive.",
+            "en": f"Step {data.step_number} is invalid or inactive."
+        })
+
+    # Verifier le role evaluateur
+    if role != step["evaluator_role"] and role != "ADMIN":
+        raise HTTPException(status_code=403, detail={
+            "fr": f"L'etape {data.step_number} ({step['criterion']}) est reservee au role {step['evaluator_role']}.",
+            "en": f"Step {data.step_number} ({step['criterion']}) is reserved for the {step['evaluator_role']} role."
+        })
+
+    # Verifier le verdict depuis le referentiel
+    verdict = db.execute(text("""
+        SELECT code, label_fr, label_en
+        FROM mg.review_verdicts
+        WHERE code = :code AND criterion = :criterion
+    """), {"code": data.verdict_code, "criterion": step["criterion"]}).mappings().first()
+
+    if not verdict:
+        valid_verdicts = db.execute(text("""
+            SELECT code FROM mg.review_verdicts WHERE criterion = :criterion
+        """), {"criterion": step["criterion"]}).mappings().all()
+        raise HTTPException(status_code=400, detail={
+            "fr": f"Verdict invalide pour {step['criterion']}. Verdicts possibles : {[v['code'] for v in valid_verdicts]}",
+            "en": f"Invalid verdict for {step['criterion']}. Possible verdicts: {[v['code'] for v in valid_verdicts]}"
+        })
+
+    if data.contribution_type not in ("TICKET", "PROPOSAL"):
+        raise HTTPException(status_code=400, detail="Type invalide : TICKET ou PROPOSAL.")
+
+    # Recuperer la politique pour cette transition
+    policy = db.execute(text("""
+        SELECT action FROM mg.review_policies
+        WHERE criterion = :criterion AND verdict_code = :verdict
+    """), {"criterion": step["criterion"], "verdict": data.verdict_code}).mappings().first()
+
+    try:
+        row = db.execute(text("""
+            INSERT INTO mg.contribution_reviews
+                (contribution_type, contribution_id, step_number,
+                 criterion_code, verdict_code, affiliate_id, comment)
+            VALUES
+                (:type, :contrib_id, :step_number,
+                 :criterion_code, :verdict_code, :affiliate_id, :comment)
+            RETURNING id, evaluated_at
+        """), {
+            "type":           data.contribution_type,
+            "contrib_id":     data.contribution_id,
+            "step_number":    data.step_number,
+            "criterion_code": step["criterion"],
+            "verdict_code":   data.verdict_code,
+            "affiliate_id":   int(payload["sub"]),
+            "comment":        data.comment,
+        }).mappings().one()
+
+        # Recuperer l'etat actuel de la contribution
+        tbl = 'pilot_tickets' if data.contribution_type == 'TICKET' else 'methodological_proposals'
+        pk  = 'ticket_id'     if data.contribution_type == 'TICKET' else 'id'
+        current_state_row = db.execute(text(
+            f"SELECT workflow_state FROM mg.{tbl} WHERE {pk} = :id"
+        ), {"id": data.contribution_id}).mappings().first()
+        current_state = current_state_row["workflow_state"] if current_state_row else "SUBMITTED"
+
+        # Calculer le prochain etat via mg.workflow_transitions
+        action = policy["action"] if policy else "NEXT"
+        next_state_row = db.execute(text("""
+            SELECT to_state FROM mg.workflow_transitions
+            WHERE from_state = :from_state AND trigger_action = :action
+            LIMIT 1
+        """), {"from_state": current_state, "action": action}).mappings().first()
+        next_state = next_state_row["to_state"] if next_state_row else current_state
+
+        # Mettre a jour le workflow_state sur la contribution
+        db.execute(text(
+            f"UPDATE mg.{tbl} SET workflow_state = :state WHERE {pk} = :id"
+        ), {"state": next_state, "id": data.contribution_id})
+
+        # Enregistrer dans workflow_history
+        db.execute(text("""
+            INSERT INTO mg.workflow_history
+                (contribution_type, contribution_id, from_state, to_state,
+                 trigger_action, affiliate_id, comment)
+            VALUES
+                (:type, :contrib_id, :from_state, :to_state,
+                 :action, :affiliate_id, :comment)
+        """), {
+            "type":         data.contribution_type,
+            "contrib_id":   data.contribution_id,
+            "from_state":   current_state,
+            "to_state":     next_state,
+            "action":       action,
+            "affiliate_id": int(payload["sub"]),
+            "comment":      data.comment,
+        })
+
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=409, detail={
+            "fr": "Cette etape a deja ete evaluee pour cette contribution.",
+            "en": "This step has already been evaluated for this contribution."
+        })
+
+    return {
+        "id":            row["id"],
+        "step_number":   data.step_number,
+        "criterion":     step["criterion"],
+        "verdict_code":  data.verdict_code,
+        "policy_action": policy["action"] if policy else None,
+        "evaluated_at":  str(row["evaluated_at"]),
+        "message": {
+            "fr": f"Etape {data.step_number} ({step['criterion']}) evaluee : {data.verdict_code}. Action : {policy['action'] if policy else 'N/A'}.",
+            "en": f"Step {data.step_number} ({step['criterion']}) evaluated: {data.verdict_code}. Action: {policy['action'] if policy else 'N/A'}."
+        }
+    }
+
+
+@router.get("/reviews/{contribution_type}/{contribution_id}",
+    summary="Lister les evaluations d'une contribution -- R2",
+    description="Reserve aux roles de gouvernance. Retourne les evaluations + workflow_history + decision finale.")
+def get_reviews(
+    contribution_type: str,
+    contribution_id:   int,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    role = payload.get("role", "")
+    if role not in GOVERNANCE_ROLES:
+        raise HTTPException(status_code=403, detail={
+            "fr": "Reserve aux roles de gouvernance OSA.",
+            "en": "Reserved for OSA governance roles."
+        })
+
+    rows = db.execute(text("""
+        SELECT r.id, r.step_number, r.criterion_code, r.verdict_code,
+               r.comment, r.evaluated_at,
+               s.label_fr AS step_label_fr, s.label_en AS step_label_en,
+               s.evaluator_role,
+               v.label_fr AS verdict_label_fr, v.label_en AS verdict_label_en,
+               v.is_positive,
+               p.action AS policy_action,
+               a.first_name, a.last_name
+        FROM mg.contribution_reviews r
+        JOIN mg.review_steps   s ON s.criterion    = r.criterion_code
+        JOIN mg.review_verdicts v ON v.code         = r.verdict_code
+        LEFT JOIN mg.review_policies p ON p.criterion = r.criterion_code AND p.verdict_code = r.verdict_code
+        LEFT JOIN mg.affiliates a ON a.id = r.affiliate_id
+        WHERE r.contribution_type = :type AND r.contribution_id = :id
+        ORDER BY r.step_number
+    """), {"type": contribution_type.upper(), "id": contribution_id}).mappings().all()
+
+    history = db.execute(text("""
+        SELECT from_state, to_state, trigger_action, transitioned_at,
+               a.first_name, a.last_name
+        FROM mg.workflow_history h
+        LEFT JOIN mg.affiliates a ON a.id = h.affiliate_id
+        WHERE h.contribution_type = :type AND h.contribution_id = :id
+        ORDER BY h.transitioned_at
+    """), {"type": contribution_type.upper(), "id": contribution_id}).mappings().all()
+
+    decision = db.execute(text("""
+        SELECT final_decision, justification, decided_at
+        FROM mg.contribution_decisions
+        WHERE contribution_type = :type AND contribution_id = :id
+    """), {"type": contribution_type.upper(), "id": contribution_id}).mappings().first()
+
+    return {
+        "contribution_type": contribution_type.upper(),
+        "contribution_id":   contribution_id,
+        "steps_completed":   len(rows),
+        "steps_pending":     [s for s in range(1, 5) if s not in [r["step_number"] for r in rows]],
+        "reviews": [{
+            "step_number":     r["step_number"],
+            "criterion":       r["criterion_code"],
+            "step_label":      {"fr": r["step_label_fr"], "en": r["step_label_en"]},
+            "evaluator_role":  r["evaluator_role"],
+            "verdict":         r["verdict_code"],
+            "verdict_label":   {"fr": r["verdict_label_fr"], "en": r["verdict_label_en"]},
+            "is_positive":     r["is_positive"],
+            "policy_action":   r["policy_action"],
+            "comment":         r["comment"],
+            "evaluated_at":    str(r["evaluated_at"]),
+            "evaluator":       f"{r['first_name']} {r['last_name']}" if r["first_name"] else None,
+        } for r in rows],
+        "workflow_history": [{
+            "from_state":     r["from_state"],
+            "to_state":       r["to_state"],
+            "trigger_action": r["trigger_action"],
+            "transitioned_at": str(r["transitioned_at"]),
+            "by":             f"{r['first_name']} {r['last_name']}" if r["first_name"] else None,
+        } for r in history],
+        "final_decision": {
+            "decision":      decision["final_decision"],
+            "justification": decision["justification"],
+            "decided_at":    str(decision["decided_at"]),
+        } if decision else None,
+    }
+
+
+@router.post("/decisions",
+    summary="Rendre la decision finale -- R2",
+    description="Reserve a ADMIN et COMITE_TECH. Synthetise les evaluations en une decision unique.")
+def submit_decision(
+    data: DecisionCreate,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    role = payload.get("role", "")
+    if role not in DECISION_ROLES:
+        raise HTTPException(status_code=403, detail={
+            "fr": "La decision finale est reservee a l'equipe OSA et au Comite technique.",
+            "en": "The final decision is reserved for the OSA team and the Technical Committee."
+        })
+
+    valid_decisions = db.execute(text("""
+        SELECT final_decision FROM mg.contribution_decisions LIMIT 0
+        UNION VALUES ('APPROVED'), ('REVISION_REQUESTED'), ('REJECTED'), ('ARCHIVED')
+    """)).mappings().all()
+
+    if data.final_decision not in ("APPROVED", "REVISION_REQUESTED", "REJECTED", "ARCHIVED"):
+        raise HTTPException(status_code=400, detail={
+            "fr": "Decision invalide. Choix : APPROVED, REVISION_REQUESTED, REJECTED, ARCHIVED.",
+            "en": "Invalid decision. Choices: APPROVED, REVISION_REQUESTED, REJECTED, ARCHIVED."
+        })
+
+    try:
+        row = db.execute(text("""
+            INSERT INTO mg.contribution_decisions
+                (contribution_type, contribution_id, final_decision,
+                 justification, decided_by)
+            VALUES (:type, :contrib_id, :decision, :justification, :decided_by)
+            RETURNING id, decided_at
+        """), {
+            "type":          data.contribution_type,
+            "contrib_id":    data.contribution_id,
+            "decision":      data.final_decision,
+            "justification": data.justification,
+            "decided_by":    int(payload["sub"]),
+        }).mappings().one()
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=409, detail={
+            "fr": "Une decision a deja ete rendue pour cette contribution.",
+            "en": "A decision has already been made for this contribution."
+        })
+
+    return {
+        "id":             row["id"],
+        "final_decision": data.final_decision,
+        "decided_at":     str(row["decided_at"]),
+        "message": {
+            "fr": f"Decision finale rendue : {data.final_decision}.",
+            "en": f"Final decision rendered: {data.final_decision}."
+        }
+    }
