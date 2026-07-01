@@ -1065,3 +1065,114 @@ def review_cooptation(
             "en": f"Proposal {proposal_id}: status updated ({data.status})."
         }
     }
+
+
+# ── Sprint 30 R4.3 -- Dashboard securite + alertes Admin ──────────────────────
+
+@router.get("/security/events",
+    summary="Dashboard evenements de securite -- R4.3",
+    description="Reserve a l'Admin. Liste les evenements non traites par severite.")
+def get_security_events(
+    severity:   Optional[str] = None,
+    processed:  Optional[bool] = False,
+    limit:      int = 50,
+    payload:    dict = Depends(get_current_affiliate),
+    db:         Session = Depends(get_db),
+):
+    role = payload.get("role", "")
+    if role != "ADMIN":
+        raise HTTPException(status_code=403, detail={
+            "fr": "Reserve a l'administrateur OSA.",
+            "en": "Reserved for the OSA administrator."
+        })
+
+    conditions = []
+    params = {"limit": limit}
+
+    if severity:
+        conditions.append("e.severity = :severity")
+        params["severity"] = severity.upper()
+    if processed is not None:
+        conditions.append("e.processed = :processed")
+        params["processed"] = processed
+
+    where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
+
+    rows = db.execute(text(f"""
+        SELECT e.id, e.event_type, e.severity, e.ip_address, e.email,
+               e.domain, e.endpoint, e.details, e.processed,
+               e.processed_at, e.created_at,
+               t.label_fr, t.label_en, t.category,
+               a.first_name, a.last_name
+        FROM mg.security_events e
+        JOIN mg.event_types t ON t.code = e.event_type
+        LEFT JOIN mg.affiliates a ON a.id = e.affiliate_id
+        {where_clause}
+        ORDER BY e.created_at DESC
+        LIMIT :limit
+    """), params).mappings().all()
+
+    # Compter les alertes non traitees par severite
+    stats = db.execute(text("""
+        SELECT severity, COUNT(*) AS count
+        FROM mg.security_events
+        WHERE processed = FALSE
+        GROUP BY severity
+        ORDER BY CASE severity
+            WHEN 'CRITICAL' THEN 1
+            WHEN 'ALERT'    THEN 2
+            WHEN 'WARNING'  THEN 3
+            ELSE 4 END
+    """)).mappings().all()
+
+    return {
+        "unprocessed_summary": [{"severity": r["severity"], "count": r["count"]} for r in stats],
+        "events": [{
+            "id":           r["id"],
+            "event_type":   r["event_type"],
+            "category":     r["category"],
+            "label":        {"fr": r["label_fr"], "en": r["label_en"]},
+            "severity":     r["severity"],
+            "ip_address":   r["ip_address"],
+            "email":        r["email"],
+            "domain":       r["domain"],
+            "endpoint":     r["endpoint"],
+            "details":      r["details"],
+            "processed":    r["processed"],
+            "processed_at": str(r["processed_at"]) if r["processed_at"] else None,
+            "created_at":   str(r["created_at"]),
+            "affiliate":    f"{r['first_name']} {r['last_name']}" if r["first_name"] else None,
+        } for r in rows]
+    }
+
+
+@router.patch("/security/events/{event_id}/process",
+    summary="Marquer un evenement comme traite -- R4.3",
+    description="Reserve a l'Admin.")
+def process_security_event(
+    event_id: int,
+    payload:  dict = Depends(get_current_affiliate),
+    db:       Session = Depends(get_db),
+):
+    role = payload.get("role", "")
+    if role != "ADMIN":
+        raise HTTPException(status_code=403, detail={
+            "fr": "Reserve a l'administrateur OSA.",
+            "en": "Reserved for the OSA administrator."
+        })
+
+    result = db.execute(text("""
+        UPDATE mg.security_events
+        SET processed = TRUE, processed_at = NOW(), processed_by = :by
+        WHERE id = :id AND processed = FALSE
+        RETURNING id
+    """), {"id": event_id, "by": int(payload["sub"])}).mappings().first()
+
+    if not result:
+        raise HTTPException(status_code=404, detail="Evenement non trouve ou deja traite.")
+
+    db.commit()
+    return {"id": event_id, "processed": True, "message": {
+        "fr": "Evenement marque comme traite.",
+        "en": "Event marked as processed."
+    }}

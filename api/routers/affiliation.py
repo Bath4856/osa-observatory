@@ -15,6 +15,7 @@ from sqlalchemy import text
 from pydantic import BaseModel, Field
 from typing import Optional
 from api.db import get_db
+from fastapi import Request
 
 router = APIRouter(
     prefix="/api/v1/affiliation",
@@ -135,6 +136,126 @@ open.osa-observatory.africa
         body_fr + "\n\n---\n\n" + body_en
     )
 
+# ── Rate-limiting + journalisation ───────────────────────────────────────────
+
+def log_security_event(db, event_type: str, severity: str = None,
+                        ip: str = None, email: str = None,
+                        endpoint: str = None, details: dict = None,
+                        affiliate_id: int = None):
+    import json
+    try:
+        # Recuperer la severite par defaut si non fournie
+        if not severity:
+            row = db.execute(
+                text("SELECT default_severity FROM mg.event_types WHERE code = :code"),
+                {"code": event_type}
+            ).mappings().first()
+            severity = row["default_severity"] if row else "INFO"
+
+        domain = email.split("@")[1] if email and "@" in email else None
+
+        db.execute(text("""
+            INSERT INTO mg.security_events
+                (event_type, severity, ip_address, email, domain,
+                 endpoint, affiliate_id, details)
+            VALUES
+                (:event_type, :severity, :ip, :email, :domain,
+                 :endpoint, :affiliate_id, :details)
+        """), {
+            "event_type":   event_type,
+            "severity":     severity,
+            "ip":           ip,
+            "email":        email,
+            "domain":       domain,
+            "endpoint":     endpoint,
+            "affiliate_id": affiliate_id,
+            "details":      json.dumps(details) if details else None,
+        })
+        db.commit()
+    except Exception:
+        pass  # Ne jamais bloquer sur la journalisation
+
+
+def check_rate_limit(db, endpoint: str, ip: str = None,
+                     email: str = None) -> dict:
+    """
+    Verifie les limites de taux depuis mg.rate_limit_policies.
+    Retourne {"allowed": True} ou {"allowed": False, "action": ..., "retry_after": ...}
+    """
+    from datetime import datetime, timedelta
+
+    policies = db.execute(text("""
+        SELECT key_type, window_minutes, max_requests, action
+        FROM mg.rate_limit_policies
+        WHERE endpoint = :endpoint AND is_active = TRUE
+        ORDER BY key_type
+    """), {"endpoint": endpoint}).mappings().all()
+
+    for policy in policies:
+        key_type = policy["key_type"]
+        window   = policy["window_minutes"]
+        max_req  = policy["max_requests"]
+        action   = policy["action"]
+
+        if key_type == "IP" and not ip:
+            continue
+        if key_type == "EMAIL" and not email:
+            continue
+        if key_type == "DOMAIN" and not email:
+            continue
+
+        if key_type == "IP":
+            key_value = ip
+        elif key_type == "EMAIL":
+            key_value = email
+        else:
+            key_value = email.split("@")[1] if "@" in email else email
+
+        window_start = datetime.utcnow() - timedelta(minutes=window)
+
+        count_row = db.execute(text("""
+            SELECT COALESCE(SUM(count), 0) AS total
+            FROM mg.rate_limit_counters
+            WHERE key_type = :key_type AND key_value = :key_value
+            AND endpoint = :endpoint AND window_start >= :window_start
+        """), {
+            "key_type":     key_type,
+            "key_value":    key_value,
+            "endpoint":     endpoint,
+            "window_start": window_start,
+        }).mappings().first()
+
+        total = int(count_row["total"]) if count_row else 0
+
+        if total >= max_req:
+            return {
+                "allowed":     False,
+                "action":      action,
+                "key_type":    key_type,
+                "retry_after": window,
+            }
+
+        # Incrementer le compteur
+        try:
+            now_window = datetime.utcnow().replace(second=0, microsecond=0)
+            db.execute(text("""
+                INSERT INTO mg.rate_limit_counters
+                    (key_type, key_value, endpoint, window_start, count)
+                VALUES (:key_type, :key_value, :endpoint, :window_start, 1)
+                ON CONFLICT (key_type, key_value, endpoint, window_start)
+                DO UPDATE SET count = mg.rate_limit_counters.count + 1
+            """), {
+                "key_type":     key_type,
+                "key_value":    key_value,
+                "endpoint":     endpoint,
+                "window_start": now_window,
+            })
+        except Exception:
+            pass
+
+    return {"allowed": True}
+
+
 # ── Endpoint 1 : demande d'affiliation ─────────────────────────────────────────
 
 @router.post(
@@ -146,10 +267,37 @@ open.osa-observatory.africa
     ),
 )
 def submit_affiliation_request(
-    data: AffiliationRequest,
-    db:   Session = Depends(get_db),
+    data:    AffiliationRequest,
+    request: Request,
+    db:      Session = Depends(get_db),
 ):
-    email = data.email.lower().strip()
+    email    = data.email.lower().strip()
+    ip       = request.client.host if request.client else None
+    endpoint = "/api/v1/affiliation/request"
+
+    # R4.1 -- Rate-limiting pilote par mg.rate_limit_policies
+    rl = check_rate_limit(db, endpoint=endpoint, ip=ip, email=email)
+    if not rl["allowed"]:
+        event_map = {"IP": "RATE_LIMIT_IP", "EMAIL": "RATE_LIMIT_EMAIL", "DOMAIN": "RATE_LIMIT_DOMAIN"}
+        log_security_event(db, event_type=event_map.get(rl["key_type"], "RATE_LIMIT_IP"),
+                           ip=ip, email=email, endpoint=endpoint,
+                           details={"action": rl["action"], "retry_after": rl["retry_after"]})
+        if rl["action"] == "CAPTCHA":
+            log_security_event(db, event_type="CAPTCHA_TRIGGERED",
+                               ip=ip, email=email, endpoint=endpoint,
+                               details={"reason": f"Rate limit {rl['key_type']} depasse"})
+            raise HTTPException(status_code=429, detail={
+                "fr": "Verification de securite requise.",
+                "en": "Security verification required.",
+                "captcha_required": True,
+                "retry_after": rl["retry_after"]
+            })
+        raise HTTPException(status_code=429, detail={
+            "fr": f"Trop de demandes. Veuillez reessayer dans {rl['retry_after']} minutes.",
+            "en": f"Too many requests. Please try again in {rl['retry_after']} minutes.",
+            "captcha_required": False,
+            "retry_after": rl["retry_after"]
+        })
 
     existing = db.execute(
         text("SELECT id, status FROM mg.affiliates WHERE email = :email"),
@@ -198,6 +346,12 @@ def submit_affiliation_request(
     """ % TOKEN_EXPIRY_HOURS), {"affiliate_id": affiliate_id}).mappings().one()
 
     db.commit()
+
+    # R4.2 -- Journaliser la demande
+    log_security_event(db, event_type="AFFILIATION_REQUEST",
+                       ip=ip, email=email, endpoint=endpoint,
+                       affiliate_id=affiliate_id,
+                       details={"org_name": data.org_name, "country": data.country})
 
     email_sent = False
     try:
