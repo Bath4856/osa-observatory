@@ -809,3 +809,259 @@ def submit_decision(
             "en": f"Final decision rendered: {data.final_decision}."
         }
     }
+
+
+# ── Sprint 30 R3 -- Cooptation vers les comites ───────────────────────────────
+
+PROPOSE_ROLES  = {"COMITE_TECH"}
+VALIDATE_ROLES = {"ADMIN"}
+
+
+class CooptationCreate(BaseModel):
+    affiliate_id:     int
+    target_committee: str
+    justification:    dict  # JSONB : scientific_reason, technical_reason, remarks...
+    effective_from:   Optional[str] = None
+
+
+class CooptationReview(BaseModel):
+    status:          str
+    review_comment:  Optional[str] = None
+    effective_from:  Optional[str] = None
+    deferred_until:  Optional[str] = None
+    deferred_reason: Optional[str] = None
+
+
+@router.post("/cooptations",
+    summary="Proposer une cooptation -- R3",
+    description="Reserve au Comite technique. Un affilie ne peut jamais se porter candidat.")
+def propose_cooptation(
+    data: CooptationCreate,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    role = payload.get("role", "")
+    if role not in PROPOSE_ROLES and role != "ADMIN":
+        raise HTTPException(status_code=403, detail={
+            "fr": "La proposition de cooptation est reservee au Comite technique. Un affilie ne peut jamais se porter candidat a un comite -- la cooptation resulte de l'observation des contributions par le Comite technique.",
+            "en": "Cooptation proposals are reserved for the Technical Committee. An affiliate can never apply to a committee -- cooptation results from the Technical Committee's observation of contributions."
+        })
+
+    # Verifier que le comite cible existe
+    committee = db.execute(text("""
+        SELECT code, label_fr, label_en FROM mg.committees
+        WHERE code = :code AND is_active = TRUE
+    """), {"code": data.target_committee}).mappings().first()
+
+    if not committee:
+        raise HTTPException(status_code=400, detail={
+            "fr": f"Comite inconnu ou inactif : {data.target_committee}.",
+            "en": f"Unknown or inactive committee: {data.target_committee}."
+        })
+
+    # Verifier que l'affilie n'est pas deja membre actif de ce comite
+    existing_member = db.execute(text("""
+        SELECT id FROM mg.committee_memberships
+        WHERE affiliate_id = :affiliate_id AND committee = :committee AND status = 'ACTIVE'
+    """), {"affiliate_id": data.affiliate_id, "committee": data.target_committee}).mappings().first()
+
+    if existing_member:
+        raise HTTPException(status_code=409, detail={
+            "fr": "Cet affilie est deja membre actif de ce comite.",
+            "en": "This affiliate is already an active member of this committee."
+        })
+
+    # Verifier qu'il n'y a pas deja une proposition en cours
+    existing_proposal = db.execute(text("""
+        SELECT id, status FROM mg.cooptation_proposals
+        WHERE affiliate_id = :affiliate_id AND target_committee = :committee
+        AND status IN ('PROPOSED', 'UNDER_REVIEW', 'DEFERRED')
+    """), {"affiliate_id": data.affiliate_id, "committee": data.target_committee}).mappings().first()
+
+    if existing_proposal:
+        raise HTTPException(status_code=409, detail={
+            "fr": f"Une proposition est deja en cours pour cet affilie ({existing_proposal['status']}).",
+            "en": f"A proposal is already pending for this affiliate ({existing_proposal['status']})."
+        })
+
+    import json
+    row = db.execute(text("""
+        INSERT INTO mg.cooptation_proposals
+            (affiliate_id, proposed_by, target_committee, justification,
+             status, effective_from)
+        VALUES
+            (:affiliate_id, :proposed_by, :target_committee, :justification,
+             'PROPOSED', :effective_from)
+        RETURNING id, created_at
+    """), {
+        "affiliate_id":     data.affiliate_id,
+        "proposed_by":      int(payload["sub"]),
+        "target_committee": data.target_committee,
+        "justification":    json.dumps(data.justification),
+        "effective_from":   data.effective_from,
+    }).mappings().one()
+    db.commit()
+
+    return {
+        "id":         row["id"],
+        "status":     "PROPOSED",
+        "created_at": str(row["created_at"]),
+        "message": {
+            "fr": f"Proposition de cooptation soumise pour examen administratif. Comite cible : {committee['label_fr']}.",
+            "en": f"Cooptation proposal submitted for administrative review. Target committee: {committee['label_en']}."
+        }
+    }
+
+
+@router.get("/cooptations",
+    summary="Lister les propositions de cooptation -- R3",
+    description="Reserve a ADMIN et COMITE_TECH.")
+def list_cooptations(
+    status_filter: Optional[str] = None,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    role = payload.get("role", "")
+    if role not in {"ADMIN", "COMITE_TECH"}:
+        raise HTTPException(status_code=403, detail={
+            "fr": "Reserve a l'equipe OSA et au Comite technique.",
+            "en": "Reserved for the OSA team and the Technical Committee."
+        })
+
+    conditions = []
+    params = {}
+    if status_filter:
+        conditions.append("p.status = :status")
+        params["status"] = status_filter.upper()
+    where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
+
+    rows = db.execute(text(f"""
+        SELECT p.id, p.status, p.justification, p.effective_from,
+               p.deferred_until, p.deferred_reason, p.review_comment,
+               p.created_at, p.reviewed_at,
+               a.first_name AS aff_first, a.last_name AS aff_last, a.email AS aff_email,
+               pb.first_name AS prop_first, pb.last_name AS prop_last,
+               rb.first_name AS rev_first, rb.last_name AS rev_last,
+               c.label_fr AS committee_fr, c.label_en AS committee_en
+        FROM mg.cooptation_proposals p
+        JOIN mg.affiliates a  ON a.id  = p.affiliate_id
+        JOIN mg.affiliates pb ON pb.id = p.proposed_by
+        JOIN mg.committees c  ON c.code = p.target_committee
+        LEFT JOIN mg.affiliates rb ON rb.id = p.reviewed_by
+        {where_clause}
+        ORDER BY p.created_at DESC
+    """), params).mappings().all()
+
+    return [{
+        "id":              r["id"],
+        "status":          r["status"],
+        "affiliate":       f"{r['aff_first']} {r['aff_last']} ({r['aff_email']})",
+        "proposed_by":     f"{r['prop_first']} {r['prop_last']}",
+        "committee":       {"fr": r["committee_fr"], "en": r["committee_en"]},
+        "justification":   r["justification"],
+        "effective_from":  str(r["effective_from"]) if r["effective_from"] else None,
+        "deferred_until":  str(r["deferred_until"]) if r["deferred_until"] else None,
+        "deferred_reason": r["deferred_reason"],
+        "review_comment":  r["review_comment"],
+        "reviewed_by":     f"{r['rev_first']} {r['rev_last']}" if r["rev_first"] else None,
+        "created_at":      str(r["created_at"]),
+        "reviewed_at":     str(r["reviewed_at"]) if r["reviewed_at"] else None,
+    } for r in rows]
+
+
+@router.patch("/cooptations/{proposal_id}",
+    summary="Statuer sur une proposition de cooptation -- R3",
+    description="Reserve a l'Admin. Decisions : APPROVED, DECLINED, CANCELLED, DEFERRED.")
+def review_cooptation(
+    proposal_id: int,
+    data: CooptationReview,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    role = payload.get("role", "")
+    if role not in VALIDATE_ROLES:
+        raise HTTPException(status_code=403, detail={
+            "fr": "La validation d'une cooptation est reservee a l'administrateur OSA.",
+            "en": "Cooptation validation is reserved for the OSA administrator."
+        })
+
+    valid_statuses = {"UNDER_REVIEW", "APPROVED", "DECLINED", "CANCELLED", "DEFERRED"}
+    if data.status not in valid_statuses:
+        raise HTTPException(status_code=400, detail={
+            "fr": f"Statut invalide. Choix : {valid_statuses}",
+            "en": f"Invalid status. Choices: {valid_statuses}"
+        })
+
+    if data.status == "DEFERRED" and not data.deferred_until:
+        raise HTTPException(status_code=400, detail={
+            "fr": "deferred_until est requis pour le statut DEFERRED.",
+            "en": "deferred_until is required for DEFERRED status."
+        })
+
+    proposal = db.execute(text("""
+        SELECT p.*, a.email, a.first_name, a.last_name,
+               c.label_fr, c.label_en
+        FROM mg.cooptation_proposals p
+        JOIN mg.affiliates a ON a.id = p.affiliate_id
+        JOIN mg.committees c ON c.code = p.target_committee
+        WHERE p.id = :id
+    """), {"id": proposal_id}).mappings().first()
+
+    if not proposal:
+        raise HTTPException(status_code=404, detail="Proposition non trouvee.")
+
+    db.execute(text("""
+        UPDATE mg.cooptation_proposals SET
+            status         = :status,
+            reviewed_by    = :reviewed_by,
+            review_comment = :comment,
+            effective_from = COALESCE(:effective_from, effective_from),
+            deferred_until = :deferred_until,
+            deferred_reason = :deferred_reason,
+            reviewed_at    = NOW()
+        WHERE id = :id
+    """), {
+        "status":          data.status,
+        "reviewed_by":     int(payload["sub"]),
+        "comment":         data.review_comment,
+        "effective_from":  data.effective_from,
+        "deferred_until":  data.deferred_until,
+        "deferred_reason": data.deferred_reason,
+        "id":              proposal_id,
+    })
+
+    # Si APPROVED -- creer le membership et mettre a jour le role
+    if data.status == "APPROVED":
+        db.execute(text("""
+            INSERT INTO mg.committee_memberships
+                (affiliate_id, committee, appointed_from, start_date, status)
+            VALUES
+                (:affiliate_id, :committee, :proposal_id, :start_date, 'ACTIVE')
+        """), {
+            "affiliate_id": proposal["affiliate_id"],
+            "committee":    proposal["target_committee"],
+            "proposal_id":  proposal_id,
+            "start_date":   data.effective_from or str(__import__('datetime').date.today()),
+        })
+
+        # Attribuer le role dans mg.affiliate_roles
+        db.execute(text("""
+            INSERT INTO mg.affiliate_roles (affiliate_id, role_code, granted_by)
+            VALUES (:affiliate_id, :role_code, :granted_by)
+            ON CONFLICT (affiliate_id, role_code) DO NOTHING
+        """), {
+            "affiliate_id": proposal["affiliate_id"],
+            "role_code":    proposal["target_committee"],
+            "granted_by":   f"cooptation_proposal_{proposal_id}",
+        })
+
+    db.commit()
+
+    return {
+        "id":     proposal_id,
+        "status": data.status,
+        "message": {
+            "fr": f"Proposition {proposal_id} : statut mis a jour ({data.status}).",
+            "en": f"Proposal {proposal_id}: status updated ({data.status})."
+        }
+    }
