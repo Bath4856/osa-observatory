@@ -1,3 +1,11 @@
+.country-page { max-width: 1000px; margin: 0 auto; padding: 24px 16px 60px; }
+.country-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid var(--color-primary); }
+.country-header-text { display: flex; flex-direction: column; gap: 4px; }
+.country-title { font-size: 2rem; font-weight: 700; color: var(--color-primary-dk); margin: 0; }
+.country-region { font-size: 0.88rem; color: var(--color-accent); font-weight: 600; }
+.back-link { color: var(--color-primary); text-decoration: none; font-size: 0.9rem; font-weight: 600; white-space: nowrap; margin-top: 4px; }
+.back-link:hover { color: var(--color-accent); }
+.page-loading, .page-error { padding: 2rem; text-align: center; color: var(--color-muted); }
 
 /* Lot H -- 4 cartouches produits */
 .country-products {
