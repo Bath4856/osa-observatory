@@ -7,8 +7,14 @@
 .pillar-section { margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid #e2e8f0; }
 .pillar-section h2 { font-size: 1.1rem; font-weight: 700; color: #1F4E5F; margin-bottom: 0.8rem; }
 .pillar-section p { color: #4a5568; line-height: 1.8; }
-.indicators-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.indicators-list { display: flex; flex-wrap: wrap; gap: 6px; display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .indicator-tag { background: #f0f7f4; border: 1px solid #2E7D6E; color: #2E7D6E; padding: 0.25rem 0.7rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; font-family: Consolas, monospace; }
 .sources-list { list-style: none; display: flex; flex-direction: column; gap: 0.4rem; }
 .sources-list li { color: #4a5568; font-size: 0.9rem; padding-left: 1rem; position: relative; }
 .sources-list li::before { content: '→'; position: absolute; left: 0; color: #2E7D6E; }
+
+/* Sprint 30 Lot G -- indicateurs dynamiques */
+.ind-section-label { font-size: .82rem; font-weight: 600; color: var(--color-primary); margin-bottom: 8px; }
+.ind-section-label--muted { color: var(--color-muted); }
+.indicator-tag--active { background: var(--color-primary); color: #fff; opacity: 1; }
+.indicator-tag--pending { background: var(--color-bg-light); color: var(--color-muted); border: 1px solid var(--color-border); opacity: .8; }

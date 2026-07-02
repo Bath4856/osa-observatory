@@ -45,12 +45,141 @@
     "contact": "Contact"
   },
   "about": {
-    "title": "À propos de l'OSA Observatory",
-    "intro_template": "L'OSA Observatory (Observatoire de la Souveraineté Africaine) est une infrastructure africaine d'observation souveraine — mesurant les trajectoires de 54 États à travers 10 piliers comportementaux, observé depuis 2010 ({years} ans de données)."
+    "hero": {
+      "title": "À propos de l'OSA Observatory",
+      "paragraphs": [
+        "L'Observatoire Africain de la Souveraineté (OSA Observatory) est une infrastructure scientifique indépendante consacrée à l'observation, à la mesure et à l'analyse des trajectoires de souveraineté des États africains.",
+        "L'OSA développe des méthodes fondées exclusivement sur des données primaires auditables, reproductibles et indépendantes de toute perception subjective."
+      ]
+    },
+    "mission": {
+      "title": "Notre mission",
+      "paragraphs": [
+        "Observer les phénomènes, mesurer les trajectoires, identifier les risques émergents et analyser les mécanismes susceptibles d'influencer durablement l'exercice de la souveraineté.",
+        "L'OSA ne produit pas des jugements sur les États. Il documente objectivement des faits observables afin d'éclairer la recherche, les politiques publiques et la décision stratégique."
+      ]
+    },
+    "why": {
+      "title": "Pourquoi mesurer la souveraineté ?",
+      "paragraphs": [
+        "La souveraineté n'est pas un état figé. Elle évolue continuellement sous l'effet de facteurs économiques, humains, numériques, environnementaux, géopolitiques, énergétiques, monétaires, institutionnels et sécuritaires.",
+        "L'OSA mesure des trajectoires plutôt que de simples positions instantanées afin de mieux comprendre les dynamiques de transformation des États africains.",
+        "Les indicateurs de gouvernance mondiale sont construits à 60-70 % sur des enquêtes auprès d'experts occidentaux — ils mesurent ce que les observateurs pensent, pas ce que font les États. L'indice de perception de la corruption repose à 80 % sur des enquêtes auprès du secteur privé. Deux États aux pratiques identiques peuvent obtenir des scores très différents selon les personnes interrogées. L'OSA propose une approche différente : observer les capacités réelles des États africains à partir de données comportementales vérifiables."
+      ]
+    },
+    "diagram": {
+      "osaTitle": "OSA Observatory",
+      "osaSubtitle": "Infrastructure scientifique",
+      "pipelineLabel": "Pipeline scientifique L1 → L2 → L3",
+      "strategicLabel": "Analyse stratégique"
+    },
+    "programs": [
+      {
+        "id": "isa",
+        "code": "ISA",
+        "subtitle": "Observer et mesurer",
+        "body": "L'Indice de Souveraineté Africaine mesure les trajectoires de souveraineté grâce au pipeline méthodologique L1 → L2 → L3."
+      },
+      {
+        "id": "poa",
+        "code": "POA",
+        "subtitle": "Observer et identifier",
+        "body": "Les Phénomènes Observables Autonomes identifient des phénomènes objectivables, reproductibles et mesurables, susceptibles d'affecter l'exercice effectif de la souveraineté. Ils ne produisent ni indice, ni score, ni classement, et ne constituent pas un jugement sur les politiques publiques."
+      },
+      {
+        "id": "amar",
+        "code": "AMAR",
+        "subtitle": "Observer et alerter",
+        "body": "AMAR identifie les situations nécessitant une vigilance renforcée à partir de signaux de rupture, d'analyses stratégiques et de règles métiers. Ce n'est pas une mesure de trajectoire : un score élevé signale une situation à surveiller, pas un jugement sur l'État concerné."
+      },
+      {
+        "id": "geneco",
+        "code": "GENECO",
+        "subtitle": "Observer et détecter",
+        "body": "GENECO détecte les mécanismes économiques susceptibles d'affecter durablement l'exercice de la souveraineté dans un contexte de conflit."
+      }
+    ],
+    "pillars": {
+      "title": "Les dix piliers de souveraineté",
+      "intro": "Les travaux de l'OSA couvrent dix dimensions complémentaires de la souveraineté :",
+      "items": [
+        {
+          "code": "PECO",
+          "label": "Économique"
+        },
+        {
+          "code": "PGEO",
+          "label": "Géopolitique"
+        },
+        {
+          "code": "PMIL",
+          "label": "Militaire"
+        },
+        {
+          "code": "PMIN",
+          "label": "Minière"
+        },
+        {
+          "code": "PMON",
+          "label": "Monétaire"
+        },
+        {
+          "code": "PHUM",
+          "label": "Humaine"
+        },
+        {
+          "code": "PENV",
+          "label": "Environnementale"
+        },
+        {
+          "code": "PNUM",
+          "label": "Numérique"
+        },
+        {
+          "code": "PRES",
+          "label": "Énergétique"
+        },
+        {
+          "code": "PTRA",
+          "label": "Transport"
+        }
+      ],
+      "linkLabel": "Voir le détail des dix piliers",
+      "linkHref": "/pillars"
+    },
+    "approach": {
+      "title": "Notre approche scientifique",
+      "paragraphs": [
+        "Toutes les données utilisées par l'OSA proviennent de sources primaires observables.",
+        "Les traitements sont entièrement documentés, historisés, auditables et reproductibles afin de garantir la transparence scientifique."
+      ],
+      "linkLabel": "Voir la méthodologie complète",
+      "linkHref": "/methodology"
+    },
+    "principles": {
+      "title": "Principes fondamentaux",
+      "items": [
+        "Données primaires exclusivement.",
+        "Aucune donnée fondée sur la perception.",
+        "Traçabilité complète des traitements.",
+        "Auditabilité des méthodes.",
+        "Reproductibilité scientifique.",
+        "Documentation publique.",
+        "Validation par le Comité Scientifique."
+      ]
+    },
+    "governance": {
+      "title": "Gouvernance scientifique",
+      "body": "L'OSA Observatory fonctionne sous la supervision d'un Comité Scientifique chargé de valider les décisions méthodologiques, d'approuver les cycles de publication et d'assurer l'intégrité doctrinale. La première publication institutionnelle est prévue pour septembre 2027. Les données 2020-2024 sont disponibles au statut OFFICIEL. Les données 2025 sont au statut PRÉLIMINAIRE en attente de validation."
+    },
+    "closing": {
+      "title": "Une nouvelle approche de la souveraineté",
+      "body": "L'OSA Observatory constitue une plateforme scientifique permettant d'observer les phénomènes, de mesurer les trajectoires, d'identifier les situations nécessitant une vigilance renforcée et de détecter les mécanismes susceptibles d'affecter durablement l'exercice de la souveraineté."
+    }
   },
   "methodology": {
-    "title": "Méthodologie ISA",
-    "intro": "L'Indice de Souveraineté Africaine (ISA) est calculé à partir de données observées, primaires et auditables — jamais des sondages, jamais des estimations d'experts. La méthodologie suit la doctrine conséquentialiste OSA P7E.",
+    "title": "Méthodologie scientifique de l'OSA",
+    "intro": "Le pipeline scientifique de l'OSA calcule l'ISA à partir de données observées, primaires et auditables — jamais des sondages, jamais des estimations d'experts. Il constitue également le socle commun des programmes POA, AMAR et GENECO. La méthodologie suit la doctrine conséquentialiste OSA P7E.",
     "doctrine_title": "Doctrine P7E — Conséquentialiste",
     "doctrine_text": "Depuis plusieurs décennies, l'Afrique est évaluée à travers des indices construits sur des perceptions. OSA propose une approche différente : observer les capacités réelles des États africains à partir de données comportementales vérifiables, suivre leurs trajectoires dans le temps et éclairer les décisions publiques par des faits plutôt que par des perceptions.",
     "pipeline_title": "Pipeline en 3 couches",
@@ -67,7 +196,46 @@
       "Aucun pays n'est comparé à un autre — chaque pays est observé par rapport à sa propre trajectoire souveraine",
       "Les indicateurs sans données observées ne participent pas à la pondération",
       "Taux d'imputation supérieur à 50% → indicateur inactif"
-    ]
+    ],
+    "architecture_title": "Architecture scientifique",
+    "architecture_intro": "Le pipeline L1 → L2 → L3 alimente l'ISA. Les POA s'appuient sur L1 et des calculs métiers spécifiques, indépendamment des couches L2 et L3.",
+    "diagram": {
+      "osa": "OSA Observatory",
+      "pipelineCaption": "Pipeline méthodologique OSA",
+      "l1": "L1 — Collecte, validation, nettoyage",
+      "calculsMetiers": "Calculs métiers (POA)",
+      "l2": "L2 — Imputation",
+      "l3": "L3 — Normalisation, pondération, agrégation",
+      "isa": "ISA",
+      "strategic": "Analyse stratégique",
+      "poa": "POA",
+      "amar": "AMAR",
+      "geneco": "GENECO"
+    },
+    "products_title": "Les produits scientifiques",
+    "products": {
+      "isa": {
+        "subtitle": "Observer et mesurer",
+        "body": "L'Indice de Souveraineté Africaine mesure les trajectoires de souveraineté des États africains à partir du pipeline complet L1 → L2 → L3."
+      },
+      "poa": {
+        "subtitle": "Observer et identifier",
+        "body": "Les Phénomènes Observables Autonomes (POA) identifient des phénomènes objectivables, reproductibles et mesurables, susceptibles d'affecter l'exercice effectif de la souveraineté. Ils exploitent les données validées du niveau L1 ainsi que des calculs métiers spécifiques, indépendamment des couches L2 et L3. Ils ne produisent ni indice, ni classement, ni pondération : ils documentent des phénomènes observables pouvant être analysés par les chercheurs et les décideurs."
+      }
+    },
+    "strategic_title": "Analyse stratégique",
+    "strategic_text": "Les résultats produits par l'ISA alimentent un moteur d'analyse stratégique permettant d'identifier les forces, les faiblesses, les opportunités, les menaces, les trajectoires, les tendances et les niveaux de confiance. Cette analyse repose exclusivement sur des calculs reproductibles réalisés à partir des données observées.",
+    "engines_title": "Les moteurs analytiques",
+    "engines": {
+      "amar": {
+        "subtitle": "Observer et alerter",
+        "body": "AMAR exploite les résultats de l'analyse stratégique afin d'identifier les situations nécessitant une vigilance renforcée. Le moteur combine les trajectoires ISA, les analyses stratégiques, les historiques et les niveaux de confiance avec des règles métiers de déclenchement. Il ne s'agit pas d'une mesure de trajectoire : un score élevé signale une situation à surveiller, pas un jugement sur l'État concerné."
+      },
+      "geneco": {
+        "subtitle": "Observer et détecter",
+        "body": "GENECO détecte les mécanismes économiques susceptibles d'affecter durablement l'exercice de la souveraineté dans un contexte de conflit. Il combine les résultats ISA, les analyses stratégiques, des observations spécialisées et des règles métiers spécifiques."
+      }
+    }
   },
   "data": {
     "title": "Données ouvertes & API",
@@ -86,9 +254,18 @@
     "title": "E-Participation",
     "intro": "Contribuez à la qualité des données souveraines africaines. Signalez une anomalie, proposez une source primaire, ou soumettez une contribution méthodologique au Comité Scientifique.",
     "types": {
-      "DATA_SIGNAL": { "label": "Signal de données", "desc": "Signalez une anomalie, une valeur incorrecte, ou proposez une source primaire alternative pour un indicateur spécifique." },
-      "SOURCE_PROPOSAL": { "label": "Proposition de source", "desc": "Proposez une nouvelle source de données primaires pour améliorer la couverture d'un pilier souverain." },
-      "METHODOLOGICAL": { "label": "Contribution méthodologique", "desc": "Proposez un nouvel indicateur, une amélioration méthodologique, ou un commentaire doctrinal pour le Comité Scientifique." }
+      "DATA_SIGNAL": {
+        "label": "Signal de données",
+        "desc": "Signalez une anomalie, une valeur incorrecte, ou proposez une source primaire alternative pour un indicateur spécifique."
+      },
+      "SOURCE_PROPOSAL": {
+        "label": "Proposition de source",
+        "desc": "Proposez une nouvelle source de données primaires pour améliorer la couverture d'un pilier souverain."
+      },
+      "METHODOLOGICAL": {
+        "label": "Contribution méthodologique",
+        "desc": "Proposez un nouvel indicateur, une amélioration méthodologique, ou un commentaire doctrinal pour le Comité Scientifique."
+      }
     },
     "fields": {
       "name": "Nom",

@@ -16,9 +16,9 @@ const PILLARS = [
 ]
 
 const PIPELINE = [
-  { layer:'L1', label:{en:'Collect',fr:'Collecter'}, color:'#1F4E5F', desc:{en:'Primary data collection from audited international sources (World Bank WDI, FAO, SIPRI, IMF, USGS, EITI, Comtrade, ITU, WHO, UNDP). Only observed, verifiable data. Never surveys, never expert estimates.',fr:'Collecte de données primaires depuis des sources internationales auditées (Banque mondiale WDI, FAO, SIPRI, FMI, USGS, EITI, Comtrade, UIT, OMS, PNUD). Uniquement des données observées et vérifiables. Jamais des sondages, jamais des estimations d\'experts.'} },
-  { layer:'L2', label:{en:'Impute',fr:'Imputer'}, color:'#2E7D6E', desc:{en:'MICE imputation applied only to homogeneous time series with less than 50% missing values. Trajectoire indicators are never imputed. Imputed values are flagged FLAG_INTERPOLATED.',fr:'Imputation MICE appliquée uniquement aux séries temporelles homogènes avec moins de 50% de valeurs manquantes. Les indicateurs TRAJECTOIRE ne sont jamais imputés. Les valeurs imputées sont marquées FLAG_INTERPOLATED.'} },
-  { layer:'L3', label:{en:'Normalise',fr:'Normaliser'}, color:'#7D4800', desc:{en:'Min-max normalisation using frozen bounds v1_2026, calibrated on 2010-2020 reference data. Scores range from 0 (low sovereignty) to 1 (high sovereignty). Bounds are frozen to ensure temporal comparability.',fr:'Normalisation min-max avec bornes figées v1_2026, calibrées sur les données de référence 2010-2020. Les scores vont de 0 (souveraineté faible) à 1 (souveraineté forte). Les bornes sont figées pour garantir la comparabilité temporelle.'} },
+  { layer:'L1', label:{en:'Collect',fr:'Collecter'}, color:'var(--color-primary-dk)', desc:{en:'Primary data collection from audited international sources (World Bank WDI, FAO, SIPRI, IMF, USGS, EITI, Comtrade, ITU, WHO, UNDP). Only observed, verifiable data. Never surveys, never expert estimates.',fr:'Collecte de données primaires depuis des sources internationales auditées (Banque mondiale WDI, FAO, SIPRI, FMI, USGS, EITI, Comtrade, UIT, OMS, PNUD). Uniquement des données observées et vérifiables. Jamais des sondages, jamais des estimations d\'experts.'} },
+  { layer:'L2', label:{en:'Impute',fr:'Imputer'}, color:'var(--color-primary)', desc:{en:'MICE imputation applied only to homogeneous time series with less than 50% missing values. Trajectoire indicators are never imputed. Imputed values are flagged FLAG_INTERPOLATED.',fr:'Imputation MICE appliquée uniquement aux séries temporelles homogènes avec moins de 50% de valeurs manquantes. Les indicateurs TRAJECTOIRE ne sont jamais imputés. Les valeurs imputées sont marquées FLAG_INTERPOLATED.'} },
+  { layer:'L3', label:{en:'Normalise',fr:'Normaliser'}, color:'var(--color-accent)', desc:{en:'Min-max normalisation using frozen bounds v1_2026, calibrated on 2010-2020 reference data. Scores range from 0 (low sovereignty) to 1 (high sovereignty). Bounds are frozen to ensure temporal comparability.',fr:'Normalisation min-max avec bornes figées v1_2026, calibrées sur les données de référence 2010-2020. Les scores vont de 0 (souveraineté faible) à 1 (souveraineté forte). Les bornes sont figées pour garantir la comparabilité temporelle.'} },
 ]
 
 const STATUS_CARDS = [
@@ -31,6 +31,9 @@ const SOURCES = ['World Bank WDI','IMF WEO','FAO FRA','SIPRI Milex','ACLED','ITU
 
 export default function Methodology() {
   const { t, lang } = useLang()
+  const d = t('methodology.diagram')
+  const products = t('methodology.products')
+  const engines = t('methodology.engines')
 
   return (
     <div className="methodology-page">
@@ -46,6 +49,65 @@ export default function Methodology() {
               <li key={i}>{rule}</li>
             ))}
           </ul>
+        </div>
+      </section>
+
+      {/* Scientific architecture -- hierarchy diagram */}
+      <section className="method-section">
+        <h2>{t('methodology.architecture_title')}</h2>
+        <p>{t('methodology.architecture_intro')}</p>
+
+        <div className="osa-diagram" role="img" aria-label="OSA Observatory > L1 > POA / L2 > L3 > ISA > Analyse stratégique > AMAR / GENECO">
+          <div className="diagram-node diagram-node--root">
+            <span className="diagram-node-title">{d.osa}</span>
+          </div>
+          <div className="diagram-connector" />
+          <div className="diagram-caption">{d.pipelineCaption}</div>
+          <div className="diagram-connector" />
+          <div className="diagram-node diagram-node--l1">
+            <span className="diagram-node-subtitle">{d.l1}</span>
+          </div>
+
+          <div className="diagram-branches diagram-branches--pipeline">
+            <div className="diagram-branch diagram-branch--poa">
+              <div className="diagram-caption">{d.calculsMetiers}</div>
+              <div className="diagram-connector diagram-connector--short" />
+              <div className="diagram-node diagram-node--poa">
+                <span className="diagram-node-code">{d.poa}</span>
+              </div>
+            </div>
+
+            <div className="diagram-branch diagram-branch--main">
+              <div className="diagram-node diagram-node--l2">
+                <span className="diagram-node-subtitle">{d.l2}</span>
+              </div>
+              <div className="diagram-connector diagram-connector--short" />
+              <div className="diagram-node diagram-node--l3">
+                <span className="diagram-node-subtitle">{d.l3}</span>
+              </div>
+              <div className="diagram-connector diagram-connector--short" />
+              <div className="diagram-node diagram-node--isa">
+                <span className="diagram-node-code">{d.isa}</span>
+              </div>
+              <div className="diagram-connector diagram-connector--short" />
+              <div className="diagram-node diagram-node--strategic">
+                <span className="diagram-node-subtitle">{d.strategic}</span>
+              </div>
+
+              <div className="diagram-branches diagram-branches--engines">
+                <div className="diagram-branch">
+                  <div className="diagram-node diagram-node--branch diagram-node--amar">
+                    <span className="diagram-node-code">{d.amar}</span>
+                  </div>
+                </div>
+                <div className="diagram-branch">
+                  <div className="diagram-node diagram-node--branch diagram-node--geneco">
+                    <span className="diagram-node-code">{d.geneco}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -73,6 +135,45 @@ export default function Methodology() {
       <section className="method-section">
         <h2>{t('methodology.weighting_title')}</h2>
         <p>{t('methodology.weighting_text')}</p>
+      </section>
+
+      {/* Scientific products: ISA + POA */}
+      <section className="method-section">
+        <h2>{t('methodology.products_title')}</h2>
+        <div className="program-grid">
+          <article className="program-card program-card--isa">
+            <h3>ISA</h3>
+            <h4>{products.isa.subtitle}</h4>
+            <p>{products.isa.body}</p>
+          </article>
+          <article className="program-card program-card--poa">
+            <h3>POA</h3>
+            <h4>{products.poa.subtitle}</h4>
+            <p>{products.poa.body}</p>
+          </article>
+        </div>
+      </section>
+
+      <section className="method-section">
+        <h2>{t('methodology.strategic_title')}</h2>
+        <p>{t('methodology.strategic_text')}</p>
+      </section>
+
+      {/* Analytical engines: AMAR + GENECO */}
+      <section className="method-section">
+        <h2>{t('methodology.engines_title')}</h2>
+        <div className="program-grid">
+          <article className="program-card program-card--amar">
+            <h3>AMAR</h3>
+            <h4>{engines.amar.subtitle}</h4>
+            <p>{engines.amar.body}</p>
+          </article>
+          <article className="program-card program-card--geneco">
+            <h3>GENECO</h3>
+            <h4>{engines.geneco.subtitle}</h4>
+            <p>{engines.geneco.body}</p>
+          </article>
+        </div>
       </section>
 
       <section className="method-section">

@@ -1,6 +1,117 @@
-.country-page { max-width: 1000px; margin: 0 auto; }
-.country-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
-.country-title { font-size: 2rem; font-weight: 700; color: #1F4E5F; }
-.back-link { color: #1F4E5F; text-decoration: none; font-size: 0.9rem; }
-.back-link:hover { text-decoration: underline; }
-.page-loading, .page-error { padding: 2rem; text-align: center; color: #666; }
+
+/* Lot H -- 4 cartouches produits */
+.country-products {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+  .country-products { grid-template-columns: repeat(2, 1fr); }
+}
+
+.product-card {
+  background: var(--color-bg);
+  border-radius: 8px;
+  border-top: 4px solid var(--color-accent);
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.07);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.product-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.product-code {
+  font-weight: 700;
+  font-size: .9rem;
+  color: var(--color-primary);
+}
+
+.product-year {
+  font-size: .75rem;
+  color: var(--color-muted);
+}
+
+.product-card-body {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+}
+
+.product-score {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--color-primary-dk);
+  line-height: 1;
+}
+
+.product-trajectory {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.product-badge {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 20px;
+  color: #fff;
+  font-weight: 700;
+  font-size: .85rem;
+}
+
+.product-card-sub {
+  font-size: .78rem;
+  color: var(--color-muted);
+  flex: 1;
+}
+
+.product-btn {
+  margin-top: auto;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 5px;
+  font-weight: 600;
+  font-size: .82rem;
+  cursor: pointer;
+  transition: opacity .15s;
+  text-align: left;
+}
+
+.product-btn:hover { opacity: .85; }
+.product-btn--isa   { background: var(--color-primary); color: #fff; }
+.product-btn--iosa  { background: var(--color-primary); color: #fff; }
+.product-btn--geneco { background: var(--color-accent); color: #fff; }
+.product-btn--amar  { background: #B00020; color: #fff; }
+
+/* Section 10 piliers */
+.country-pillars { margin-top: 2rem; }
+.country-pillars-title { font-size: 1.2rem; font-weight: 700; color: var(--color-primary-dk); margin-bottom: 1rem; padding-bottom: .5rem; border-bottom: 2px solid var(--color-primary); }
+
+.pillar-row { display: grid; grid-template-columns: 2fr 1fr 2fr; align-items: center; gap: 16px; padding: 14px 16px; background: var(--color-bg); border-radius: 6px; margin-bottom: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+
+.pillar-row-left { display: flex; align-items: center; gap: 10px; }
+.pillar-row-code { font-weight: 700; font-size: .82rem; color: var(--color-primary); background: var(--color-bg-light); padding: 2px 8px; border-radius: 4px; }
+.pillar-row-name { font-size: .9rem; color: var(--color-text); }
+
+.pillar-row-center { display: flex; align-items: center; gap: 10px; }
+.pillar-row-score { font-size: 1.1rem; font-weight: 700; color: var(--color-primary-dk); }
+.pillar-row-traj { font-size: 1.1rem; font-weight: 700; }
+
+.pillar-row-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.pillar-btn { padding: 6px 12px; border: none; border-radius: 5px; font-size: .78rem; font-weight: 600; cursor: pointer; transition: opacity .15s; }
+.pillar-btn:hover { opacity: .85; }
+.pillar-btn--analyse  { background: var(--color-primary); color: #fff; }
+.pillar-btn--projects { background: var(--color-accent); color: #fff; }
+
+@media (max-width: 640px) {
+  .pillar-row { grid-template-columns: 1fr; gap: 8px; }
+  .pillar-row-actions { justify-content: flex-start; }
+}

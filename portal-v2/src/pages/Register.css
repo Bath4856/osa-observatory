@@ -1,24 +1,75 @@
-.register-page { max-width: 680px; margin: 0 auto; }
-.register-header { margin-bottom: 2rem; }
-.register-title { font-size: 1.8rem; font-weight: 700; color: #1F4E5F; }
-.register-subtitle { color: #888; font-size: 0.9rem; margin-top: 0.3rem; }
-.register-context { margin-top: 0.8rem; font-size: 0.85rem; color: #555; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-.ctx-tag { background: #e8f4f8; color: #1F4E5F; padding: 0.2rem 0.6rem; border-radius: 12px; font-weight: 600; font-size: 0.8rem; }
-.register-form { display: flex; flex-direction: column; gap: 1.2rem; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-.register-form label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem; font-weight: 600; color: #4a5568; }
-.register-form input, .register-form select, .register-form textarea {
-  padding: 0.5rem 0.8rem; border: 1px solid #cbd5e0; border-radius: 6px;
-  font-size: 0.9rem; font-family: inherit; transition: border-color 0.2s; }
-.register-form input:focus, .register-form select:focus, .register-form textarea:focus {
-  outline: none; border-color: #1F4E5F; }
-.form-full { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem; font-weight: 600; color: #4a5568; }
-.form-actions { display: flex; justify-content: flex-end; margin-top: 0.5rem; }
-.btn-submit { background: #1F4E5F; color: #fff; border: none; padding: 0.7rem 1.8rem; border-radius: 6px; cursor: pointer; font-size: 0.95rem; font-weight: 600; transition: background 0.2s; }
-.btn-submit:hover:not(:disabled) { background: #2E7D6E; }
-.btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
-.form-error { background: #fff0f0; color: #B00020; padding: 0.7rem 1rem; border-radius: 6px; font-size: 0.85rem; }
-.register-success { text-align: center; padding: 3rem 2rem; }
-.register-success h1 { color: #1B5E20; font-size: 2rem; margin-bottom: 1rem; }
-.register-success p { color: #555; margin-bottom: 2rem; }
-.btn-home { background: #1F4E5F; color: #fff; padding: 0.6rem 1.4rem; border-radius: 6px; text-decoration: none; font-weight: 600; }
+
+/* Etapes du processus */
+.register-steps { display: flex; align-items: center; gap: 8px; margin: 16px 0 8px; flex-wrap: wrap; }
+.register-step { display: flex; align-items: center; gap: 6px; }
+.step-num { font-weight: 700; color: var(--color-primary); font-size: 1rem; }
+.step-label { font-size: .82rem; color: var(--color-muted); }
+.register-step--active .step-label { color: var(--color-primary); font-weight: 600; }
+.register-step-sep { color: var(--color-accent); font-weight: 700; }
+.register-no-validation { font-size: .82rem; color: var(--color-primary); margin-bottom: 12px; font-weight: 600; }
+
+/* Hint section */
+.form-section-hint { font-size: .8rem; color: var(--color-muted); margin: -8px 0 10px; font-style: italic; }
+
+/* Encadre pedagogique */
+.register-pedagogic { background: var(--color-bg-light); border-left: 3px solid var(--color-primary); border-radius: 4px; padding: 16px 18px; margin: 16px 0; }
+.pedagogic-title { font-weight: 700; font-size: .88rem; color: var(--color-primary-dk); margin-bottom: 8px; }
+.pedagogic-list { margin: 0 0 10px 16px; padding: 0; }
+.pedagogic-list li { font-size: .83rem; color: var(--color-text); margin-bottom: 4px; }
+.pedagogic-note { font-size: .78rem; color: var(--color-muted); font-style: italic; margin: 0; border-top: 1px solid var(--color-border); padding-top: 8px; }
+
+/* Messages erreur enrichis */
+.form-error--info    { background: #e8f0ff; border-color: #3a5fa0; color: #1a3060; }
+.form-error--warning { background: #fff3e0; border-color: #C8973A; color: #7a5000; }
+
+/* Succes */
+.success-icon { font-size: 2.5rem; margin-bottom: 12px; }
+.success-email { font-size: 1.1rem; color: var(--color-primary-dk); margin: 8px 0 16px; }
+.success-main { font-size: .92rem; color: var(--color-text); line-height: 1.6; margin-bottom: 10px; }
+.success-sub { font-size: .82rem; color: var(--color-muted); margin-bottom: 16px; }
+.success-note { font-size: .78rem; color: var(--color-muted); font-style: italic; border-top: 1px solid var(--color-border); padding-top: 12px; }
+
+/* Lien confirm-email */
+.register-already-sent { font-size: .82rem; color: var(--color-muted); margin: 8px 0 16px; }
+.register-already-sent a { color: var(--color-primary); text-decoration: underline; }
+
+/* Mission */
+.register-mission { font-size: .9rem; color: var(--color-muted); line-height: 1.6; margin: 6px 0 16px; max-width: 600px; }
+
+/* Bénéfices */
+.register-benefits { background: var(--color-bg-light); border-radius: 8px; padding: 20px; margin: 16px 0; }
+.benefits-title { font-weight: 700; font-size: .88rem; color: var(--color-primary-dk); margin-bottom: 14px; }
+.benefits-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.benefit-card { display: flex; align-items: flex-start; gap: 8px; background: var(--color-bg); border-radius: 6px; padding: 10px 12px; }
+.benefit-icon { font-size: 1.2rem; flex-shrink: 0; }
+.benefit-text { font-size: .8rem; color: var(--color-text); line-height: 1.45; }
+@media (max-width: 480px) { .benefits-grid { grid-template-columns: 1fr; } }
+
+/* Parcours affilié */
+.register-journey { margin: 14px 0; padding: 14px 16px; background: var(--color-bg); border-radius: 6px; border-left: 3px solid var(--color-accent); }
+.journey-title { font-weight: 700; font-size: .82rem; color: var(--color-accent); margin-bottom: 10px; }
+.journey-steps { display: flex; flex-direction: column; gap: 2px; }
+.journey-step { display: flex; align-items: center; gap: 8px; flex-direction: column; align-items: flex-start; }
+.journey-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-muted); flex-shrink: 0; display: inline-block; margin-top: 5px; }
+.journey-dot--active { background: var(--color-primary); }
+.journey-label { font-size: .8rem; color: var(--color-text); }
+.journey-arrow { font-size: .7rem; color: var(--color-muted); margin-left: 4px; }
+.journey-step { flex-direction: row; align-items: center; }
+
+/* Note comités */
+.register-committees-note { margin-top: 14px; padding: 12px 14px; background: #f0f4ff; border-radius: 6px; border: 1px solid #c8d4f0; }
+.committees-note-title { font-weight: 700; font-size: .8rem; color: #3a5fa0; margin-bottom: 4px; }
+.committees-note-text { font-size: .78rem; color: #2a3a60; line-height: 1.5; margin: 0; }
+
+/* Liens confirmation */
+.register-confirm-links { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 12px 0 6px; font-size: .8rem; }
+.confirm-links-label { color: var(--color-muted); }
+.confirm-link { color: var(--color-primary); text-decoration: underline; }
+
+/* CGU */
+.register-terms { font-size: .75rem; color: var(--color-muted); margin: 6px 0 14px; line-height: 1.5; }
+.register-terms a { color: var(--color-primary); text-decoration: underline; }
+
+/* Succès actions */
+.success-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; justify-content: center; }
+.btn-resend { padding: 9px 18px; background: transparent; border: 2px solid var(--color-primary); color: var(--color-primary); border-radius: 6px; font-weight: 600; font-size: .85rem; text-decoration: none; }

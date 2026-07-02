@@ -345,3 +345,76 @@ def get_composite_country(
     if not rows:
         raise HTTPException(status_code=404, detail=f"No composite data found for {iso3}.")
     return [dict(r) for r in rows]
+
+
+# ── Sprint 29 -- Endpoints publics vues materialisees 2020-2024 ───────────────
+
+class AmarPublicItem(BaseModel):
+    country_iso3:                   str
+    year:                           int
+    risk_band:                      Optional[str]   = None
+    risk_score:                     Optional[float] = None
+    confidence_score:               Optional[float] = None
+    recommended_action:             Optional[str]   = None
+    public_narrative:               Optional[str]   = None
+    structural_fragility_score:     Optional[float] = None
+    conflict_escalation_score:      Optional[float] = None
+    governance_breakdown_score:     Optional[float] = None
+    humanitarian_stress_score:      Optional[float] = None
+    resource_conflict_score:        Optional[float] = None
+    information_polarization_score: Optional[float] = None
+
+
+class GenecoPublicItem(BaseModel):
+    country_iso3:                 str
+    year:                         int
+    risk_band:                    Optional[str]   = None
+    risk_score:                   Optional[float] = None
+    confidence_score:             Optional[float] = None
+    risk_class:                   Optional[str]   = None
+    recommended_action:           Optional[str]   = None
+    resource_capture_risk:        Optional[float] = None
+    logistics_enabling_risk:      Optional[float] = None
+    institutional_capture_risk:   Optional[float] = None
+    civilian_exploitation_risk:   Optional[float] = None
+    narrative_weaponization_risk: Optional[float] = None
+
+
+@router.get("/amar/{iso3}", response_model=List[AmarPublicItem],
+    summary="AMAR -- Vigilance souveraine pays unique (2020-2024)",
+    description="6 facteurs AMAR observes. Source : pub.mv_amar_dashboard.")
+def get_amar_public_country(iso3: str, db: Session = Depends(get_db)):
+    iso3 = iso3.upper()
+    rows = db.execute(text("""
+        SELECT country_iso3, year, risk_band, risk_score, confidence_score,
+               recommended_action, public_narrative,
+               structural_fragility_score, conflict_escalation_score,
+               governance_breakdown_score, humanitarian_stress_score,
+               resource_conflict_score, information_polarization_score
+        FROM pub.mv_amar_dashboard
+        WHERE country_iso3 = :iso3
+        ORDER BY year DESC
+    """), {"iso3": iso3}).mappings().all()
+    if not rows:
+        raise HTTPException(status_code=404, detail=f"No AMAR data for {iso3}.")
+    return [dict(r) for r in rows]
+
+
+@router.get("/geneco/{iso3}", response_model=List[GenecoPublicItem],
+    summary="GENECO -- Economie de conflit pays unique (2020-2024)",
+    description="5 facteurs GENECO observes. Source : pub.mv_geneco_dashboard.")
+def get_geneco_public_country(iso3: str, db: Session = Depends(get_db)):
+    iso3 = iso3.upper()
+    rows = db.execute(text("""
+        SELECT country_iso3, year, risk_band, risk_score, confidence_score,
+               risk_class, recommended_action,
+               resource_capture_risk, logistics_enabling_risk,
+               institutional_capture_risk, civilian_exploitation_risk,
+               narrative_weaponization_risk
+        FROM pub.mv_geneco_dashboard
+        WHERE country_iso3 = :iso3
+        ORDER BY year DESC
+    """), {"iso3": iso3}).mappings().all()
+    if not rows:
+        raise HTTPException(status_code=404, detail=f"No GENECO data for {iso3}.")
+    return [dict(r) for r in rows]
