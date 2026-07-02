@@ -1176,3 +1176,350 @@ def process_security_event(
         "fr": "Evenement marque comme traite.",
         "en": "Event marked as processed."
     }}
+
+
+# ── Sprint 30 D4 -- Groupes de travail des piliers de souverainete ─────────────
+
+WG_MANAGE_ROLES = {"ADMIN", "COMITE_TECH"}
+WG_MEMBER_ROLES = {"ADMIN", "COMITE_TECH", "COMITE_SCI", "COMITE_ETHIQUE", "AFFILIE"}
+
+
+class WorkingGroupInvite(BaseModel):
+    affiliate_id:  int
+    pillar_code:   str
+    role_in_group: Optional[str] = "MEMBER"
+    reason:        Optional[str] = None
+
+
+class WorkingGroupAccept(BaseModel):
+    member_id: int
+
+
+class WorkingGroupTransfer(BaseModel):
+    affiliate_id:  int
+    new_pillar:    str
+    reason:        Optional[str] = None
+
+
+@router.get("/working-groups",
+    summary="Groupes de travail des piliers de souverainete -- D4",
+    description="Accessible a tous les affilies authentifies.")
+def list_working_groups(
+    payload: dict = Depends(get_current_affiliate),
+    db:      Session = Depends(get_db),
+):
+    role = payload.get("role", "")
+    if role not in WG_MEMBER_ROLES:
+        raise HTTPException(status_code=403, detail={
+            "fr": "Reserve aux affilies OSA.",
+            "en": "Reserved for OSA affiliates."
+        })
+
+    rows = db.execute(text("""
+        SELECT g.pillar_code, g.label_fr, g.label_en,
+               g.description_fr, g.description_en, g.status,
+               COUNT(m.id) FILTER (WHERE m.status = 'ACTIVE')  AS nb_active,
+               COUNT(m.id) FILTER (WHERE m.status = 'INVITED') AS nb_invited
+        FROM mg.working_groups g
+        LEFT JOIN mg.working_group_members m ON m.pillar_code = g.pillar_code
+        GROUP BY g.pillar_code
+        ORDER BY g.pillar_code
+    """)).mappings().all()
+
+    my_group = db.execute(text("""
+        SELECT m.pillar_code, m.status, m.role_in_group
+        FROM mg.working_group_members m
+        WHERE m.affiliate_id = :id AND m.status IN ('INVITED','ACTIVE')
+        ORDER BY m.invited_at DESC LIMIT 1
+    """), {"id": int(payload["sub"])}).mappings().first()
+
+    return {
+        "my_group": {
+            "pillar_code":  my_group["pillar_code"],
+            "status":       my_group["status"],
+            "role":         my_group["role_in_group"],
+        } if my_group else None,
+        "groups": [{
+            "pillar_code": r["pillar_code"],
+            "label":       {"fr": r["label_fr"], "en": r["label_en"]},
+            "description": {"fr": r["description_fr"], "en": r["description_en"]},
+            "status":      r["status"],
+            "nb_active":   r["nb_active"],
+            "nb_invited":  r["nb_invited"],
+        } for r in rows]
+    }
+
+
+@router.get("/working-groups/{pillar_code}/members",
+    summary="Membres d'un groupe de travail -- D4",
+    description="Reserve a ADMIN et COMITE_TECH.")
+def list_group_members(
+    pillar_code: str,
+    payload:     dict = Depends(get_current_affiliate),
+    db:          Session = Depends(get_db),
+):
+    role = payload.get("role", "")
+    if role not in WG_MANAGE_ROLES:
+        raise HTTPException(status_code=403, detail={
+            "fr": "Reserve a l'equipe OSA et au Comite technique.",
+            "en": "Reserved for the OSA team and Technical Committee."
+        })
+
+    rows = db.execute(text("""
+        SELECT m.id, m.status, m.role_in_group,
+               m.invited_at, m.accepted_at, m.left_at, m.reason,
+               a.first_name, a.last_name, a.email, a.org_name,
+               inv.first_name AS inv_first, inv.last_name AS inv_last,
+               upd.first_name AS upd_first, upd.last_name AS upd_last
+        FROM mg.working_group_members m
+        JOIN mg.affiliates a   ON a.id  = m.affiliate_id
+        JOIN mg.affiliates inv ON inv.id = m.invited_by
+        LEFT JOIN mg.affiliates upd ON upd.id = m.updated_by
+        WHERE m.pillar_code = :pillar
+        ORDER BY m.invited_at DESC
+    """), {"pillar": pillar_code.upper()}).mappings().all()
+
+    return [{
+        "id":           r["id"],
+        "affiliate":    f"{r['first_name']} {r['last_name']} ({r['email']})",
+        "org_name":     r["org_name"],
+        "role":         r["role_in_group"],
+        "status":       r["status"],
+        "invited_by":   f"{r['inv_first']} {r['inv_last']}",
+        "updated_by":   f"{r['upd_first']} {r['upd_last']}" if r["upd_first"] else None,
+        "invited_at":   str(r["invited_at"]),
+        "accepted_at":  str(r["accepted_at"]) if r["accepted_at"] else None,
+        "left_at":      str(r["left_at"]) if r["left_at"] else None,
+        "reason":       r["reason"],
+    } for r in rows]
+
+
+@router.post("/working-groups/invite",
+    summary="Inviter un affilie dans un groupe -- D4",
+    description="Reserve a ADMIN et COMITE_TECH. Statut initial : INVITED.")
+def invite_to_group(
+    data:    WorkingGroupInvite,
+    payload: dict = Depends(get_current_affiliate),
+    db:      Session = Depends(get_db),
+):
+    role = payload.get("role", "")
+    if role not in WG_MANAGE_ROLES:
+        raise HTTPException(status_code=403, detail={
+            "fr": "L'invitation dans un groupe est reservee a l'equipe OSA et au Comite technique.",
+            "en": "Inviting to a group is reserved for the OSA team and Technical Committee."
+        })
+
+    group = db.execute(text("""
+        SELECT pillar_code, label_fr, label_en FROM mg.working_groups
+        WHERE pillar_code = :pillar AND status = 'ACTIVE'
+    """), {"pillar": data.pillar_code.upper()}).mappings().first()
+
+    if not group:
+        raise HTTPException(status_code=404, detail={
+            "fr": f"Groupe {data.pillar_code} non trouve ou inactif.",
+            "en": f"Group {data.pillar_code} not found or inactive."
+        })
+
+    # Verifier role_in_group valide
+    valid_role = db.execute(text("""
+        SELECT code FROM mg.group_roles WHERE code = :code AND is_active = TRUE
+    """), {"code": data.role_in_group or "MEMBER"}).mappings().first()
+
+    if not valid_role:
+        raise HTTPException(status_code=400, detail={
+            "fr": "Role dans le groupe invalide.",
+            "en": "Invalid group role."
+        })
+
+    existing = db.execute(text("""
+        SELECT pillar_code, status FROM mg.working_group_members
+        WHERE affiliate_id = :id AND status IN ('INVITED','ACTIVE')
+    """), {"id": data.affiliate_id}).mappings().first()
+
+    if existing:
+        raise HTTPException(status_code=409, detail={
+            "fr": f"Cet affilie est deja dans le groupe {existing['pillar_code']} (statut : {existing['status']}).",
+            "en": f"This affiliate is already in group {existing['pillar_code']} (status: {existing['status']})."
+        })
+
+    db.execute(text("""
+        INSERT INTO mg.working_group_members
+            (pillar_code, affiliate_id, role_in_group, invited_by, status)
+        VALUES (:pillar, :affiliate_id, :role, :invited_by, 'INVITED')
+    """), {
+        "pillar":       data.pillar_code.upper(),
+        "affiliate_id": data.affiliate_id,
+        "role":         data.role_in_group or "MEMBER",
+        "invited_by":   int(payload["sub"]),
+    })
+    db.commit()
+
+    return {
+        "pillar_code":  data.pillar_code.upper(),
+        "affiliate_id": data.affiliate_id,
+        "status":       "INVITED",
+        "message": {
+            "fr": f"Affilie invite dans le groupe {group['label_fr']}. En attente d'acceptation.",
+            "en": f"Affiliate invited to the {group['label_en']} group. Awaiting acceptance."
+        }
+    }
+
+
+@router.patch("/working-groups/accept/{member_id}",
+    summary="Accepter une invitation -- D4",
+    description="Accessible a l'affilie concerne. Passe le statut INVITED -> ACTIVE.")
+def accept_invitation(
+    member_id: int,
+    payload:   dict = Depends(get_current_affiliate),
+    db:        Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+
+    member = db.execute(text("""
+        SELECT id, pillar_code, affiliate_id, status
+        FROM mg.working_group_members
+        WHERE id = :id
+    """), {"id": member_id}).mappings().first()
+
+    if not member:
+        raise HTTPException(status_code=404, detail="Invitation non trouvee.")
+
+    if member["affiliate_id"] != affiliate_id:
+        raise HTTPException(status_code=403, detail={
+            "fr": "Seul l'affilie invite peut accepter cette invitation. Le Comite technique peut annuler une invitation ou effectuer un transfert, mais ne peut pas accepter a la place de l'interesse.",
+            "en": "Only the invited affiliate can accept this invitation. The Technical Committee can cancel an invitation or perform a transfer, but cannot accept on behalf of the affiliate."
+        })
+
+    if member["status"] != "INVITED":
+        raise HTTPException(status_code=400, detail={
+            "fr": "Cette invitation n'est plus en attente.",
+            "en": "This invitation is no longer pending."
+        })
+
+    db.execute(text("""
+        UPDATE mg.working_group_members
+        SET status = 'ACTIVE', accepted_at = NOW(), updated_by = :by
+        WHERE id = :id
+    """), {"id": member_id, "by": affiliate_id})
+    db.commit()
+
+    return {
+        "id":          member_id,
+        "pillar_code": member["pillar_code"],
+        "status":      "ACTIVE",
+        "message": {
+            "fr": f"Invitation acceptee. Vous etes maintenant membre du groupe {member['pillar_code']}.",
+            "en": f"Invitation accepted. You are now a member of the {member['pillar_code']} group."
+        }
+    }
+
+
+@router.patch("/working-groups/transfer",
+    summary="Transferer un affilie vers un autre groupe -- D4",
+    description="Reserve a ADMIN et COMITE_TECH. Archive l'ancienne affectation.")
+def transfer_group(
+    data:    WorkingGroupTransfer,
+    payload: dict = Depends(get_current_affiliate),
+    db:      Session = Depends(get_db),
+):
+    role = payload.get("role", "")
+    if role not in WG_MANAGE_ROLES:
+        raise HTTPException(status_code=403, detail={
+            "fr": "Le transfert de groupe est reserve a l'equipe OSA et au Comite technique.",
+            "en": "Group transfer is reserved for the OSA team and Technical Committee."
+        })
+
+    old = db.execute(text("""
+        UPDATE mg.working_group_members
+        SET status = 'INACTIVE', left_at = NOW(),
+            reason = :reason, updated_by = :by
+        WHERE affiliate_id = :id AND status = 'ACTIVE'
+        RETURNING pillar_code
+    """), {
+        "id":     data.affiliate_id,
+        "reason": data.reason,
+        "by":     int(payload["sub"]),
+    }).mappings().first()
+
+    if not old:
+        raise HTTPException(status_code=404, detail={
+            "fr": "Aucune affectation active trouvee pour cet affilie.",
+            "en": "No active group assignment found for this affiliate."
+        })
+
+    db.execute(text("""
+        INSERT INTO mg.working_group_members
+            (pillar_code, affiliate_id, role_in_group, invited_by,
+             status, accepted_at, reason)
+        VALUES (:pillar, :affiliate_id, 'MEMBER', :by,
+                'ACTIVE', NOW(), :reason)
+    """), {
+        "pillar":       data.new_pillar.upper(),
+        "affiliate_id": data.affiliate_id,
+        "by":           int(payload["sub"]),
+        "reason":       data.reason,
+    })
+    db.commit()
+
+    return {
+        "from_group": old["pillar_code"],
+        "to_group":   data.new_pillar.upper(),
+        "message": {
+            "fr": f"Affilie transfere de {old['pillar_code']} vers {data.new_pillar.upper()}. Historique conserve.",
+            "en": f"Affiliate transferred from {old['pillar_code']} to {data.new_pillar.upper()}. History preserved."
+        }
+    }
+
+
+@router.get("/working-groups/dashboard",
+    summary="Dashboard des groupes de travail -- D4",
+    description="Vue summary pilotee par mg.group_occupation_policies. Reserve a ADMIN et COMITE_TECH.")
+def get_working_groups_dashboard(
+    payload: dict = Depends(get_current_affiliate),
+    db:      Session = Depends(get_db),
+):
+    role = payload.get("role", "")
+    if role not in WG_MANAGE_ROLES:
+        raise HTTPException(status_code=403, detail={
+            "fr": "Reserve a l'equipe OSA et au Comite technique.",
+            "en": "Reserved for the OSA team and Technical Committee."
+        })
+
+    rows = db.execute(text("""
+        SELECT pillar_code, label_fr, label_en, display_order, group_status,
+               nb_members, nb_pending, has_coordinator, nb_rapporteurs,
+               nb_contributions, nb_comments_open, nb_proposals_open,
+               last_activity, occupation
+        FROM mg.v_working_group_summary
+        ORDER BY display_order
+    """)).mappings().all()
+
+    policies = db.execute(text("""
+        SELECT level, min_members, max_members, label_fr, label_en
+        FROM mg.group_occupation_policies
+        WHERE is_active = TRUE ORDER BY min_members
+    """)).mappings().all()
+
+    return {
+        "occupation_policies": [{
+            "level":       r["level"],
+            "min_members": r["min_members"],
+            "max_members": r["max_members"],
+            "label":       {"fr": r["label_fr"], "en": r["label_en"]},
+        } for r in policies],
+        "groups": [{
+            "pillar_code":      r["pillar_code"],
+            "label":            {"fr": r["label_fr"], "en": r["label_en"]},
+            "display_order":    r["display_order"],
+            "status":           r["group_status"],
+            "nb_members":       r["nb_members"],
+            "nb_pending":       r["nb_pending"],
+            "has_coordinator":  r["has_coordinator"] is not None,
+            "nb_rapporteurs":   r["nb_rapporteurs"],
+            "nb_contributions": r["nb_contributions"],
+            "nb_comments_open": r["nb_comments_open"],
+            "nb_proposals_open":r["nb_proposals_open"],
+            "last_activity":    str(r["last_activity"]) if r["last_activity"] else None,
+            "occupation":       r["occupation"],
+        } for r in rows]
+    }
