@@ -95,7 +95,7 @@
 
 .product-btn:hover { opacity: .85; }
 .product-btn--isa   { background: var(--color-primary); color: #fff; }
-.product-btn--iosa  { background: var(--color-primary); color: #fff; }
+.product-btn--poa   { background: var(--color-primary); color: #fff; }
 .product-btn--geneco { background: var(--color-accent); color: #fff; }
 .product-btn--amar  { background: #B00020; color: #fff; }
 
@@ -117,7 +117,6 @@
 .pillar-btn { padding: 6px 12px; border: none; border-radius: 5px; font-size: .78rem; font-weight: 600; cursor: pointer; transition: opacity .15s; }
 .pillar-btn:hover { opacity: .85; }
 .pillar-btn--analyse  { background: var(--color-primary); color: #fff; }
-.pillar-btn--projects { background: var(--color-accent); color: #fff; }
 
 @media (max-width: 640px) {
   .pillar-row { grid-template-columns: 1fr; gap: 8px; }

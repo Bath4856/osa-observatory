@@ -231,3 +231,71 @@ async def get_country_sovereign_projects(
         "elapsed_ms": elapsed,
         "data": [dict(r) for r in rows]
     })
+
+
+@sovereign_router.get(
+    "/recommendation/{iso3}/{pillar}",
+    summary="Recommandation stratégique pilier -- PUBLIC",
+    description="Diagnostic stratégique (rôle SWOT) et projet structurant recommandé pour un pays "
+                "et un pilier donnés. Doctrine : aucun score numérique n'est exposé au public -- "
+                "les scores servent uniquement au tri interne (ORDER BY), jamais à l'affichage. "
+                "Le projet recommandé n'a pas d'impact ISA calculé ; il est propose parce que "
+                "l'analyse stratégique identifie une pertinence sur ce pilier (swot_strategic_role)."
+)
+async def get_pillar_recommendation(
+    iso3: str,
+    pillar: str,
+    lang: str = Query(default="en", description="Langue des contenus : en (defaut) ou fr"),
+    db: Session = Depends(get_db),
+):
+    t0 = time.time()
+    lang_norm = lang.lower() if lang else "en"
+
+    diagnosis = db.execute(text("""
+        SELECT
+            country_iso3, year, pillar_code,
+            swot_strategic_role, strategic_recommendation_action,
+            project_orientation, strategic_objective,
+            open_data_deliverable, recommendation_evidence_status
+        FROM ma.mv_isa_project_opportunity_catalog
+        WHERE country_iso3 = :iso3 AND pillar_code = :pillar
+        ORDER BY year DESC
+        LIMIT 1
+    """), {"iso3": iso3.upper(), "pillar": pillar.upper()}).mappings().first()
+
+    project = db.execute(text("""
+        SELECT
+            sp.project_code, sp.project_acronym,
+            COALESCE(
+                CASE WHEN :lang = 'fr' THEN sp.project_name_fr ELSE sp.project_name_en END,
+                sp.project_name
+            ) AS project_name,
+            COALESCE(
+                CASE WHEN :lang = 'fr' THEN sp.project_description_fr ELSE sp.project_description_en END,
+                sp.project_description
+            ) AS project_description,
+            COALESCE(
+                CASE WHEN :lang = 'fr' THEN sp.deliverable_public_fr ELSE sp.deliverable_public_en END,
+                sp.deliverable_public
+            ) AS deliverable_public,
+            sp.status
+        FROM rf.sovereign_project_catalog sp
+        WHERE sp.is_active = true
+          AND sp.pillar_code = :pillar
+          AND (sp.country_iso3 = :iso3 OR sp.country_iso3 IS NULL)
+        ORDER BY sp.priority_score DESC
+        LIMIT 1
+    """), {"pillar": pillar.upper(), "iso3": iso3.upper(), "lang": lang_norm}).mappings().first()
+
+    elapsed = round((time.time() - t0) * 1000, 2)
+    await register_api_usage(
+        "V2_PILLAR_RECOMMENDATION", f"/api/v2/sovereign-projects/recommendation/{iso3}/{pillar}", "GET",
+        "PUBLIC", 200, elapsed, 1 if project else 0
+    )
+    return _json({
+        "country_iso3": iso3.upper(),
+        "pillar_code": pillar.upper(),
+        "diagnosis": dict(diagnosis) if diagnosis else None,
+        "recommended_project": dict(project) if project else None,
+        "elapsed_ms": elapsed,
+    })

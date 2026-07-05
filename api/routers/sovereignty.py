@@ -196,3 +196,112 @@ def get_structural_obs_country(
         params["indicator"] = indicator.upper()
     sql += " ORDER BY c.year DESC, c.indicator_code LIMIT :limit"
     return [dict(r) for r in db.execute(text(sql), params).mappings().all()]
+
+
+class PoaCatalogItem(BaseModel):
+    indicator_code:  str            = Field(..., description="Code indicateur POA")
+    pillar_code:     str            = Field(..., description="Pilier de rattachement (rf.indicators)")
+    title_fr:        str            = Field(..., description="Titre public (rf.indicators.name_fr)")
+    title_en:        str            = Field(..., description="Public title (rf.indicators.name_en)")
+    delta_desc_fr:   str
+    delta_desc_en:   str
+    metric_label_fr: str
+    metric_label_en: str
+    metric_note_fr:  str
+    metric_note_en:  str
+    source_fr:       str
+    source_en:       str
+    coverage_fr:     str = Field(..., description="Calculee a la volee -- pays distincts + annee min/max reellement observes")
+    coverage_en:     str
+    warning_fr:      Optional[str] = None
+    warning_en:      Optional[str] = None
+    tendency_up_fr:   str
+    tendency_up_en:   str
+    tendency_down_fr: str
+    tendency_down_en: str
+    tendency_flat_fr: str
+    tendency_flat_en: str
+    display_order:    int
+
+@router.get("/poa-catalog",
+    summary="Catalogue des phénomènes POA — métadonnées",
+    description=(
+        "Libellés, descriptions et textes de tendance des indicateurs POA "
+        "(Phénomènes Observables Autonomes). Contenu de référence pour les pages "
+        "de détail — remplace la configuration en dur précédemment codée côté portail. "
+        "Le titre et le pilier de rattachement proviennent de rf.indicators, seule "
+        "source de vérité pour ces deux champs (pas de duplication). La couverture "
+        "(nombre de pays, plage d'années) est calculée à la volée à partir des "
+        "données réellement présentes -- jamais un texte figé qui se périmerait "
+        "à chaque nouvelle année publiée."
+    ),
+    response_model=List[PoaCatalogItem])
+def get_poa_catalog(db: Session = Depends(get_db)):
+    sql = """
+        WITH pub_policy AS (
+            SELECT year, status AS publication_status
+            FROM rf.publication_policy
+        ),
+        covered AS (
+            SELECT country_iso3, year, indicator_code
+            FROM ma.indicator_values
+            WHERE indicator_code IN ('PHUM_VALUE_CAPTURE', 'PMIN_VALUE_LEAKAGE')
+              AND layer_id = 3
+            UNION ALL
+            SELECT country_iso3, year, indicator_code
+            FROM collect.raw_data
+            WHERE indicator_code = 'PMIN_SMUGGLING_SIGNAL_RANK'
+        ),
+        -- Uniquement les annees dans le perimetre de publication reel
+        -- (rf.publication_policy) -- jamais toute la fenetre de collecte brute.
+        -- Coherent avec le filtre publication_status appliqué côté portail.
+        published_only AS (
+            SELECT c.country_iso3, c.year, c.indicator_code
+            FROM covered c
+            JOIN pub_policy pp ON pp.year = c.year
+        ),
+        coverage AS (
+            SELECT
+                indicator_code,
+                COUNT(DISTINCT country_iso3) AS nb_countries,
+                MIN(year) AS year_min,
+                MAX(year) AS year_max
+            FROM published_only
+            GROUP BY indicator_code
+        )
+        SELECT
+            p.indicator_code,
+            i.pillar_code,
+            i.name_fr AS title_fr,
+            i.name_en AS title_en,
+            p.delta_desc_fr, p.delta_desc_en,
+            p.metric_label_fr, p.metric_label_en,
+            p.metric_note_fr, p.metric_note_en,
+            p.source_fr, p.source_en,
+            c.nb_countries, c.year_min, c.year_max,
+            p.warning_fr, p.warning_en,
+            p.tendency_up_fr, p.tendency_up_en,
+            p.tendency_down_fr, p.tendency_down_en,
+            p.tendency_flat_fr, p.tendency_flat_en,
+            p.display_order
+        FROM rf.poa_catalog p
+        JOIN rf.indicators i ON i.code = p.indicator_code
+        LEFT JOIN coverage c ON c.indicator_code = p.indicator_code
+        ORDER BY p.display_order
+    """
+    rows = db.execute(text(sql)).mappings().all()
+    result = []
+    for r in rows:
+        d = dict(r)
+        nb = d.pop("nb_countries", None)
+        ymin = d.pop("year_min", None)
+        ymax = d.pop("year_max", None)
+        if nb is not None and ymin is not None and ymax is not None:
+            year_range = str(ymin) if ymin == ymax else f"{ymin}–{ymax}"
+            d["coverage_fr"] = f"{nb} pays · {year_range}"
+            d["coverage_en"] = f"{nb} countries · {year_range}"
+        else:
+            d["coverage_fr"] = "Aucune donnée publiée"
+            d["coverage_en"] = "No published data"
+        result.append(d)
+    return result

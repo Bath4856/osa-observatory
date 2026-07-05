@@ -45,6 +45,7 @@ const router = createBrowserRouter([
       { path: '/country/:iso3/amar',             element: <AmarDetail /> },
       { path: '/country/:iso3/conflict-economy', element: <ConflictEconomyDetail /> },
       { path: '/country/:iso3/iosa',             element: <IosaDetail /> },
+      { path: '/country/:iso3/poa',              element: <IosaDetail /> },
       { path: '/register',                       element: <Register /> },
       { path: '/confirm-email',                  element: <ConfirmEmail /> },
       { path: '/pillars',                        element: <Pillars /> },

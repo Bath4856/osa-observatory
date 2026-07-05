@@ -1,142 +1,44 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { getStructuralObs } from '../api/structural'
+import { getStructuralObs, getPoaCatalog } from '../api/structural'
 import { useLang } from '../i18n/useLang'
 import './IosaDetail.css'
 
-// Années de publication officielle OSA
-const PUB_YEARS = [2020, 2021, 2022, 2023, 2024]
-
-// ─── Configuration par indicateur ─────────────────────────────────────────────
-// Chaque indicateur a :
-// - un libellé public (sans jargon technique)
-// - une description du delta qu'il mesure
-// - le nom de la colonne métrique et son unité
-// - la couverture géographique et temporelle
-// - une note de lecture pour l'usager
-// - un lien vers les projets structurants pertinents
-const INDICATOR_CONFIG = {
-  PHUM_VALUE_CAPTURE: {
-    fr: {
-      label: 'Capture de valeur du capital humain',
-      delta_desc: "Mesure l'écart entre le capital humain formé sur le territoire et celui qui y reste. Un delta négatif croissant signale une hémorragie de compétences — médecins, ingénieurs, cadres qui quittent le pays après leur formation.",
-      metric_label: 'Rétention observée (%)',
-      metric_note: 'Part du capital humain formé retenu sur le territoire. Un chiffre en baisse indique que la fuite s\'accélère.',
-      source: 'Banque mondiale (WB SH.MED.PHYS.ZS + SE.TER.ENRR)',
-      coverage_fr: '54 pays · 2010–2024',
-      coverage_en: '54 countries · 2010–2024',
-      project_pillar: 'PHUM',
-      warning: null,
-      tendency_up_fr: "La rétention du capital humain se dégrade sur la période — le pays perd proportionnellement plus de compétences formées qu'il n'en retient.",
-      tendency_up_en: "Human capital retention is deteriorating over the period — the country is losing a proportionally higher share of its trained skills.",
-      tendency_down_fr: "La rétention du capital humain s'améliore sur la période — une part croissante des compétences formées reste sur le territoire.",
-      tendency_down_en: "Human capital retention is improving over the period — a growing share of trained skills remains on the territory.",
-      tendency_flat_fr: "La rétention du capital humain est stable sur la période observée.",
-      tendency_flat_en: "Human capital retention is stable over the observed period.",
-    },
-    en: {
-      label: 'Human capital value capture',
-      delta_desc: "Measures the gap between human capital trained on the territory and human capital that stays. A growing negative delta signals a brain drain — doctors, engineers, executives leaving the country after training.",
-      metric_label: 'Observed retention (%)',
-      metric_note: 'Share of trained human capital retained on the territory. A declining figure indicates accelerating outflow.',
-      source: 'World Bank (WB SH.MED.PHYS.ZS + SE.TER.ENRR)',
-      coverage_fr: '54 pays · 2010–2024',
-      coverage_en: '54 countries · 2010–2024',
-      project_pillar: 'PHUM',
-      warning: null,
-      tendency_up_fr: "La rétention du capital humain se dégrade sur la période.",
-      tendency_up_en: "Human capital retention is deteriorating over the period.",
-      tendency_down_fr: "La rétention du capital humain s'améliore sur la période.",
-      tendency_down_en: "Human capital retention is improving over the period.",
-      tendency_flat_fr: "La rétention du capital humain est stable sur la période observée.",
-      tendency_flat_en: "Human capital retention is stable over the observed period.",
-    }
-  },
-  PMIN_VALUE_LEAKAGE: {
-    fr: {
-      label: 'Fuite de valeur minière',
-      delta_desc: "Mesure l'écart entre ce que les partenaires commerciaux déclarent avoir reçu et ce que le pays déclare avoir exporté, sur les minerais stratégiques. Ce delta représente la valeur qui quitte le territoire sans être déclarée ni capturée — une hémorragie commerciale mesurable.",
-      metric_label: 'Fuite déclarée (%)',
-      metric_note: 'Pourcentage de la valeur minérale reçue par les partenaires qui n\'a pas été déclarée à l\'export par le pays. Plus ce chiffre est élevé, plus l\'hémorragie est importante.',
-      source: 'CEPII BACI HS92 (HS26 + HS27 + HS71)',
-      coverage_fr: '54 pays · 2010–2024',
-      coverage_en: '54 countries · 2010–2024',
-      project_pillar: 'PMIN',
-      warning: null,
-      tendency_up_fr: "La fuite de valeur minière s'aggrave sur la période — une proportion croissante des minerais exportés échappe à la déclaration officielle.",
-      tendency_up_en: "Mineral value leakage is worsening over the period — a growing share of exported minerals escapes official declaration.",
-      tendency_down_fr: "La fuite de valeur minière se réduit sur la période — la part des minerais non déclarés diminue.",
-      tendency_down_en: "Mineral value leakage is decreasing over the period — the share of undeclared minerals is declining.",
-      tendency_flat_fr: "La fuite de valeur minière est stable sur la période observée.",
-      tendency_flat_en: "Mineral value leakage is stable over the observed period.",
-    },
-    en: {
-      label: 'Mineral value leakage',
-      delta_desc: "Measures the gap between what trading partners declare having received and what the country declares having exported, on strategic minerals. This delta represents value leaving the territory undeclared and uncaptured — a measurable commercial hemorrhage.",
-      metric_label: 'Declared leakage (%)',
-      metric_note: 'Percentage of mineral value received by partners that was not declared as an export by the country. The higher this figure, the greater the hemorrhage.',
-      source: 'CEPII BACI HS92 (HS26 + HS27 + HS71)',
-      coverage_fr: '54 pays · 2010–2024',
-      coverage_en: '54 countries · 2010–2024',
-      project_pillar: 'PMIN',
-      warning: null,
-      tendency_up_fr: "La fuite de valeur minière s'aggrave sur la période.",
-      tendency_up_en: "Mineral value leakage is worsening over the period.",
-      tendency_down_fr: "La fuite de valeur minière se réduit sur la période.",
-      tendency_down_en: "Mineral value leakage is decreasing over the period.",
-      tendency_flat_fr: "La fuite de valeur minière est stable sur la période observée.",
-      tendency_flat_en: "Mineral value leakage is stable over the observed period.",
-    }
-  },
-  PMIN_SMUGGLING_SIGNAL_RANK: {
-    fr: {
-      label: 'Signal de contrebande minière',
-      delta_desc: "Mesure l'écart entre la production minérale estimée et les flux commerciaux déclarés. Un rang élevé indique que l'écart entre production et déclaration est suspect — une configuration méritant une investigation complémentaire. Cet indicateur ne désigne aucune responsabilité.",
-      metric_label: 'Rang de suspicion',
-      metric_note: 'Rang ordinal construit à partir de l\'écart production/déclaration. Un rang élevé signale une configuration atypique — pas une certitude de contrebande.',
-      source: 'BACI × USGS (MIN_PRD_*)',
-      coverage_fr: '37 pays · 2016–2021',
-      coverage_en: '37 countries · 2016–2021',
-      project_pillar: 'PMIN',
-      warning: {
-        fr: "Série partielle — couverture 2016–2021 pour 37 pays. Les années hors de cette fenêtre n'ont pas de données observées et ne sont pas publiées.",
-        en: "Partial series — 2016–2021 coverage for 37 countries. Years outside this window have no observed data and are not published.",
-      },
-      tendency_up_fr: "Le rang de suspicion s'aggrave sur la période — l'écart entre production estimée et flux déclarés s'élargit.",
-      tendency_up_en: "The suspicion rank is worsening over the period — the gap between estimated production and declared flows is widening.",
-      tendency_down_fr: "Le rang de suspicion diminue sur la période — l'écart entre production estimée et flux déclarés se réduit.",
-      tendency_down_en: "The suspicion rank is decreasing over the period — the gap between estimated production and declared flows is narrowing.",
-      tendency_flat_fr: "Le rang de suspicion est stable sur la période observée.",
-      tendency_flat_en: "The suspicion rank is stable over the observed period.",
-    },
-    en: {
-      label: 'Mineral smuggling signal',
-      delta_desc: "Measures the gap between estimated mineral production and declared trade flows. A high rank indicates that the gap between production and declaration is suspicious — a configuration warranting further investigation. This indicator assigns no responsibility.",
-      metric_label: 'Suspicion rank',
-      metric_note: 'Ordinal rank built from the production/declaration gap. A high rank signals an atypical configuration — not a certainty of smuggling.',
-      source: 'BACI × USGS (MIN_PRD_*)',
-      coverage_fr: '37 pays · 2016–2021',
-      coverage_en: '37 countries · 2016–2021',
-      project_pillar: 'PMIN',
-      warning: {
-        fr: "Série partielle — couverture 2016–2021 pour 37 pays. Les années hors de cette fenêtre n'ont pas de données observées et ne sont pas publiées.",
-        en: "Partial series — 2016–2021 coverage for 37 countries. Years outside this window have no observed data and are not published.",
-      },
-      tendency_up_fr: "Le rang de suspicion s'aggrave sur la période.",
-      tendency_up_en: "The suspicion rank is worsening over the period.",
-      tendency_down_fr: "Le rang de suspicion diminue sur la période.",
-      tendency_down_en: "The suspicion rank is decreasing over the period.",
-      tendency_flat_fr: "Le rang de suspicion est stable sur la période observée.",
-      tendency_flat_en: "The suspicion rank is stable over the observed period.",
-    }
-  }
-}
+// Pas d'annees de publication codees en dur ici : le statut de publication
+// (OFFICIEL / PRELIMINAIRE / absent) vient de rf.publication_policy via
+// l'API (champ publication_status de chaque ligne). Une annee est "publiee"
+// si et seulement si ce champ n'est pas null -- jamais une liste figee cote
+// portail qui se perimerait a chaque nouvelle annee ouverte.
 
 const INDICATOR_ORDER = [
   'PHUM_VALUE_CAPTURE',
   'PMIN_VALUE_LEAKAGE',
   'PMIN_SMUGGLING_SIGNAL_RANK'
 ]
+
+// Adapte une ligne de rf.poa_catalog (une seule fois, bilingue par colonnes
+// _fr/_en) vers la forme {label, delta_desc, ...} attendue par le reste du
+// composant -- evite de reecrire toute la logique de rendu en aval.
+// Source de verite unique : plus aucune donnee en dur cote portail
+// (Sprint 31 -- doctrine "tout en base").
+function adaptCatalogRow(row, lang) {
+  if (!row) return null
+  const pick = (base) => row[`${base}_${lang}`]
+  return {
+    label: lang === 'fr' ? row.title_fr : row.title_en,
+    delta_desc: pick('delta_desc'),
+    metric_label: pick('metric_label'),
+    metric_note: pick('metric_note'),
+    source: pick('source'),
+    coverage_fr: row.coverage_fr,
+    coverage_en: row.coverage_en,
+    project_pillar: row.pillar_code,
+    warning: (row.warning_fr || row.warning_en) ? { fr: row.warning_fr, en: row.warning_en } : null,
+    tendency_up_fr: row.tendency_up_fr, tendency_up_en: row.tendency_up_en,
+    tendency_down_fr: row.tendency_down_fr, tendency_down_en: row.tendency_down_en,
+    tendency_flat_fr: row.tendency_flat_fr, tendency_flat_en: row.tendency_flat_en,
+  }
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -158,7 +60,11 @@ function getTendency(rows, pubYears, code) {
   const vals = pubYears
     .map(y => rows.find(r => r.year === y)?.raw_value)
     .filter(v => v != null)
-  if (vals.length < 2) return 'flat'
+  // Moins de 2 points observés : aucune tendance n'est calculable.
+  // A ne jamais confondre avec 'flat' (une tendance reellement stable,
+  // calculee a partir de donnees suffisantes) -- le trait d'absence de
+  // donnee et la fleche "stable" doivent rester visuellement distincts.
+  if (vals.length < 2) return 'insufficient'
   const delta = vals[vals.length - 1] - vals[0]
   const threshold = 3 // % de variation significative
   if (code === 'PHUM_VALUE_CAPTURE') {
@@ -177,11 +83,6 @@ function getObsStatus(rows, pubYears) {
   if (observed.length === 0) return 'COLLECTING'
   if (observed.length < pubYears.length) return 'PARTIAL'
   return 'OBSERVED'
-}
-
-function isInCoverage(year, code) {
-  if (code === 'PMIN_SMUGGLING_SIGNAL_RANK') return year >= 2016 && year <= 2021
-  return year >= 2010 && year <= 2024
 }
 
 function PubBadge({ status, lang }) {
@@ -216,18 +117,20 @@ function StatusBadge({ status, lang }) {
 }
 
 // ─── Composant fiche indicateur ───────────────────────────────────────────────
-function IndicatorDetail({ code, rows, lang, iso3 }) {
+function IndicatorDetail({ code, rows, lang, iso3, onBack, catalogRow }) {
   const navigate = useNavigate()
-  const cfg = INDICATOR_CONFIG[code]?.[lang]
+  const cfg = adaptCatalogRow(catalogRow, lang)
   if (!cfg) return null
 
-  // Années affichées : uniquement celles dans la couverture de la source
-  const allYears = [...new Set(rows.map(r => r.year))]
-    .filter(y => isInCoverage(y, code))
+  // Années affichées : uniquement celles reellement publiees (publication_status
+  // non nul, provenant de rf.publication_policy via l'API) -- jamais une fenetre
+  // figee. Une annee sans statut de publication n'est simplement pas affichee,
+  // plutot que montree comme "Hors périmètre" (aucune valeur ajoutee a l'afficher).
+  const allYears = [...new Set(rows.filter(r => r.publication_status != null).map(r => r.year))]
     .sort((a, b) => a - b)
 
-  // Tendance sur les années de publication
-  const pubRowsInCoverage = PUB_YEARS.filter(y => isInCoverage(y, code))
+  // Tendance sur les années effectivement publiées
+  const pubRowsInCoverage = allYears
   const tendency = getTendency(rows, pubRowsInCoverage, code)
 
   // Variation brute entre première et dernière valeur observée dans la fenêtre pub
@@ -294,10 +197,9 @@ function IndicatorDetail({ code, rows, lang, iso3 }) {
               const row = rows.find(r => r.year === y)
               const val = row?.raw_value
               const pubStatus = row?.publication_status || null
-              const isPub = PUB_YEARS.includes(y)
-              const rowClass = pubStatus === 'OFFICIAL' ? 'row-official'
-                : pubStatus === 'PRELIMINARY' ? 'row-preliminary'
-                : isPub ? 'row-official' : 'row-outside'
+              // allYears ne contient que des annees avec publication_status
+              // reel (cf. filtre plus haut) -- jamais "Hors périmètre" ici.
+              const rowClass = pubStatus === 'OFFICIAL' ? 'row-official' : 'row-preliminary'
 
               return (
                 <tr key={y} className={rowClass}>
@@ -343,12 +245,12 @@ function IndicatorDetail({ code, rows, lang, iso3 }) {
         </div>
       )}
 
-      {/* Lien projets structurants */}
-      <Link
-        to={`/country/${iso3}/projects?pillar=${cfg.project_pillar}`}
-        className="iosa-projects-link">
-        {lang === 'fr' ? '→ Projets structurants associés' : '→ Associated structural projects'}
-      </Link>
+      {/* Retour vers la liste -- plutot qu'un lien vers les projets, pas
+          necessaire a ce stade : l'usager peut vouloir consulter une autre
+          observation, pas forcement les projets structurants du pilier */}
+      <button className="iosa-projects-link" style={{ border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit' }} onClick={onBack}>
+        {lang === 'fr' ? '← Voir une autre observation' : '← View another observation'}
+      </button>
     </div>
   )
 }
@@ -358,9 +260,17 @@ export default function IosaDetail() {
   const { iso3 } = useParams()
   const { lang } = useLang()
   const [data, setData] = useState(null)
+  const [catalog, setCatalog] = useState(null)
   const [selected, setSelected] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  // Catalogue POA -- independant du pays, charge une seule fois
+  useEffect(() => {
+    getPoaCatalog()
+      .then(c => setCatalog(c))
+      .catch(() => setCatalog([]))
+  }, [])
 
   useEffect(() => {
     setLoading(true)
@@ -372,7 +282,7 @@ export default function IosaDetail() {
       .finally(() => setLoading(false))
   }, [iso3])
 
-  if (loading) return <div className="page-loading">{lang === 'fr' ? 'Chargement...' : 'Loading...'}</div>
+  if (loading || catalog === null) return <div className="page-loading">{lang === 'fr' ? 'Chargement...' : 'Loading...'}</div>
   if (error)   return <div className="page-error">{lang === 'fr' ? 'Erreur' : 'Error'}: {error}</div>
 
   // Grouper par indicateur
@@ -384,27 +294,32 @@ export default function IosaDetail() {
     })
   }
   const hasData = Object.keys(byIndicator).length > 0
+  const catalogByCode = {}
+  catalog.forEach(row => { catalogByCode[row.indicator_code] = row })
 
   return (
     <div className="iosa-detail-page">
       <div className="iosa-detail-header">
         <h1 className="iosa-detail-title">
-          {lang === 'fr' ? 'Observations Souveraines' : 'Sovereign Observations'} — {iso3}
+          {lang === 'fr' ? 'POA — Phénomènes Observables Autonomes' : 'POA — Autonomous Observable Phenomena'} — {iso3}
         </h1>
         <Link to={`/country/${iso3}`} className="back-link">← {iso3}</Link>
       </div>
 
-      {/* Présentation doctrinale */}
-      <div className="iosa-block iosa-block-about">
-        <h2 className="iosa-block-title">
-          {lang === 'fr' ? 'Observations Souveraines Autonomes' : 'Autonomous Sovereign Observations'}
-        </h2>
-        <p className="iosa-block-text">
-          {lang === 'fr'
-            ? "Ces observations documentent des déltas mesurables — des écarts entre ce qu'un État déclare et ce que les données primaires révèlent. Chaque observation repose sur une source unique, auditée et reproductible. Elles ne produisent ni classement, ni jugement, ni causalité. Elles mettent en évidence des réalités objectivables dont l'analyse peut conduire à des décisions souveraines."
-            : "These observations document measurable deltas — gaps between what a state declares and what primary data reveals. Each observation relies on a single, audited and reproducible source. They produce no ranking, judgment, or causal claim. They highlight objective realities whose analysis can lead to sovereign decisions."}
-        </p>
-      </div>
+      {/* Présentation doctrinale -- uniquement sur la vue liste, pas repetee
+          a chaque fiche indicateur (evite la duplication signalee) */}
+      {!selected && (
+        <div className="iosa-block iosa-block-about">
+          <h2 className="iosa-block-title">
+            {lang === 'fr' ? 'Phénomènes Observables Autonomes' : 'Autonomous Observable Phenomena'}
+          </h2>
+          <p className="iosa-block-text">
+            {lang === 'fr'
+              ? "Un POA est un phénomène objectivable, reproductible et mesurable, susceptible d'affecter l'exercice effectif de la souveraineté. Ces observations documentent des déltas mesurables — des écarts entre ce qu'un État déclare et ce que les données primaires révèlent. Chaque observation repose sur une source unique, auditée et reproductible. Elles ne produisent ni indice, ni score, ni classement, et ne constituent pas un jugement sur les politiques publiques."
+              : "A POA is an objectifiable, reproducible and measurable phenomenon likely to affect the effective exercise of sovereignty. These observations document measurable deltas — gaps between what a state declares and what primary data reveals. Each observation relies on a single, audited and reproducible source. They produce no index, score or ranking, and do not constitute a judgment on public policy."}
+          </p>
+        </div>
+      )}
 
       {!hasData ? (
         <p className="iosa-detail-empty">
@@ -432,14 +347,17 @@ export default function IosaDetail() {
                   {INDICATOR_ORDER.map(code => {
                     const rows = byIndicator[code]
                     if (!rows) return null
-                    const cfg = INDICATOR_CONFIG[code]?.[lang]
-                    const pubInCov = PUB_YEARS.filter(y => isInCoverage(y, code))
+                    const cfg = adaptCatalogRow(catalogByCode[code], lang)
+                    const pubInCov = [...new Set(rows.filter(r => r.publication_status != null).map(r => r.year))]
                     const status = getObsStatus(rows, pubInCov)
                     const tendency = getTendency(rows, pubInCov, code)
-                    const arrow = tendency === 'up' ? '↗' : tendency === 'down' ? '↘' : '→'
-                    const arrowColor = tendency === 'up'
-                      ? '#B00020'
-                      : tendency === 'down' ? 'var(--color-primary)' : 'var(--color-muted)'
+                    const insufficient = tendency === 'insufficient'
+                    const arrow = insufficient
+                      ? (lang === 'fr' ? 'n/d' : 'n/a')
+                      : tendency === 'up' ? '↗' : tendency === 'down' ? '↘' : '→'
+                    const arrowColor = insufficient
+                      ? 'var(--color-muted)'
+                      : tendency === 'up' ? '#B00020' : tendency === 'down' ? 'var(--color-primary)' : 'var(--color-accent)'
                     return (
                       <tr key={code}>
                         <td>
@@ -450,7 +368,12 @@ export default function IosaDetail() {
                           <span className="iosa-obs-delta">{cfg?.metric_label}</span>
                         </td>
                         <td><StatusBadge status={status} lang={lang} /></td>
-                        <td style={{ fontSize: '1.3rem', textAlign: 'center', color: arrowColor }}>
+                        <td style={{
+                          fontSize: insufficient ? '0.85rem' : '1.3rem',
+                          fontStyle: insufficient ? 'italic' : 'normal',
+                          textAlign: 'center',
+                          color: arrowColor,
+                        }} title={insufficient ? (lang === 'fr' ? 'Pas assez de données pour calculer une tendance' : 'Not enough data to compute a trend') : undefined}>
                           {arrow}
                         </td>
                         <td>
@@ -477,6 +400,8 @@ export default function IosaDetail() {
                 rows={byIndicator[selected] || []}
                 lang={lang}
                 iso3={iso3}
+                onBack={() => setSelected(null)}
+                catalogRow={catalogByCode[selected]}
               />
             </>
           )}
@@ -485,8 +410,8 @@ export default function IosaDetail() {
 
       <p className="iosa-disclaimer">
         {lang === 'fr'
-          ? "Les observations souveraines autonomes ne constituent pas un jugement sur la gouvernance des États. Elles documentent des phénomènes objectivables dont l'analyse et les décisions relèvent de la responsabilité souveraine des États, des chercheurs et des institutions."
-          : "Autonomous sovereign observations do not constitute a judgment on state governance. They document objective phenomena whose analysis and decisions are the sovereign responsibility of states, researchers, and institutions."}
+          ? "Les POA (Phénomènes Observables Autonomes) ne constituent pas un jugement sur la gouvernance des États. Ils documentent des phénomènes objectivables dont l'analyse et les décisions relèvent de la responsabilité souveraine des États, des chercheurs et des institutions."
+          : "POA (Autonomous Observable Phenomena) do not constitute a judgment on state governance. They document objective phenomena whose analysis and decisions are the sovereign responsibility of states, researchers, and institutions."}
       </p>
     </div>
   )

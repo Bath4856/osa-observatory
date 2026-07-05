@@ -1,20 +1,228 @@
-.pillar-page { max-width: 800px; margin: 0 auto; }
-.pillar-header { margin-bottom: 2rem; }
-.pillar-code-badge { display: inline-block; background: #1F4E5F; color: #fff; padding: 0.3rem 0.8rem; border-radius: 4px; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.08em; margin-bottom: 0.6rem; }
-.pillar-title { font-size: 1.8rem; font-weight: 700; color: #1F4E5F; margin-bottom: 0.4rem; }
-.back-link { color: #1F4E5F; text-decoration: none; font-size: 0.85rem; }
-.back-link:hover { text-decoration: underline; }
-.pillar-section { margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid #e2e8f0; }
-.pillar-section h2 { font-size: 1.1rem; font-weight: 700; color: #1F4E5F; margin-bottom: 0.8rem; }
-.pillar-section p { color: #4a5568; line-height: 1.8; }
-.indicators-list { display: flex; flex-wrap: wrap; gap: 6px; display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.indicator-tag { background: #f0f7f4; border: 1px solid #2E7D6E; color: #2E7D6E; padding: 0.25rem 0.7rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; font-family: Consolas, monospace; }
-.sources-list { list-style: none; display: flex; flex-direction: column; gap: 0.4rem; }
-.sources-list li { color: #4a5568; font-size: 0.9rem; padding-left: 1rem; position: relative; }
-.sources-list li::before { content: '→'; position: absolute; left: 0; color: #2E7D6E; }
+/* ============================================================
+   Pillar.css -- fiche detail d'un pilier
+   Reconstruction consolidee : les classes de base n'existaient
+   dans aucun des patches precedents (Sprint 30 Lot G, Sprint 31),
+   qui n'ajoutaient que des variantes sans jamais definir le socle.
+   ============================================================ */
 
-/* Sprint 30 Lot G -- indicateurs dynamiques */
-.ind-section-label { font-size: .82rem; font-weight: 600; color: var(--color-primary); margin-bottom: 8px; }
+.pillar-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 16px 60px;
+}
+
+.pillar-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--color-primary);
+}
+
+.pillar-code-badge {
+  display: inline-block;
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  color: var(--color-primary);
+  background: var(--color-bg-light);
+  padding: 3px 10px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.pillar-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--color-primary-dk);
+  margin: 0 0 8px;
+}
+
+.back-link {
+  display: inline-block;
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+.back-link:hover { color: var(--color-accent); }
+
+.pillar-section {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.pillar-section:last-child { border-bottom: none; }
+
+.pillar-section h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-primary-dk);
+  margin: 0 0 .8rem;
+}
+
+.pillar-section p {
+  color: var(--color-text);
+  line-height: 1.75;
+  margin: 0 0 .5rem;
+}
+
+/* ---------- Indicateurs (Sprint 30 Lot G -- socle manquant) ---------- */
+.ind-section-label {
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 8px;
+}
 .ind-section-label--muted { color: var(--color-muted); }
-.indicator-tag--active { background: var(--color-primary); color: #fff; opacity: 1; }
+
+.indicators-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.indicator-tag {
+  display: inline-block;
+  font-size: .78rem;
+  font-weight: 600;
+  font-family: Consolas, monospace;
+  padding: 4px 10px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.indicator-tag--active  { background: var(--color-primary); color: #fff; opacity: 1; }
 .indicator-tag--pending { background: var(--color-bg-light); color: var(--color-muted); border: 1px solid var(--color-border); opacity: .8; }
+
+/* ---------- Sources ---------- */
+.sources-list {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+.sources-list li {
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+/* ============================================================
+   Ajout Sprint 31 -- Analyse stratégique / recommandation projet
+   Doctrine : aucun chiffre affiché, uniquement du texte qualitatif.
+   ============================================================ */
+
+.strategic-reco {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.reco-step {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.reco-step-label {
+  font-size: .72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--color-muted);
+}
+
+.reco-step-value {
+  font-size: .98rem;
+  font-weight: 600;
+  color: var(--color-primary-dk);
+}
+
+.reco-project {
+  margin-top: 6px;
+  padding: 18px 20px;
+  background: var(--color-bg);
+  border-left: 4px solid var(--color-accent);
+  border-radius: 0 8px 8px 0;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+
+.reco-project-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.reco-project-tag {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--color-accent);
+  background: var(--color-bg-light);
+  padding: 3px 10px;
+  border-radius: 10px;
+}
+
+.reco-project-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-primary-dk);
+  margin: 0;
+}
+
+.reco-project-desc {
+  font-size: .92rem;
+  color: var(--color-text);
+  line-height: 1.7;
+  margin: 0 0 14px;
+}
+
+.reco-contribution {
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.reco-contribution-text {
+  font-size: .92rem;
+  color: var(--color-text);
+  line-height: 1.7;
+  margin: 0;
+}
+
+.reco-projects-link {
+  display: inline-block;
+  margin-top: 14px;
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.reco-projects-link:hover { color: var(--color-accent); }
+
+.reco-no-project {
+  font-size: .88rem;
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+.reco-disclaimer {
+  font-size: .78rem;
+  color: var(--color-muted);
+  font-style: italic;
+  line-height: 1.6;
+  margin-top: 4px;
+}
