@@ -1,6 +1,7 @@
 """
 OSA Observatory -- Rate Limiting Middleware
 Sprint 17 -- 27 mai 2026
+Correctif du 13 juillet 2026 -- collision de nom de table resolue.
 
 Architecture :
     @app.middleware("http") -- plus leger que BaseHTTPMiddleware
@@ -16,9 +17,21 @@ Profils et quotas :
     /auth/otp/request       : 5 req/heure par IP      (fenetre glissante)
     X-Api-Key (transition)  : gere par security.py (rate_limit_per_hour)
 
-Backend : mg.rate_limit_counters (PostgreSQL)
+Backend : mg.api_rate_limit_counters (PostgreSQL)
     Upsert sur fenetre courante uniquement.
     Taille stable. Migration Redis possible sans changer l'interface.
+
+    Correctif du 13 juillet 2026 : la table portait a l'origine le nom
+    mg.rate_limit_counters, entree en collision avec une table homonyme
+    creee plus tard (Sprint 30, schema differe -- key_type/key_value/
+    endpoint/count, utilisee par check_rate_limit() dans
+    api/routers/affiliation.py, restreinte a /auth/login et
+    /affiliation/request). Depuis cette collision, ce middleware echouait
+    silencieusement sur chaque requete (fail-open) -- aucune limite
+    PUBLIC/STANDARD/PREMIUM/EXPERT n'etait donc plus appliquee sur
+    l'ensemble de l'API. Corrige en migrant vers une table dediee,
+    mg.api_rate_limit_counters (meme schema, nom distinct). Cf. finding
+    GAF correspondant pour le detail complet.
 
 Headers RFC 6585 retournes :
     X-RateLimit-Limit     : quota du profil
@@ -118,7 +131,7 @@ def _get_profile(request: Request) -> tuple[str, str, int]:
     """
     Determine le profil de rate limiting de la requete.
     Retourne (profile, identifier, limit).
-    
+
     Profiles :
       EXPERT   : illimite
       PREMIUM  : 2000 req/jour par affiliation_id
@@ -150,7 +163,7 @@ def _get_profile(request: Request) -> tuple[str, str, int]:
 
 
 # ---------------------------------------------------------------------------
-# Logique de comptage -- mg.rate_limit_counters
+# Logique de comptage -- mg.api_rate_limit_counters
 # ---------------------------------------------------------------------------
 def _window_start_hourly() -> datetime:
     """Debut de l'heure courante UTC (fenetre glissante)."""
@@ -186,7 +199,7 @@ def _check_and_increment(
     """
     Verifie le compteur et l'incremente atomiquement via UPSERT.
     Retourne (allowed, current_count, reset_ts).
-    
+
     Pattern UPSERT :
       - Si la ligne n'existe pas : INSERT avec counter=1
       - Si elle existe : UPDATE counter = counter + 1
@@ -203,13 +216,13 @@ def _check_and_increment(
 
     # UPSERT atomique -- incrément systématique puis vérification
     result = db.execute(text("""
-        INSERT INTO mg.rate_limit_counters
+        INSERT INTO mg.api_rate_limit_counters
             (identifier, window_type, window_start, counter, access_class, updated_at)
         VALUES
             (:identifier, :window_type, :window_start, 1, :access_class, NOW())
         ON CONFLICT (identifier, window_type, window_start)
         DO UPDATE SET
-            counter    = mg.rate_limit_counters.counter + 1,
+            counter    = mg.api_rate_limit_counters.counter + 1,
             updated_at = NOW()
         RETURNING counter
     """), {
@@ -226,7 +239,7 @@ def _check_and_increment(
     if current > limit:
         # Rembourser l'increment pour ne pas fausser les stats
         db.execute(text("""
-            UPDATE mg.rate_limit_counters
+            UPDATE mg.api_rate_limit_counters
             SET counter = counter - 1, updated_at = NOW()
             WHERE identifier = :identifier
               AND window_type = :window_type
