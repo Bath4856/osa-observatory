@@ -1,0 +1,28 @@
+.kyc-banner {
+  background: #FDF3E0;
+  border-bottom: 1px solid var(--color-accent);
+  color: #7D4800;
+  font-size: .85rem;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.kyc-banner a {
+  color: var(--color-primary-dk);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.kyc-banner-close {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: #7D4800;
+  cursor: pointer;
+  padding: 0 4px;
+}

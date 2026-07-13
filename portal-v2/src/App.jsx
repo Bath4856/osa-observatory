@@ -8,7 +8,12 @@ import CountryISA from './pages/CountryISA'
 import Projects from './pages/Projects'
 import ProjectDetail from './pages/ProjectDetail'
 import Register from './pages/Register'
+import Login from './pages/Login'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
+import Account from './pages/Account'
 import ConfirmEmail from './pages/ConfirmEmail'
+import KycReminderBanner from './components/KycReminderBanner/KycReminderBanner'
 import Pillar from './pages/Pillar'
 import Pillars from './pages/Pillars'
 import About from './pages/About'
@@ -24,6 +29,7 @@ function Layout() {
   return (
     <>
       <AppHeader />
+      <KycReminderBanner />
       <main className="main-content">
         <Outlet />
       </main>
@@ -33,6 +39,10 @@ function Layout() {
 }
 
 const router = createBrowserRouter([
+  // Route independante -- volontairement hors du Layout (pas de header
+  // complet avec navigation). Accedee via un lien/QR personnel (flyer,
+  // e-mail d'invitation), pas par une navigation normale dans le site.
+  { path: '/confirm-email', element: <ConfirmEmail /> },
   {
     element: <Layout />,
     children: [
@@ -47,7 +57,10 @@ const router = createBrowserRouter([
       { path: '/country/:iso3/iosa',             element: <IosaDetail /> },
       { path: '/country/:iso3/poa',              element: <IosaDetail /> },
       { path: '/register',                       element: <Register /> },
-      { path: '/confirm-email',                  element: <ConfirmEmail /> },
+      { path: '/login',                          element: <Login /> },
+      { path: '/forgot-password',                element: <ForgotPassword /> },
+      { path: '/reset-password',                 element: <ResetPassword /> },
+      { path: '/mon-espace',                     element: <Account /> },
       { path: '/pillars',                        element: <Pillars /> },
       { path: '/pillar/:code',                   element: <Pillar /> },
       { path: '/about',                          element: <About /> },
