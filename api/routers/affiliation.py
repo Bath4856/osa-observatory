@@ -23,6 +23,9 @@ from typing import Optional
 from api.db import get_db
 from fastapi import Request
 from api.utils.password_policy import validate_password_strength
+from api.services.governance_events import (
+    emit_governance_event, register_domain_handler, apply_governance_event,
+)
 
 router = APIRouter(
     prefix="/api/v1/affiliation",
@@ -32,11 +35,13 @@ router = APIRouter(
 TOKEN_EXPIRY_HOURS = 48
 PASSWORD_RESET_EXPIRY_HOURS = 2  # plus court qu'une confirmation d'affiliation -- fenetre de securite reduite
 
-# ── Emission d'evenements d'identite (ADR-001) ─────────────────────────────────
-# N'emet reellement un evenement que si ce code tourne en PREPROD -- seul
-# environnement source autorise a synchroniser vers PROD (DEV exclu, PROD
-# est la cible terminale). Verifie a l'execution via OSA_ENVIRONMENT, pas
-# en dur -- meme code deploye sur les 3 environnements.
+# ── Emission d'evenements d'identite (ADR-001) -- DORMANTE depuis ADR-004 ──────
+# Conservee intacte pour memoire et coexistence (ADR-003/ADR-004 §1),
+# mais n'est plus appelee depuis la bascule du domaine IDENTITY vers le
+# bus de gouvernance generique (voir confirm_email plus bas, qui appelle
+# desormais emit_governance_event). mg.identity_events ne recoit donc
+# plus aucune ecriture nouvelle -- table dormante, decommissionnee a la
+# Phase 6 du plan de migration (ADR-003).
 def emit_identity_event(db: Session, event_type: str, affiliate_uuid, payload: dict):
     if os.getenv("OSA_ENVIRONMENT", "").upper() != "PREPROD":
         return
@@ -605,7 +610,9 @@ def confirm_email(token: str, body: ConfirmEmailBody, db: Session = Depends(get_
         UPDATE mg.email_confirmation_tokens SET used_at = NOW() WHERE id = :id
     """), {"id": token_row["id"]})
 
-    # ── Emission des evenements d'identite (ADR-001, sans effet hors preprod) ──
+    # ── Emission des evenements de gouvernance (ADR-004, sans effet hors preprod) ──
+    # Domaine IDENTITY sur le bus generique -- remplace emit_identity_event()
+    # (ADR-001, desormais dormante) depuis la bascule ADR-003 Phase 3.
     base_payload = {
         "identity_uuid": str(affiliate_uuid),
         "email": token_row["email"],
@@ -616,7 +623,7 @@ def confirm_email(token: str, body: ConfirmEmailBody, db: Session = Depends(get_
         "country": country,
         "status": "AFFILIATED",
     }
-    emit_identity_event(db, "AFFILIATE_CONFIRMED", affiliate_uuid, base_payload)
+    emit_governance_event(db, "IDENTITY", "AFFILIATE_CONFIRMED", "AFFILIATE", affiliate_uuid, base_payload)
 
     committee_row = db.execute(text("""
         SELECT committee, start_date FROM mg.committee_memberships
@@ -624,14 +631,14 @@ def confirm_email(token: str, body: ConfirmEmailBody, db: Session = Depends(get_
         ORDER BY start_date DESC LIMIT 1
     """), {"id": token_row["affiliate_id"]}).mappings().first()
     if committee_row:
-        emit_identity_event(db, "COMMITTEE_MEMBERSHIP_GRANTED", affiliate_uuid, {
+        emit_governance_event(db, "IDENTITY", "COMMITTEE_MEMBERSHIP_GRANTED", "AFFILIATE", affiliate_uuid, {
             **base_payload,
             "committee": committee_row["committee"],
             "start_date": committee_row["start_date"],
         })
 
     if activated_wg:
-        emit_identity_event(db, "WORKING_GROUP_ACTIVATED", affiliate_uuid, {
+        emit_governance_event(db, "IDENTITY", "WORKING_GROUP_ACTIVATED", "AFFILIATE", affiliate_uuid, {
             **base_payload,
             "pillar_code": activated_wg["pillar_code"],
         })
@@ -847,26 +854,20 @@ OSA Observatory -- African Sovereignty Observatory
     )
 
 
-class SyncEventPayload(BaseModel):
-    event_type: str
-    affiliate_uuid: str
-    payload: dict
+# ── Gestionnaire metier du domaine IDENTITY (ADR-004 §5) ───────────────────────
+# Point de verite UNIQUE pour l'application des evenements d'identite --
+# appele indifferemment par l'ancien endpoint (/affiliation/sync/apply-event,
+# ci-dessous, conserve pour compatibilite avec identity_synchronizer.py) et
+# le nouveau endpoint generique (POST /api/v1/sync/apply-event, api/routers/
+# governance_sync.py, appele par governance_synchronizer.py). Aucune
+# duplication de logique metier entre les deux chemins.
+@register_domain_handler("IDENTITY")
+def _apply_identity_event(db: Session, event_type: str, object_uuid: str, payload: dict) -> dict:
+    p = payload
 
-
-@router.post(
-    "/sync/apply-event",
-    summary="[Interne] Appliquer un événement d'identité propagé",
-    description="Réservé au service identity_synchronizer.py -- protégé par secret partagé, pas une session utilisateur.",
-)
-def apply_sync_event(body: SyncEventPayload, request: Request, db: Session = Depends(get_db)):
-    if not SYNC_SHARED_SECRET or request.headers.get("X-Sync-Secret") != SYNC_SHARED_SECRET:
-        raise HTTPException(status_code=403, detail="Accès refusé.")
-
-    p = body.payload
-
-    if body.event_type == "AFFILIATE_CONFIRMED":
+    if event_type == "AFFILIATE_CONFIRMED":
         existing = db.execute(text("SELECT id, status FROM mg.affiliates WHERE identity_uuid = :uuid"),
-                               {"uuid": body.affiliate_uuid}).mappings().first()
+                               {"uuid": object_uuid}).mappings().first()
 
         if existing:
             # Deja propage anterieurement -- mise a jour du profil
@@ -877,7 +878,7 @@ def apply_sync_event(body: SyncEventPayload, request: Request, db: Session = Dep
                     org_name = :org_name, function_title = :function_title,
                     country = :country
                 WHERE identity_uuid = :uuid
-            """), {**p, "uuid": body.affiliate_uuid})
+            """), {**p, "uuid": object_uuid})
             db.commit()
             return {"applied": True, "action": "updated", "affiliate_id": existing["id"]}
 
@@ -890,14 +891,14 @@ def apply_sync_event(body: SyncEventPayload, request: Request, db: Session = Dep
                     (:uuid, :last_name, :first_name, :email, :org_name,
                      'FONDATEUR', :function_title, :country, 'PROD_PENDING_ACTIVATION')
                 RETURNING id
-            """), {**p, "uuid": body.affiliate_uuid}).mappings().first()
+            """), {**p, "uuid": object_uuid}).mappings().first()
         except Exception as e:
             db.rollback()
             raise HTTPException(status_code=409, detail=(
                 f"Conflit à la création (email déjà utilisé sous une autre identité ?) : {e}"
             ))
 
-        import datetime, uuid as uuid_mod
+        import datetime
         token_row = db.execute(text("""
             INSERT INTO mg.password_reset_tokens (affiliate_id, expires_at)
             VALUES (:aff_id, :expires_at)
@@ -915,9 +916,9 @@ def apply_sync_event(body: SyncEventPayload, request: Request, db: Session = Dep
 
         return {"applied": True, "action": "created", "affiliate_id": new_row["id"]}
 
-    elif body.event_type == "COMMITTEE_MEMBERSHIP_GRANTED":
+    elif event_type == "COMMITTEE_MEMBERSHIP_GRANTED":
         affiliate = db.execute(text("SELECT id FROM mg.affiliates WHERE identity_uuid = :uuid"),
-                                {"uuid": body.affiliate_uuid}).mappings().first()
+                                {"uuid": object_uuid}).mappings().first()
         if not affiliate:
             raise HTTPException(status_code=409, detail="Affilié inconnu -- événement AFFILIATE_CONFIRMED requis au préalable.")
 
@@ -929,9 +930,9 @@ def apply_sync_event(body: SyncEventPayload, request: Request, db: Session = Dep
         db.commit()
         return {"applied": True, "action": "committee_membership_synced"}
 
-    elif body.event_type == "WORKING_GROUP_ACTIVATED":
+    elif event_type == "WORKING_GROUP_ACTIVATED":
         affiliate = db.execute(text("SELECT id FROM mg.affiliates WHERE identity_uuid = :uuid"),
-                                {"uuid": body.affiliate_uuid}).mappings().first()
+                                {"uuid": object_uuid}).mappings().first()
         if not affiliate:
             raise HTTPException(status_code=409, detail="Affilié inconnu -- événement AFFILIATE_CONFIRMED requis au préalable.")
 
@@ -946,4 +947,30 @@ def apply_sync_event(body: SyncEventPayload, request: Request, db: Session = Dep
         db.commit()
         return {"applied": True, "action": "working_group_synced"}
 
-    raise HTTPException(status_code=422, detail=f"Type d'événement non pris en charge : {body.event_type}")
+    raise HTTPException(status_code=422, detail=f"Type d'événement non pris en charge : {event_type}")
+
+
+class SyncEventPayload(BaseModel):
+    event_type: str
+    affiliate_uuid: str
+    payload: dict
+
+
+@router.post(
+    "/sync/apply-event",
+    summary="[Interne, ANCIEN -- conservé pour compatibilité] Appliquer un événement d'identité propagé",
+    description=(
+        "Réservé au service identity_synchronizer.py -- protégé par secret partagé, pas "
+        "une session utilisateur. Conservé pour compatibilité pendant la période de "
+        "coexistence (ADR-004 §1) -- délègue à la même logique métier mutualisée que le "
+        "nouvel endpoint générique POST /api/v1/sync/apply-event, jamais dupliquée."
+    ),
+)
+def apply_sync_event(body: SyncEventPayload, request: Request, db: Session = Depends(get_db)):
+    if not SYNC_SHARED_SECRET or request.headers.get("X-Sync-Secret") != SYNC_SHARED_SECRET:
+        raise HTTPException(status_code=403, detail="Accès refusé.")
+
+    try:
+        return apply_governance_event(db, "IDENTITY", body.event_type, body.affiliate_uuid, body.payload)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))

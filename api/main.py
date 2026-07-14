@@ -23,6 +23,7 @@ from api.routers.tokens import router as tokens_router, public_router as tokens_
 from api.routers.tickets import public_router as tickets_public_router, admin_router as tickets_admin_router
 from api.routers.affiliation import router as affiliation_router
 from api.routers.admin_affiliates import router as admin_affiliates_router
+from api.routers.governance_sync import router as governance_sync_router
 from api.routers.auth_affiliates import router as auth_affiliates_router
 from api.routers.eparticipation import router as eparticipation_router
 # SPRINT17 -- Authentification JWT
@@ -138,6 +139,7 @@ app.include_router(tokens_public_router)
 app.include_router(tickets_public_router)
 app.include_router(affiliation_router)
 app.include_router(admin_affiliates_router)
+app.include_router(governance_sync_router)
 app.include_router(auth_affiliates_router)
 app.include_router(eparticipation_router)
 app.include_router(tickets_admin_router)
