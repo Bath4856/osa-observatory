@@ -1,9 +1,8 @@
 """
-OSA Observatory -- Sprint 30 Lot B -- REVISE R2 (ADR-002 §2)
+OSA Observatory -- Sprint 30 Lot B -- REVISE R1 (AFFILIATION_WORKFLOW_REVISION_001)
 Router Affiliation -- Auto-activation par confirmation email
 POST /api/v1/affiliation/request
-POST /api/v1/affiliation/confirm-email/{token}  (definition du mot de passe fusionnee, session 11 juillet 2026 ;
-                                                  KYC conditionnel a la cooptation, ADR-002 §2, 12 juillet 2026)
+POST /api/v1/affiliation/confirm-email/{token}  (definition du mot de passe fusionnee, session 11 juillet 2026)
 POST /api/v1/affiliation/request-password-reset
 POST /api/v1/affiliation/reset-password/{token}
 """
@@ -23,9 +22,6 @@ from typing import Optional
 from api.db import get_db
 from fastapi import Request
 from api.utils.password_policy import validate_password_strength
-from api.services.governance_events import (
-    emit_governance_event, register_domain_handler, apply_governance_event,
-)
 
 router = APIRouter(
     prefix="/api/v1/affiliation",
@@ -35,13 +31,11 @@ router = APIRouter(
 TOKEN_EXPIRY_HOURS = 48
 PASSWORD_RESET_EXPIRY_HOURS = 2  # plus court qu'une confirmation d'affiliation -- fenetre de securite reduite
 
-# ── Emission d'evenements d'identite (ADR-001) -- DORMANTE depuis ADR-004 ──────
-# Conservee intacte pour memoire et coexistence (ADR-003/ADR-004 §1),
-# mais n'est plus appelee depuis la bascule du domaine IDENTITY vers le
-# bus de gouvernance generique (voir confirm_email plus bas, qui appelle
-# desormais emit_governance_event). mg.identity_events ne recoit donc
-# plus aucune ecriture nouvelle -- table dormante, decommissionnee a la
-# Phase 6 du plan de migration (ADR-003).
+# ── Emission d'evenements d'identite (ADR-001) ─────────────────────────────────
+# N'emet reellement un evenement que si ce code tourne en PREPROD -- seul
+# environnement source autorise a synchroniser vers PROD (DEV exclu, PROD
+# est la cible terminale). Verifie a l'execution via OSA_ENVIRONMENT, pas
+# en dur -- meme code deploye sur les 3 environnements.
 def emit_identity_event(db: Session, event_type: str, affiliate_uuid, payload: dict):
     if os.getenv("OSA_ENVIRONMENT", "").upper() != "PREPROD":
         return
@@ -131,6 +125,22 @@ open.osa-observatory.africa
         "Confirmez votre adresse email -- OSA Observatory / Confirm your email",
         body_fr + "\n\n---\n\n" + body_en
     )
+
+
+# ── URL de base selon l'environnement d'execution ──────────────────────────────
+# Le compte concerne par un lien de reinitialisation vit dans la base de
+# CET environnement -- le lien doit y pointer, pas systematiquement vers
+# la prod (bug corrige le 16 juillet 2026, decouvert sur le compte
+# fondateur preprod id=3).
+_ENV_BASE_URLS = {
+    "PROD": "https://open.osa-observatory.africa",
+    "PREPROD": "https://preprod.osa-observatory.africa",
+}
+
+
+def current_environment_base_url() -> str:
+    env = os.getenv("OSA_ENVIRONMENT", "").upper()
+    return _ENV_BASE_URLS.get(env, _ENV_BASE_URLS["PROD"])  # repli prudent sur prod si non defini
 
 
 def send_welcome_email(to_email: str, first_name: str, last_name: str):
@@ -482,41 +492,19 @@ def confirm_email_info(token: str, db: Session = Depends(get_db)):
     }
 
 
-# ── Cooptation vs affiliation volontaire (ADR-002 §2) ─────────────────────────
-# Deux parcours metier distincts partagent le meme endpoint technique de
-# confirmation -- la separation ne se fait jamais via OSA_ENVIRONMENT
-# (interdit explicitement par l'ADR-002), mais via l'etat reel des donnees :
-# un affilie deja rattache a un comite ou un groupe de travail AVANT sa
-# confirmation est necessairement issu d'une cooptation (admin_affiliates.py
-# / preaffiliate), jamais du formulaire public /affiliation/request. Le KYC
-# n'est donc obligatoire que si ce rattachement prealable existe.
-def _has_pending_cooptation(db: Session, affiliate_id: int) -> bool:
-    row = db.execute(text("""
-        SELECT 1 FROM mg.committee_memberships WHERE affiliate_id = :id
-        UNION
-        SELECT 1 FROM mg.working_group_members WHERE affiliate_id = :id
-        LIMIT 1
-    """), {"id": affiliate_id}).first()
-    return row is not None
-
-
 # ── Endpoint 2 : confirmation email + definition du mot de passe + KYC ────────
 # Decision actee (session du 11 juillet 2026, revisee suite au retour de
 # Theo sur la gouvernance de cooptation) : mot de passe ET KYC fusionnes
-# dans le meme formulaire de confirmation. KYC obligatoire uniquement pour
-# la procedure de cooptation (organisation pilotee) -- jamais force pour
-# l'affiliation volontaire (/api/v1/affiliation/request). Revision ADR-002
-# §2 du 12 juillet 2026 : function_title/country deviennent optionnels au
-# niveau du schema Pydantic ; l'obligation reelle est verifiee dans le
-# corps de la fonction via _has_pending_cooptation (etat des donnees, pas
-# de branche sur l'environnement). Le compte ne devient actif qu'une fois
-# les conditions requises completes -- le token n'est marque utilise
-# qu'apres succes complet.
+# dans le meme formulaire de confirmation, obligatoires -- specifique a la
+# procedure de cooptation preprod (organisation pilotee), distincte de
+# l'affiliation volontaire en production (/api/v1/affiliation/request, KYC
+# non force). Le compte ne devient actif qu'une fois les deux completes --
+# le token n'est marque utilise qu'apres succes complet.
 
 class ConfirmEmailBody(BaseModel):
     password: str = Field(..., min_length=8, description="Choisi par l'affilié -- jamais généré côté serveur")
-    function_title: Optional[str] = Field(None, max_length=200, description="KYC -- obligatoire uniquement si l'affilié est issu d'une cooptation")
-    country: Optional[str] = Field(None, max_length=100, description="KYC -- obligatoire uniquement si l'affilié est issu d'une cooptation")
+    function_title: str = Field(..., min_length=1, max_length=200, description="KYC obligatoire -- cooptation preprod")
+    country: str = Field(..., min_length=1, max_length=100, description="KYC obligatoire -- cooptation preprod")
 
 
 @router.post(
@@ -524,10 +512,8 @@ class ConfirmEmailBody(BaseModel):
     summary="Confirmer l'email et définir son mot de passe -- action unique",
     description=(
         "Valide le token et définit le mot de passe en une seule transaction. "
-        "Le compte ne devient AFFILIATED qu'une fois cette action complète. "
-        "KYC (fonction, pays) obligatoire uniquement pour les affiliés issus "
-        "d'une cooptation -- déterminé par l'existence d'un rattachement "
-        "comité/groupe de travail préalable, jamais par l'environnement d'exécution."
+        "Le compte ne devient AFFILIATED qu'une fois cette action complète -- "
+        "aucun état intermédiaire confirmé-mais-sans-mot-de-passe."
     ),
 )
 def confirm_email(token: str, body: ConfirmEmailBody, db: Session = Depends(get_db)):
@@ -564,35 +550,23 @@ def confirm_email(token: str, body: ConfirmEmailBody, db: Session = Depends(get_
         # de passe conforme sans avoir a redemander un nouveau lien.
         raise HTTPException(status_code=422, detail={"fr": error, "en": error})
 
-    # KYC obligatoire uniquement si cet affilie est issu d'une cooptation
-    # (rattachement comite/groupe de travail deja existant a ce stade).
-    # Cf. ADR-002 §2 -- separation metier, jamais via OSA_ENVIRONMENT.
-    kyc_required = _has_pending_cooptation(db, token_row["affiliate_id"])
-    if kyc_required:
-        if not body.function_title or not body.function_title.strip() \
-           or not body.country or not body.country.strip():
-            raise HTTPException(status_code=422, detail={
-                "fr": "Fonction et pays sont obligatoires pour finaliser l'inscription (cooptation).",
-                "en": "Function and country are required to complete registration (cooptation)."
-            })
-
-    function_title = body.function_title.strip() if body.function_title else None
-    country = body.country.strip() if body.country else None
+    if not body.function_title.strip() or not body.country.strip():
+        raise HTTPException(status_code=422, detail={
+            "fr": "Fonction et pays sont obligatoires pour finaliser l'inscription.",
+            "en": "Function and country are required to complete registration."
+        })
 
     password_hash = bcrypt.hashpw(body.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
-    # COALESCE : ne jamais ecraser une valeur existante avec NULL quand le
-    # champ n'est pas fourni (affiliation volontaire, KYC differe a /me).
     updated = db.execute(text("""
         UPDATE mg.affiliates
         SET status = 'AFFILIATED', password_hash = :pwd,
-            function_title = COALESCE(:function_title, function_title),
-            country = COALESCE(:country, country)
+            function_title = :function_title, country = :country
         WHERE id = :id
         RETURNING identity_uuid
     """), {
         "id": token_row["affiliate_id"], "pwd": password_hash,
-        "function_title": function_title, "country": country,
+        "function_title": body.function_title.strip(), "country": body.country.strip(),
     }).mappings().first()
     affiliate_uuid = updated["identity_uuid"]
 
@@ -610,20 +584,18 @@ def confirm_email(token: str, body: ConfirmEmailBody, db: Session = Depends(get_
         UPDATE mg.email_confirmation_tokens SET used_at = NOW() WHERE id = :id
     """), {"id": token_row["id"]})
 
-    # ── Emission des evenements de gouvernance (ADR-004, sans effet hors preprod) ──
-    # Domaine IDENTITY sur le bus generique -- remplace emit_identity_event()
-    # (ADR-001, desormais dormante) depuis la bascule ADR-003 Phase 3.
+    # ── Emission des evenements d'identite (ADR-001, sans effet hors preprod) ──
     base_payload = {
         "identity_uuid": str(affiliate_uuid),
         "email": token_row["email"],
         "first_name": token_row["first_name"],
         "last_name": token_row["last_name"],
         "org_name": token_row["org_name"],
-        "function_title": function_title,
-        "country": country,
+        "function_title": body.function_title.strip(),
+        "country": body.country.strip(),
         "status": "AFFILIATED",
     }
-    emit_governance_event(db, "IDENTITY", "AFFILIATE_CONFIRMED", "AFFILIATE", affiliate_uuid, base_payload)
+    emit_identity_event(db, "AFFILIATE_CONFIRMED", affiliate_uuid, base_payload)
 
     committee_row = db.execute(text("""
         SELECT committee, start_date FROM mg.committee_memberships
@@ -631,14 +603,14 @@ def confirm_email(token: str, body: ConfirmEmailBody, db: Session = Depends(get_
         ORDER BY start_date DESC LIMIT 1
     """), {"id": token_row["affiliate_id"]}).mappings().first()
     if committee_row:
-        emit_governance_event(db, "IDENTITY", "COMMITTEE_MEMBERSHIP_GRANTED", "AFFILIATE", affiliate_uuid, {
+        emit_identity_event(db, "COMMITTEE_MEMBERSHIP_GRANTED", affiliate_uuid, {
             **base_payload,
             "committee": committee_row["committee"],
             "start_date": committee_row["start_date"],
         })
 
     if activated_wg:
-        emit_governance_event(db, "IDENTITY", "WORKING_GROUP_ACTIVATED", "AFFILIATE", affiliate_uuid, {
+        emit_identity_event(db, "WORKING_GROUP_ACTIVATED", affiliate_uuid, {
             **base_payload,
             "pillar_code": activated_wg["pillar_code"],
         })
@@ -711,7 +683,7 @@ def request_password_reset(body: PasswordResetRequest, db: Session = Depends(get
     """), {"aff_id": affiliate["id"], "expires_at": expires_at}).mappings().first()
     db.commit()
 
-    reset_url = f"https://open.osa-observatory.africa/reset-password?token={token_row['token']}"
+    reset_url = f"{current_environment_base_url()}/reset-password?token={token_row['token']}"
     try:
         _smtp_send(
             affiliate["email"],
@@ -817,6 +789,10 @@ def send_activation_email(to_email: str, first_name: str, last_name: str, token:
     # ni un oubli. Reutilise le meme token/table que reset-password
     # (meme mecanique technique), semantique metier distincte (ADR-001,
     # proposition de Theo D. Bakang).
+    # Intentionnellement fixe sur prod, contrairement a request_password_reset :
+    # cette fonction n'est jamais appelee que par l'endpoint sync/apply-event,
+    # qui ne tourne que sur prod (le compte cree par le synchroniseur est par
+    # nature un compte prod).
     activation_url = f"https://open.osa-observatory.africa/reset-password?token={token}"
 
     body_fr = f"""Madame, Monsieur {last_name},
@@ -854,20 +830,26 @@ OSA Observatory -- African Sovereignty Observatory
     )
 
 
-# ── Gestionnaire metier du domaine IDENTITY (ADR-004 §5) ───────────────────────
-# Point de verite UNIQUE pour l'application des evenements d'identite --
-# appele indifferemment par l'ancien endpoint (/affiliation/sync/apply-event,
-# ci-dessous, conserve pour compatibilite avec identity_synchronizer.py) et
-# le nouveau endpoint generique (POST /api/v1/sync/apply-event, api/routers/
-# governance_sync.py, appele par governance_synchronizer.py). Aucune
-# duplication de logique metier entre les deux chemins.
-@register_domain_handler("IDENTITY")
-def _apply_identity_event(db: Session, event_type: str, object_uuid: str, payload: dict) -> dict:
-    p = payload
+class SyncEventPayload(BaseModel):
+    event_type: str
+    affiliate_uuid: str
+    payload: dict
 
-    if event_type == "AFFILIATE_CONFIRMED":
+
+@router.post(
+    "/sync/apply-event",
+    summary="[Interne] Appliquer un événement d'identité propagé",
+    description="Réservé au service identity_synchronizer.py -- protégé par secret partagé, pas une session utilisateur.",
+)
+def apply_sync_event(body: SyncEventPayload, request: Request, db: Session = Depends(get_db)):
+    if not SYNC_SHARED_SECRET or request.headers.get("X-Sync-Secret") != SYNC_SHARED_SECRET:
+        raise HTTPException(status_code=403, detail="Accès refusé.")
+
+    p = body.payload
+
+    if body.event_type == "AFFILIATE_CONFIRMED":
         existing = db.execute(text("SELECT id, status FROM mg.affiliates WHERE identity_uuid = :uuid"),
-                               {"uuid": object_uuid}).mappings().first()
+                               {"uuid": body.affiliate_uuid}).mappings().first()
 
         if existing:
             # Deja propage anterieurement -- mise a jour du profil
@@ -878,7 +860,7 @@ def _apply_identity_event(db: Session, event_type: str, object_uuid: str, payloa
                     org_name = :org_name, function_title = :function_title,
                     country = :country
                 WHERE identity_uuid = :uuid
-            """), {**p, "uuid": object_uuid})
+            """), {**p, "uuid": body.affiliate_uuid})
             db.commit()
             return {"applied": True, "action": "updated", "affiliate_id": existing["id"]}
 
@@ -891,14 +873,14 @@ def _apply_identity_event(db: Session, event_type: str, object_uuid: str, payloa
                     (:uuid, :last_name, :first_name, :email, :org_name,
                      'FONDATEUR', :function_title, :country, 'PROD_PENDING_ACTIVATION')
                 RETURNING id
-            """), {**p, "uuid": object_uuid}).mappings().first()
+            """), {**p, "uuid": body.affiliate_uuid}).mappings().first()
         except Exception as e:
             db.rollback()
             raise HTTPException(status_code=409, detail=(
                 f"Conflit à la création (email déjà utilisé sous une autre identité ?) : {e}"
             ))
 
-        import datetime
+        import datetime, uuid as uuid_mod
         token_row = db.execute(text("""
             INSERT INTO mg.password_reset_tokens (affiliate_id, expires_at)
             VALUES (:aff_id, :expires_at)
@@ -909,16 +891,25 @@ def _apply_identity_event(db: Session, event_type: str, object_uuid: str, payloa
         }).mappings().first()
         db.commit()
 
+        activation_url = f"https://open.osa-observatory.africa/reset-password?token={token_row['token']}"
+
+        email_sent = True
+        email_error = None
         try:
             send_activation_email(p["email"], p["first_name"], p["last_name"], str(token_row["token"]))
-        except Exception:
-            pass  # le compte existe deja ; un echec d'envoi n'annule rien
+        except Exception as e:
+            email_sent = False
+            email_error = str(e)  # le compte existe deja ; un echec d'envoi n'annule rien, mais reste visible
 
-        return {"applied": True, "action": "created", "affiliate_id": new_row["id"]}
+        return {
+            "applied": True, "action": "created", "affiliate_id": new_row["id"],
+            "activation_url": activation_url,
+            "email_sent": email_sent, "email_error": email_error,
+        }
 
-    elif event_type == "COMMITTEE_MEMBERSHIP_GRANTED":
+    elif body.event_type == "COMMITTEE_MEMBERSHIP_GRANTED":
         affiliate = db.execute(text("SELECT id FROM mg.affiliates WHERE identity_uuid = :uuid"),
-                                {"uuid": object_uuid}).mappings().first()
+                                {"uuid": body.affiliate_uuid}).mappings().first()
         if not affiliate:
             raise HTTPException(status_code=409, detail="Affilié inconnu -- événement AFFILIATE_CONFIRMED requis au préalable.")
 
@@ -930,9 +921,9 @@ def _apply_identity_event(db: Session, event_type: str, object_uuid: str, payloa
         db.commit()
         return {"applied": True, "action": "committee_membership_synced"}
 
-    elif event_type == "WORKING_GROUP_ACTIVATED":
+    elif body.event_type == "WORKING_GROUP_ACTIVATED":
         affiliate = db.execute(text("SELECT id FROM mg.affiliates WHERE identity_uuid = :uuid"),
-                                {"uuid": object_uuid}).mappings().first()
+                                {"uuid": body.affiliate_uuid}).mappings().first()
         if not affiliate:
             raise HTTPException(status_code=409, detail="Affilié inconnu -- événement AFFILIATE_CONFIRMED requis au préalable.")
 
@@ -947,30 +938,4 @@ def _apply_identity_event(db: Session, event_type: str, object_uuid: str, payloa
         db.commit()
         return {"applied": True, "action": "working_group_synced"}
 
-    raise HTTPException(status_code=422, detail=f"Type d'événement non pris en charge : {event_type}")
-
-
-class SyncEventPayload(BaseModel):
-    event_type: str
-    affiliate_uuid: str
-    payload: dict
-
-
-@router.post(
-    "/sync/apply-event",
-    summary="[Interne, ANCIEN -- conservé pour compatibilité] Appliquer un événement d'identité propagé",
-    description=(
-        "Réservé au service identity_synchronizer.py -- protégé par secret partagé, pas "
-        "une session utilisateur. Conservé pour compatibilité pendant la période de "
-        "coexistence (ADR-004 §1) -- délègue à la même logique métier mutualisée que le "
-        "nouvel endpoint générique POST /api/v1/sync/apply-event, jamais dupliquée."
-    ),
-)
-def apply_sync_event(body: SyncEventPayload, request: Request, db: Session = Depends(get_db)):
-    if not SYNC_SHARED_SECRET or request.headers.get("X-Sync-Secret") != SYNC_SHARED_SECRET:
-        raise HTTPException(status_code=403, detail="Accès refusé.")
-
-    try:
-        return apply_governance_event(db, "IDENTITY", body.event_type, body.affiliate_uuid, body.payload)
-    except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e))
+    raise HTTPException(status_code=422, detail=f"Type d'événement non pris en charge : {body.event_type}")
