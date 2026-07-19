@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif;
+    color: #1A2A1A;
+    width: 210mm;
+    height: 297mm;
+    position: relative;
+  }
+
+  .header {
+    background: #0F4A1A;
+    padding: 14mm 16mm 10mm;
+    display: flex;
+    align-items: center;
+    gap: 6mm;
+  }
+  .header img { width: 20mm; height: 20mm; }
+  .header-text .org { color: #C8973A; font-size: 22pt; font-weight: 700; letter-spacing: 0.5pt; }
+  .header-text .sub { color: #E8C97A; font-size: 10pt; font-style: italic; margin-top: 1mm; }
+
+  .goldbar { height: 2mm; background: #C8973A; }
+
+  .content { padding: 14mm 18mm 0; }
+
+  .badge {
+    display: inline-block;
+    background: #F4F8F4;
+    border: 1px solid #D4E4D4;
+    color: #0F4A1A;
+    font-size: 9pt;
+    font-weight: 700;
+    letter-spacing: 0.5pt;
+    text-transform: uppercase;
+    padding: 2mm 5mm;
+    border-radius: 20mm;
+    margin-bottom: 6mm;
+  }
+
+  h1 {
+    color: #0F4A1A;
+    font-size: 22pt;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 4mm;
+  }
+  h1 .accent { color: #C8973A; }
+
+  .lead {
+    font-size: 10.5pt;
+    line-height: 1.65;
+    color: #333;
+    margin-bottom: 6mm;
+    max-width: 160mm;
+  }
+
+  .engines {
+    background: #F4F8F4;
+    border-left: 3mm solid #1A6B2A;
+    padding: 5mm 7mm;
+    margin-bottom: 9mm;
+    font-size: 9.5pt;
+    line-height: 1.7;
+    color: #333;
+  }
+  .engines strong { color: #0F4A1A; }
+
+  .recipient-block {
+    background: #F4F8F4;
+    border-left: 3mm solid #C8973A;
+    padding: 5mm 7mm;
+    margin-bottom: 9mm;
+  }
+  .recipient-block .label {
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.6pt;
+    color: #5A7A5A;
+    font-weight: 700;
+  }
+  .recipient-block .name {
+    font-size: 14pt;
+    font-weight: 700;
+    color: #0F4A1A;
+    margin: 1mm 0;
+  }
+
+  .steps { display: flex; gap: 8mm; align-items: flex-start; margin-bottom: 9mm; }
+  .qr-box {
+    flex: 0 0 auto;
+    text-align: center;
+    border: 1px solid #D4E4D4;
+    border-radius: 3mm;
+    padding: 5mm;
+    background: #fff;
+  }
+  .qr-box img { width: 38mm; height: 38mm; display: block; }
+  .qr-box .caption { font-size: 7.5pt; color: #5A7A5A; margin-top: 2mm; max-width: 38mm; }
+
+  .steps-text { flex: 1; padding-top: 4mm; }
+  .steps-text .url { color: #0F4A1A; word-break: break-all; font-size: 8pt; }
+  .steps-text p { font-size: 9.5pt; line-height: 1.5; }
+
+  .disclaimer {
+    font-size: 8pt;
+    color: #5A7A5A;
+    font-style: italic;
+    line-height: 1.5;
+    border-top: 1px solid #D4E4D4;
+    padding-top: 4mm;
+    margin-top: 2mm;
+  }
+
+  .footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #F4F8F4;
+    padding: 6mm 18mm;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 7.5pt;
+    color: #5A7A5A;
+  }
+  .footer .cc { font-weight: 700; }
+</style>
+</head>
+<body>
+
+  <div class="header">
+    <img src="logo.png" alt="OSA">
+    <div class="header-text">
+      <div class="org">OSA OBSERVATORY</div>
+      <div class="sub">Observatoire de la Souveraineté Africaine</div>
+    </div>
+  </div>
+  <div class="goldbar"></div>
+
+  <div class="content">
+    <span class="badge">Plateforme officielle — Production</span>
+
+    <h1>Votre identité a rejoint la<br><span class="accent">plateforme officielle de l'OSA</span></h1>
+
+    <p class="lead">
+      Votre profil, validé pendant la phase de test du cercle fondateur,
+      vient d'être transféré vers la plateforme officielle de l'Observatoire
+      de la Souveraineté Africaine. Une dernière étape : choisissez votre
+      mot de passe pour cette plateforme, distinct de celui utilisé en test.
+    </p>
+
+    <div class="engines">
+      <strong>OSA Observatory</strong> mesure les trajectoires de souveraineté
+      de 54 États africains à travers 10 piliers comportementaux, à partir de
+      données primaires auditables — sans indicateur de perception.<br><br>
+      Ses moteurs scientifiques : <strong>ISA</strong> (indice composite de
+      souveraineté), <strong>POA</strong> (moniteurs sectoriels), <strong>AMAR</strong>
+      et <strong>GENECO</strong> (analyses de valeur et de fuite économique) —
+      publiés sous doctrine de traçabilité stricte.
+    </div>
+
+    <div class="recipient-block">
+      <div class="label">Compte</div>
+      <div class="name">{{PRENOM}} {{NOM}}</div>
+    </div>
+
+    <div class="steps">
+      <div class="qr-box">
+        <img src="qr_sample.png" alt="QR code">
+        <div class="caption">Scannez pour activer votre compte</div>
+      </div>
+      <div class="steps-text">
+        <p>
+          Scannez le QR code ou ouvrez ce lien pour choisir votre mot de passe
+          et activer votre compte en production :<br>
+          <span class="url">{{ACTIVATION_URL}}</span>
+        </p>
+      </div>
+    </div>
+
+    <p class="disclaimer">
+      Cette plateforme est la version officielle de l'OSA Observatory —
+      distincte de l'environnement de test utilisé pendant la phase de
+      validation du cercle fondateur. Lien personnel et à usage unique,
+      à ne pas transmettre.
+    </p>
+  </div>
+
+  <div class="footer">
+    <span class="cc">CC-BY-NC-4.0 · contact@osa-observatory.africa</span>
+    <span>OSA Observatory — plateforme officielle, {{DATE}}</span>
+  </div>
+
+</body>
+</html>
