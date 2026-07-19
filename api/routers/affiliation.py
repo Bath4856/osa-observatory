@@ -22,6 +22,7 @@ from typing import Optional
 from api.db import get_db
 from fastapi import Request
 from api.utils.password_policy import validate_password_strength
+from api.services.governance_events import emit_governance_event, register_domain_handler
 
 router = APIRouter(
     prefix="/api/v1/affiliation",
@@ -32,10 +33,9 @@ TOKEN_EXPIRY_HOURS = 48
 PASSWORD_RESET_EXPIRY_HOURS = 2  # plus court qu'une confirmation d'affiliation -- fenetre de securite reduite
 
 # ── Emission d'evenements d'identite (ADR-001) ─────────────────────────────────
-# N'emet reellement un evenement que si ce code tourne en PREPROD -- seul
-# environnement source autorise a synchroniser vers PROD (DEV exclu, PROD
-# est la cible terminale). Verifie a l'execution via OSA_ENVIRONMENT, pas
-# en dur -- meme code deploye sur les 3 environnements.
+# HISTORIQUE -- plus appelee depuis la bascule ADR-003 Phase 3 (confirm_email
+# appelle desormais emit_governance_event). Conservee intacte, dormante, pour
+# ne rien casser en cas de rollback -- decommissionnee a la Phase 6 seulement.
 def emit_identity_event(db: Session, event_type: str, affiliate_uuid, payload: dict):
     if os.getenv("OSA_ENVIRONMENT", "").upper() != "PREPROD":
         return
@@ -584,7 +584,10 @@ def confirm_email(token: str, body: ConfirmEmailBody, db: Session = Depends(get_
         UPDATE mg.email_confirmation_tokens SET used_at = NOW() WHERE id = :id
     """), {"id": token_row["id"]})
 
-    # ── Emission des evenements d'identite (ADR-001, sans effet hors preprod) ──
+    # ── Emission des evenements de gouvernance (ADR-003/004, domaine IDENTITY) ──
+    # Bascule Phase 3 : remplace emit_identity_event / mg.identity_events par
+    # emit_governance_event / mg.governance_events, sans effet hors PREPROD
+    # (verifie a l'execution dans emit_governance_event lui-meme).
     base_payload = {
         "identity_uuid": str(affiliate_uuid),
         "email": token_row["email"],
@@ -595,7 +598,7 @@ def confirm_email(token: str, body: ConfirmEmailBody, db: Session = Depends(get_
         "country": body.country.strip(),
         "status": "AFFILIATED",
     }
-    emit_identity_event(db, "AFFILIATE_CONFIRMED", affiliate_uuid, base_payload)
+    emit_governance_event(db, "IDENTITY", "AFFILIATE_CONFIRMED", "AFFILIATE", affiliate_uuid, base_payload)
 
     committee_row = db.execute(text("""
         SELECT committee, start_date FROM mg.committee_memberships
@@ -603,14 +606,14 @@ def confirm_email(token: str, body: ConfirmEmailBody, db: Session = Depends(get_
         ORDER BY start_date DESC LIMIT 1
     """), {"id": token_row["affiliate_id"]}).mappings().first()
     if committee_row:
-        emit_identity_event(db, "COMMITTEE_MEMBERSHIP_GRANTED", affiliate_uuid, {
+        emit_governance_event(db, "IDENTITY", "COMMITTEE_MEMBERSHIP_GRANTED", "AFFILIATE", affiliate_uuid, {
             **base_payload,
             "committee": committee_row["committee"],
             "start_date": committee_row["start_date"],
         })
 
     if activated_wg:
-        emit_identity_event(db, "WORKING_GROUP_ACTIVATED", affiliate_uuid, {
+        emit_governance_event(db, "IDENTITY", "WORKING_GROUP_ACTIVATED", "AFFILIATE", affiliate_uuid, {
             **base_payload,
             "pillar_code": activated_wg["pillar_code"],
         })
@@ -770,7 +773,115 @@ def reset_password(token: str, body: PasswordResetSubmit, db: Session = Depends(
     }
 
 
+# ── Gestionnaire IDENTITY pour le bus de gouvernance générique (ADR-004) ──────
+# Logique dupliquée depuis apply_sync_event() ci-dessous, de façon assumée --
+# la mutualisation stricte (ADR-004 §5, un seul point de vérité par domaine)
+# est différée à la Phase 6 pour ne pas faire deux bascules dans le même
+# changement (émission ET réception). Enregistré via le décorateur générique
+# de api.services.governance_events -- dispatché par apply_governance_event
+# depuis POST /api/v1/sync/apply-event (api/routers/governance_sync.py).
+@register_domain_handler("IDENTITY")
+def _apply_identity_event(db: Session, event_type: str, object_uuid: str, payload: dict) -> dict:
+    p = payload
+
+    if event_type == "AFFILIATE_CONFIRMED":
+        existing = db.execute(text("SELECT id, status FROM mg.affiliates WHERE identity_uuid = :uuid"),
+                               {"uuid": object_uuid}).mappings().first()
+
+        if existing:
+            # Deja propage anterieurement -- mise a jour du profil
+            # uniquement, jamais du statut ni du mot de passe.
+            db.execute(text("""
+                UPDATE mg.affiliates
+                SET first_name = :first_name, last_name = :last_name,
+                    org_name = :org_name, function_title = :function_title,
+                    country = :country
+                WHERE identity_uuid = :uuid
+            """), {**p, "uuid": object_uuid})
+            db.commit()
+            return {"applied": True, "action": "updated", "affiliate_id": existing["id"]}
+
+        try:
+            new_row = db.execute(text("""
+                INSERT INTO mg.affiliates
+                    (identity_uuid, last_name, first_name, email, org_name,
+                     affiliate_type, function_title, country, status)
+                VALUES
+                    (:uuid, :last_name, :first_name, :email, :org_name,
+                     'FONDATEUR', :function_title, :country, 'PROD_PENDING_ACTIVATION')
+                RETURNING id
+            """), {**p, "uuid": object_uuid}).mappings().first()
+        except Exception as e:
+            db.rollback()
+            raise ValueError(f"Conflit à la création (email déjà utilisé sous une autre identité ?) : {e}")
+
+        import datetime
+        token_row = db.execute(text("""
+            INSERT INTO mg.password_reset_tokens (affiliate_id, expires_at)
+            VALUES (:aff_id, :expires_at)
+            RETURNING token
+        """), {
+            "aff_id": new_row["id"],
+            "expires_at": datetime.datetime.utcnow() + datetime.timedelta(days=30),
+        }).mappings().first()
+        db.commit()
+
+        activation_url = f"https://open.osa-observatory.africa/reset-password?token={token_row['token']}"
+
+        email_sent = True
+        email_error = None
+        try:
+            send_activation_email(p["email"], p["first_name"], p["last_name"], str(token_row["token"]))
+        except Exception as e:
+            email_sent = False
+            email_error = str(e)  # le compte existe deja ; un echec d'envoi n'annule rien, mais reste visible
+
+        return {
+            "applied": True, "action": "created", "affiliate_id": new_row["id"],
+            "activation_url": activation_url,
+            "email_sent": email_sent, "email_error": email_error,
+        }
+
+    elif event_type == "COMMITTEE_MEMBERSHIP_GRANTED":
+        affiliate = db.execute(text("SELECT id FROM mg.affiliates WHERE identity_uuid = :uuid"),
+                                {"uuid": object_uuid}).mappings().first()
+        if not affiliate:
+            raise ValueError("Affilié inconnu -- événement AFFILIATE_CONFIRMED requis au préalable.")
+
+        db.execute(text("""
+            INSERT INTO mg.committee_memberships (affiliate_id, committee, start_date, status)
+            VALUES (:aff_id, :committee, :start_date, 'ACTIVE')
+            ON CONFLICT DO NOTHING
+        """), {"aff_id": affiliate["id"], "committee": p["committee"], "start_date": p["start_date"]})
+        db.commit()
+        return {"applied": True, "action": "committee_membership_synced"}
+
+    elif event_type == "WORKING_GROUP_ACTIVATED":
+        affiliate = db.execute(text("SELECT id FROM mg.affiliates WHERE identity_uuid = :uuid"),
+                                {"uuid": object_uuid}).mappings().first()
+        if not affiliate:
+            raise ValueError("Affilié inconnu -- événement AFFILIATE_CONFIRMED requis au préalable.")
+
+        # invited_by = leur propre id : placeholder deliberé -- la personne
+        # qui a reellement invite existe cote preprod, pas cote prod (id
+        # non correspondant). Pas de FK vers un admin factice.
+        db.execute(text("""
+            INSERT INTO mg.working_group_members (pillar_code, affiliate_id, invited_by, status, accepted_at)
+            VALUES (:pillar_code, :aff_id, :aff_id, 'ACTIVE', NOW())
+            ON CONFLICT DO NOTHING
+        """), {"pillar_code": p["pillar_code"], "aff_id": affiliate["id"]})
+        db.commit()
+        return {"applied": True, "action": "working_group_synced"}
+
+    raise ValueError(f"Type d'événement non pris en charge pour IDENTITY : {event_type}")
+
+
 # ── Endpoint 4 : synchronisation d'identite (ADR-001) ─────────────────────────
+# HISTORIQUE -- coexiste avec POST /api/v1/sync/apply-event (generique,
+# api/routers/governance_sync.py) jusqu'a la Phase 6 (ADR-003/004). N'est
+# plus appele par aucun synchroniseur actif depuis la bascule vers
+# governance_synchronizer.py -- identity_synchronizer.py, qui l'appelait,
+# devient dormant par la meme occasion. Conserve intact, non supprime.
 # Appele uniquement par le service identity_synchronizer.py -- jamais par
 # le portail public. Protege par un secret partage (pas une session
 # utilisateur : c'est un appel machine-a-machine entre deux instances de
