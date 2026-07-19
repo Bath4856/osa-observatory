@@ -22,7 +22,7 @@ import Participate from './pages/Participate'
 import Data from './pages/Data'
 import AmarDetail from './pages/AmarDetail'
 import ConflictEconomyDetail from './pages/ConflictEconomyDetail'
-import IosaDetail from './pages/IosaDetail'
+import PoaDetail from './pages/PoaDetail'
 import './App.css'
 
 function Layout() {
@@ -54,8 +54,7 @@ const router = createBrowserRouter([
       { path: '/country/:iso3/projects/:id',     element: <ProjectDetail /> },
       { path: '/country/:iso3/amar',             element: <AmarDetail /> },
       { path: '/country/:iso3/conflict-economy', element: <ConflictEconomyDetail /> },
-      { path: '/country/:iso3/iosa',             element: <IosaDetail /> },
-      { path: '/country/:iso3/poa',              element: <IosaDetail /> },
+      { path: '/country/:iso3/poa',              element: <PoaDetail /> },
       { path: '/register',                       element: <Register /> },
       { path: '/login',                          element: <Login /> },
       { path: '/forgot-password',                element: <ForgotPassword /> },

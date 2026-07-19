@@ -1,31 +1,31 @@
-.iosa-detail-page {
+.poa-detail-page {
   max-width: 900px;
   margin: 0 auto;
   padding: 24px 16px 60px;
 }
 
-.iosa-detail-header {
+.poa-detail-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 28px;
 }
 
-.iosa-detail-title {
+.poa-detail-title {
   font-size: 1.6rem;
   font-weight: 700;
   color: var(--color-primary-dk);
   margin: 0;
 }
 
-.iosa-detail-empty {
+.poa-detail-empty {
   color: var(--color-muted);
   font-style: italic;
   margin-top: 32px;
 }
 
 /* Blocs génériques */
-.iosa-block {
+.poa-block {
   background: var(--color-bg);
   border-radius: 8px;
   box-shadow: 0 1px 4px rgba(0,0,0,.07);
@@ -33,32 +33,32 @@
   margin-bottom: 20px;
 }
 
-.iosa-block-about {
+.poa-block-about {
   border-left: 4px solid var(--color-primary);
 }
 
-.iosa-block-title {
+.poa-block-title {
   font-size: 1.05rem;
   font-weight: 700;
   color: var(--color-primary-dk);
   margin: 0 0 12px;
 }
 
-.iosa-block-text {
+.poa-block-text {
   color: var(--color-text);
   line-height: 1.75;
   margin: 0;
 }
 
 /* Tableau synthétique des observations */
-.iosa-obs-table {
+.poa-obs-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 8px;
   font-size: .92rem;
 }
 
-.iosa-obs-table th {
+.poa-obs-table th {
   background: var(--color-primary);
   color: var(--color-white);
   padding: 10px 14px;
@@ -66,34 +66,34 @@
   font-weight: 600;
 }
 
-.iosa-obs-table td {
+.poa-obs-table td {
   padding: 12px 14px;
   border-bottom: 1px solid var(--color-border);
   vertical-align: middle;
 }
 
-.iosa-obs-table tr:last-child td {
+.poa-obs-table tr:last-child td {
   border-bottom: none;
 }
 
-.iosa-obs-table tr:hover td {
+.poa-obs-table tr:hover td {
   background: var(--color-bg-light);
 }
 
-.iosa-obs-name {
+.poa-obs-name {
   font-weight: 600;
   color: var(--color-primary-dk);
   display: block;
 }
 
-.iosa-obs-pillar {
+.poa-obs-pillar {
   font-size: .78rem;
   color: var(--color-muted);
   display: block;
   margin-top: 2px;
 }
 
-.iosa-obs-delta {
+.poa-obs-delta {
   font-size: .88rem;
   color: var(--color-muted);
   display: block;
@@ -102,7 +102,7 @@
 }
 
 /* Badges statut observation */
-.iosa-status-badge {
+.poa-status-badge {
   display: inline-block;
   padding: 3px 10px;
   border-radius: 10px;
@@ -110,12 +110,12 @@
   font-weight: 600;
 }
 
-.iosa-status-OBSERVED   { background: #E8F5E9; color: #1A6B2A; }
-.iosa-status-PARTIAL    { background: #FFF8E1; color: #7D4800; }
-.iosa-status-COLLECTING { background: var(--color-bg-light); color: var(--color-muted); }
+.poa-status-OBSERVED   { background: #E8F5E9; color: #1A6B2A; }
+.poa-status-PARTIAL    { background: #FFF8E1; color: #7D4800; }
+.poa-status-COLLECTING { background: var(--color-bg-light); color: var(--color-muted); }
 
 /* Bouton Voir */
-.iosa-btn-voir {
+.poa-btn-voir {
   background: var(--color-primary);
   color: var(--color-white);
   border: none;
@@ -128,15 +128,15 @@
   transition: background .15s;
 }
 
-.iosa-btn-voir:hover  { background: var(--color-primary-dk); }
-.iosa-btn-voir:disabled { background: var(--color-border); color: var(--color-muted); cursor: default; }
+.poa-btn-voir:hover  { background: var(--color-primary-dk); }
+.poa-btn-voir:disabled { background: var(--color-border); color: var(--color-muted); cursor: default; }
 
 /* Fiche indicateur détaillée */
-.iosa-indicator-block {
+.poa-indicator-block {
   border-left: 4px solid var(--color-accent);
 }
 
-.iosa-indicator-meta {
+.poa-indicator-meta {
   display: flex;
   gap: 32px;
   flex-wrap: wrap;
@@ -145,13 +145,13 @@
   border-bottom: 1px solid var(--color-border);
 }
 
-.iosa-indicator-meta-item {
+.poa-indicator-meta-item {
   display: flex;
   flex-direction: column;
   gap: 3px;
 }
 
-.iosa-meta-label {
+.poa-meta-label {
   font-size: .72rem;
   color: var(--color-muted);
   text-transform: uppercase;
@@ -159,14 +159,14 @@
   font-weight: 600;
 }
 
-.iosa-meta-value {
+.poa-meta-value {
   font-size: .92rem;
   font-weight: 600;
   color: var(--color-primary-dk);
 }
 
 /* Note d'avertissement */
-.iosa-note-warning {
+.poa-note-warning {
   background: #FFF8E1;
   border-left: 3px solid var(--color-accent);
   padding: 10px 14px;
@@ -178,24 +178,24 @@
 }
 
 /* Tableau de trajectoire */
-.iosa-trajectory-section {
+.poa-trajectory-section {
   margin-top: 20px;
 }
 
-.iosa-trajectory-title {
+.poa-trajectory-title {
   font-size: .95rem;
   font-weight: 700;
   color: var(--color-primary-dk);
   margin: 0 0 10px;
 }
 
-.iosa-trajectory-table {
+.poa-trajectory-table {
   width: 100%;
   border-collapse: collapse;
   font-size: .9rem;
 }
 
-.iosa-trajectory-table th {
+.poa-trajectory-table th {
   background: var(--color-bg-light);
   color: var(--color-primary-dk);
   padding: 9px 14px;
@@ -207,38 +207,38 @@
   letter-spacing: .04em;
 }
 
-.iosa-trajectory-table td {
+.poa-trajectory-table td {
   padding: 9px 14px;
   border-bottom: 1px solid var(--color-border);
   vertical-align: middle;
 }
 
-.iosa-trajectory-table tr:last-child td {
+.poa-trajectory-table tr:last-child td {
   border-bottom: none;
 }
 
 /* États des lignes */
-.iosa-trajectory-table tr.row-official td   { color: var(--color-text); }
-.iosa-trajectory-table tr.row-preliminary td { color: #7D4800; }
-.iosa-trajectory-table tr.row-outside td    { color: var(--color-muted); font-style: italic; }
+.poa-trajectory-table tr.row-official td   { color: var(--color-text); }
+.poa-trajectory-table tr.row-preliminary td { color: #7D4800; }
+.poa-trajectory-table tr.row-outside td    { color: var(--color-muted); font-style: italic; }
 
-.iosa-trajectory-table tr.row-official:hover td,
-.iosa-trajectory-table tr.row-preliminary:hover td {
+.poa-trajectory-table tr.row-official:hover td,
+.poa-trajectory-table tr.row-preliminary:hover td {
   background: var(--color-bg-light);
 }
 
 /* Cellule delta */
-.iosa-delta-value {
+.poa-delta-value {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
-.iosa-delta-value.delta-high   { color: #B00020; }
-.iosa-delta-value.delta-medium { color: #7D4800; }
-.iosa-delta-value.delta-low    { color: var(--color-primary); }
+.poa-delta-value.delta-high   { color: #B00020; }
+.poa-delta-value.delta-medium { color: #7D4800; }
+.poa-delta-value.delta-low    { color: var(--color-primary); }
 
 /* Badge publication */
-.iosa-pub-badge {
+.poa-pub-badge {
   display: inline-block;
   padding: 2px 8px;
   border-radius: 8px;
@@ -246,19 +246,19 @@
   font-weight: 600;
 }
 
-.iosa-pub-OFFICIAL    { background: #E8F5E9; color: #1A6B2A; }
-.iosa-pub-PRELIMINARY { background: #FFF8E1; color: #7D4800; }
-.iosa-pub-outside     { background: var(--color-bg-light); color: var(--color-muted); }
+.poa-pub-OFFICIAL    { background: #E8F5E9; color: #1A6B2A; }
+.poa-pub-PRELIMINARY { background: #FFF8E1; color: #7D4800; }
+.poa-pub-outside     { background: var(--color-bg-light); color: var(--color-muted); }
 
 /* État non observé */
-.iosa-not-observed {
+.poa-not-observed {
   color: var(--color-muted);
   font-style: italic;
   font-size: .85rem;
 }
 
 /* Bilan de tendance */
-.iosa-tendency-block {
+.poa-tendency-block {
   margin-top: 16px;
   padding: 14px 18px;
   background: var(--color-bg-light);
@@ -266,7 +266,7 @@
   border-left: 3px solid var(--color-accent);
 }
 
-.iosa-tendency-label {
+.poa-tendency-label {
   font-size: .78rem;
   text-transform: uppercase;
   letter-spacing: .06em;
@@ -275,23 +275,23 @@
   margin-bottom: 4px;
 }
 
-.iosa-tendency-text {
+.poa-tendency-text {
   font-size: .92rem;
   color: var(--color-text);
   line-height: 1.6;
 }
 
-.iosa-tendency-arrow {
+.poa-tendency-arrow {
   font-size: 1.3rem;
   margin-right: 6px;
 }
 
-.iosa-tendency-arrow.up   { color: #B00020; }
-.iosa-tendency-arrow.down { color: var(--color-primary); }
-.iosa-tendency-arrow.flat { color: var(--color-muted); }
+.poa-tendency-arrow.up   { color: #B00020; }
+.poa-tendency-arrow.down { color: var(--color-primary); }
+.poa-tendency-arrow.flat { color: var(--color-muted); }
 
 /* Projets structurants */
-.iosa-projects-link {
+.poa-projects-link {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -306,13 +306,13 @@
   transition: background .15s;
 }
 
-.iosa-projects-link:hover {
+.poa-projects-link:hover {
   background: #A87830;
   color: var(--color-white);
 }
 
 /* Disclaimer */
-.iosa-disclaimer {
+.poa-disclaimer {
   font-size: .8rem;
   color: var(--color-muted);
   margin-top: 36px;
@@ -323,7 +323,7 @@
 }
 
 /* Bouton retour */
-.iosa-back-top {
+.poa-back-top {
   display: inline-block;
   margin-bottom: 18px;
   font-size: .85rem;
@@ -335,4 +335,4 @@
   font-weight: 500;
 }
 
-.iosa-back-top:hover { color: var(--color-accent); }
+.poa-back-top:hover { color: var(--color-accent); }

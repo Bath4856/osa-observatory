@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getStructuralObs, getPoaCatalog } from '../api/structural'
 import { useLang } from '../i18n/useLang'
-import './IosaDetail.css'
+import './PoaDetail.css'
 
 // Pas d'annees de publication codees en dur ici : le statut de publication
 // (OFFICIEL / PRELIMINAIRE / absent) vient de rf.publication_policy via
@@ -87,7 +87,7 @@ function getObsStatus(rows, pubYears) {
 
 function PubBadge({ status, lang }) {
   if (!status) return (
-    <span className="iosa-pub-badge iosa-pub-outside">
+    <span className="poa-pub-badge poa-pub-outside">
       {lang === 'fr' ? 'Hors périmètre' : 'Out of scope'}
     </span>
   )
@@ -96,7 +96,7 @@ function PubBadge({ status, lang }) {
     PRELIMINARY: { fr: 'Préliminaire', en: 'Preliminary' },
   }
   return (
-    <span className={`iosa-pub-badge iosa-pub-${status}`}>
+    <span className={`poa-pub-badge poa-pub-${status}`}>
       {labels[status]?.[lang] || status}
     </span>
   )
@@ -110,7 +110,7 @@ function StatusBadge({ status, lang }) {
   }
   const s = status || 'COLLECTING'
   return (
-    <span className={`iosa-status-badge iosa-status-${s}`}>
+    <span className={`poa-status-badge poa-status-${s}`}>
       {labels[s]?.[lang] || s}
     </span>
   )
@@ -151,40 +151,40 @@ function IndicatorDetail({ code, rows, lang, iso3, onBack, catalogRow }) {
   const tendencyArrow = tendency === 'up' ? '↗' : tendency === 'down' ? '↘' : '→'
 
   return (
-    <div className="iosa-block iosa-indicator-block">
-      <h2 className="iosa-block-title">{cfg.label}</h2>
+    <div className="poa-block poa-indicator-block">
+      <h2 className="poa-block-title">{cfg.label}</h2>
 
-      <div className="iosa-indicator-meta">
-        <div className="iosa-indicator-meta-item">
-          <span className="iosa-meta-label">{lang === 'fr' ? 'Source primaire' : 'Primary source'}</span>
-          <span className="iosa-meta-value">{cfg.source}</span>
+      <div className="poa-indicator-meta">
+        <div className="poa-indicator-meta-item">
+          <span className="poa-meta-label">{lang === 'fr' ? 'Source primaire' : 'Primary source'}</span>
+          <span className="poa-meta-value">{cfg.source}</span>
         </div>
-        <div className="iosa-indicator-meta-item">
-          <span className="iosa-meta-label">{lang === 'fr' ? 'Couverture' : 'Coverage'}</span>
-          <span className="iosa-meta-value">{lang === 'fr' ? cfg.coverage_fr : cfg.coverage_en}</span>
+        <div className="poa-indicator-meta-item">
+          <span className="poa-meta-label">{lang === 'fr' ? 'Couverture' : 'Coverage'}</span>
+          <span className="poa-meta-value">{lang === 'fr' ? cfg.coverage_fr : cfg.coverage_en}</span>
         </div>
-        <div className="iosa-indicator-meta-item">
-          <span className="iosa-meta-label">{lang === 'fr' ? 'Mesure' : 'Metric'}</span>
-          <span className="iosa-meta-value">{cfg.metric_label}</span>
+        <div className="poa-indicator-meta-item">
+          <span className="poa-meta-label">{lang === 'fr' ? 'Mesure' : 'Metric'}</span>
+          <span className="poa-meta-value">{cfg.metric_label}</span>
         </div>
       </div>
 
-      <p className="iosa-block-text" style={{ marginBottom: 16 }}>{cfg.delta_desc}</p>
+      <p className="poa-block-text" style={{ marginBottom: 16 }}>{cfg.delta_desc}</p>
 
       {cfg.warning && (
-        <div className="iosa-note-warning">
+        <div className="poa-note-warning">
           ⚠ {cfg.warning[lang] || cfg.warning.fr}
         </div>
       )}
 
       {/* Tableau de trajectoire */}
-      <div className="iosa-trajectory-section">
-        <h3 className="iosa-trajectory-title">
+      <div className="poa-trajectory-section">
+        <h3 className="poa-trajectory-title">
           {lang === 'fr'
             ? `Trajectoire observée — ${allYears[0]}–${allYears[allYears.length - 1]}`
             : `Observed trajectory — ${allYears[0]}–${allYears[allYears.length - 1]}`}
         </h3>
-        <table className="iosa-trajectory-table">
+        <table className="poa-trajectory-table">
           <thead>
             <tr>
               <th>{lang === 'fr' ? 'Année' : 'Year'}</th>
@@ -206,10 +206,10 @@ function IndicatorDetail({ code, rows, lang, iso3, onBack, catalogRow }) {
                   <td><strong>{y}</strong></td>
                   <td>
                     {val != null
-                      ? <span className={`iosa-delta-value ${getDeltaClass(val, code)}`}>
+                      ? <span className={`poa-delta-value ${getDeltaClass(val, code)}`}>
                           {val.toFixed(1)}
                         </span>
-                      : <span className="iosa-not-observed">
+                      : <span className="poa-not-observed">
                           {lang === 'fr' ? 'Non observé' : 'Not observed'}
                         </span>
                     }
@@ -229,12 +229,12 @@ function IndicatorDetail({ code, rows, lang, iso3, onBack, catalogRow }) {
 
       {/* Bilan de tendance */}
       {pubVals.length >= 2 && (
-        <div className="iosa-tendency-block">
-          <div className="iosa-tendency-label">
+        <div className="poa-tendency-block">
+          <div className="poa-tendency-label">
             {lang === 'fr' ? 'Lecture de la tendance' : 'Trend reading'}
           </div>
-          <div className="iosa-tendency-text">
-            <span className={`iosa-tendency-arrow ${tendencyArrowClass}`}>{tendencyArrow}</span>
+          <div className="poa-tendency-text">
+            <span className={`poa-tendency-arrow ${tendencyArrowClass}`}>{tendencyArrow}</span>
             {tendencyText}
             {variation != null && (
               <span style={{ marginLeft: 8, fontWeight: 600 }}>
@@ -248,7 +248,7 @@ function IndicatorDetail({ code, rows, lang, iso3, onBack, catalogRow }) {
       {/* Retour vers la liste -- plutot qu'un lien vers les projets, pas
           necessaire a ce stade : l'usager peut vouloir consulter une autre
           observation, pas forcement les projets structurants du pilier */}
-      <button className="iosa-projects-link" style={{ border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit' }} onClick={onBack}>
+      <button className="poa-projects-link" style={{ border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit' }} onClick={onBack}>
         {lang === 'fr' ? '← Voir une autre observation' : '← View another observation'}
       </button>
     </div>
@@ -256,7 +256,7 @@ function IndicatorDetail({ code, rows, lang, iso3, onBack, catalogRow }) {
 }
 
 // ─── Page principale ──────────────────────────────────────────────────────────
-export default function IosaDetail() {
+export default function PoaDetail() {
   const { iso3 } = useParams()
   const { lang } = useLang()
   const [data, setData] = useState(null)
@@ -298,9 +298,9 @@ export default function IosaDetail() {
   catalog.forEach(row => { catalogByCode[row.indicator_code] = row })
 
   return (
-    <div className="iosa-detail-page">
-      <div className="iosa-detail-header">
-        <h1 className="iosa-detail-title">
+    <div className="poa-detail-page">
+      <div className="poa-detail-header">
+        <h1 className="poa-detail-title">
           {lang === 'fr' ? 'POA — Phénomènes Observables Autonomes' : 'POA — Autonomous Observable Phenomena'} — {iso3}
         </h1>
         <Link to={`/country/${iso3}`} className="back-link">← {iso3}</Link>
@@ -309,11 +309,11 @@ export default function IosaDetail() {
       {/* Présentation doctrinale -- uniquement sur la vue liste, pas repetee
           a chaque fiche indicateur (evite la duplication signalee) */}
       {!selected && (
-        <div className="iosa-block iosa-block-about">
-          <h2 className="iosa-block-title">
+        <div className="poa-block poa-block-about">
+          <h2 className="poa-block-title">
             {lang === 'fr' ? 'Phénomènes Observables Autonomes' : 'Autonomous Observable Phenomena'}
           </h2>
-          <p className="iosa-block-text">
+          <p className="poa-block-text">
             {lang === 'fr'
               ? "Un POA est un phénomène objectivable, reproductible et mesurable, susceptible d'affecter l'exercice effectif de la souveraineté. Ces observations documentent des déltas mesurables — des écarts entre ce qu'un État déclare et ce que les données primaires révèlent. Chaque observation repose sur une source unique, auditée et reproductible. Elles ne produisent ni indice, ni score, ni classement, et ne constituent pas un jugement sur les politiques publiques."
               : "A POA is an objectifiable, reproducible and measurable phenomenon likely to affect the effective exercise of sovereignty. These observations document measurable deltas — gaps between what a state declares and what primary data reveals. Each observation relies on a single, audited and reproducible source. They produce no index, score or ranking, and do not constitute a judgment on public policy."}
@@ -322,18 +322,18 @@ export default function IosaDetail() {
       )}
 
       {!hasData ? (
-        <p className="iosa-detail-empty">
+        <p className="poa-detail-empty">
           {lang === 'fr' ? 'Aucune observation disponible pour ce pays.' : 'No observations available for this country.'}
         </p>
       ) : (
         <>
           {/* Vue synthétique */}
           {!selected && (
-            <div className="iosa-block">
-              <h2 className="iosa-block-title">
+            <div className="poa-block">
+              <h2 className="poa-block-title">
                 {lang === 'fr' ? 'Observations disponibles' : 'Available observations'}
               </h2>
-              <table className="iosa-obs-table">
+              <table className="poa-obs-table">
                 <thead>
                   <tr>
                     <th>{lang === 'fr' ? 'Observation' : 'Observation'}</th>
@@ -361,11 +361,11 @@ export default function IosaDetail() {
                     return (
                       <tr key={code}>
                         <td>
-                          <span className="iosa-obs-name">{cfg?.label || code}</span>
-                          <span className="iosa-obs-pillar">{rows[0]?.pillar_code}</span>
+                          <span className="poa-obs-name">{cfg?.label || code}</span>
+                          <span className="poa-obs-pillar">{rows[0]?.pillar_code}</span>
                         </td>
                         <td>
-                          <span className="iosa-obs-delta">{cfg?.metric_label}</span>
+                          <span className="poa-obs-delta">{cfg?.metric_label}</span>
                         </td>
                         <td><StatusBadge status={status} lang={lang} /></td>
                         <td style={{
@@ -377,7 +377,7 @@ export default function IosaDetail() {
                           {arrow}
                         </td>
                         <td>
-                          <button className="iosa-btn-voir" onClick={() => setSelected(code)}>
+                          <button className="poa-btn-voir" onClick={() => setSelected(code)}>
                             {lang === 'fr' ? 'Voir →' : 'View →'}
                           </button>
                         </td>
@@ -392,7 +392,7 @@ export default function IosaDetail() {
           {/* Vue détail indicateur */}
           {selected && (
             <>
-              <button className="iosa-back-top" onClick={() => setSelected(null)}>
+              <button className="poa-back-top" onClick={() => setSelected(null)}>
                 ← {lang === 'fr' ? 'Toutes les observations' : 'All observations'}
               </button>
               <IndicatorDetail
@@ -408,7 +408,7 @@ export default function IosaDetail() {
         </>
       )}
 
-      <p className="iosa-disclaimer">
+      <p className="poa-disclaimer">
         {lang === 'fr'
           ? "Les POA (Phénomènes Observables Autonomes) ne constituent pas un jugement sur la gouvernance des États. Ils documentent des phénomènes objectivables dont l'analyse et les décisions relèvent de la responsabilité souveraine des États, des chercheurs et des institutions."
           : "POA (Autonomous Observable Phenomena) do not constitute a judgment on state governance. They document objective phenomena whose analysis and decisions are the sovereign responsibility of states, researchers, and institutions."}

@@ -43,7 +43,7 @@ function fmt(val, status) {
   return isNaN(n) ? '—' : n.toFixed(3)
 }
 
-export default function ScoreTable({ iso3, scoresData, pillarData, historyData, amarData, conflictData, iosaData }) {
+export default function ScoreTable({ iso3, scoresData, pillarData, historyData, amarData, conflictData, poaData }) {
   const { t, lang } = useLang()
   const navigate = useNavigate()
 
@@ -88,13 +88,13 @@ export default function ScoreTable({ iso3, scoresData, pillarData, historyData, 
   }
 
   // Nombre d'observations POA distinctes pour une année donnée
-  const getIosaCount = (year) => {
-    if (!iosaData || iosaData.length === 0) return 0
-    return [...new Set(iosaData.filter(d => d.year === year).map(d => d.indicator_code))].length
+  const getPoaCount = (year) => {
+    if (!poaData || poaData.length === 0) return 0
+    return [...new Set(poaData.filter(d => d.year === year).map(d => d.indicator_code))].length
   }
 
   // Indicateur de présence POA globale (au moins une observation dans la fenêtre)
-  const hasIosa = iosaData && iosaData.length > 0
+  const hasPoa = poaData && poaData.length > 0
 
   const RiskBadge = ({ band }) => (
     <span className="risk-badge" style={{ background: RISK_COLOR[band] || '#888' }}>

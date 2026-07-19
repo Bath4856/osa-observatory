@@ -16,7 +16,7 @@ export default function CountryISA() {
   const [history, setHistory]                 = useState(null)
   const [amarHistory, setAmarHistory]         = useState(null)
   const [conflictHistory, setConflictHistory] = useState(null)
-  const [iosaData, setIosaData]               = useState(null)
+  const [poaData, setPoaData]               = useState(null)
   const [identity, setIdentity]               = useState(null)
   const [loading, setLoading]                 = useState(true)
   const [error, setError]                     = useState(null)
@@ -33,13 +33,13 @@ export default function CountryISA() {
       getStructuralObs(iso3),
       getCountryIdentity(iso3),
     ])
-      .then(([isa, pillars, hist, amarData, conflictData, iosa, id]) => {
+      .then(([isa, pillars, hist, amarData, conflictData, poa, id]) => {
         setScores(isa)
         setPillarScores(pillars)
         setHistory(hist)
         setAmarHistory(amarData)
         setConflictHistory(conflictData)
-        setIosaData(iosa)
+        setPoaData(poa)
         setIdentity(id)
       })
       .catch(e => setError(e.message))
@@ -68,7 +68,7 @@ export default function CountryISA() {
         historyData={history}
         amarData={amarHistory}
         conflictData={conflictHistory}
-        iosaData={iosaData}
+        poaData={poaData}
         identity={identity}
       />
     </div>
