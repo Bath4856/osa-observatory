@@ -87,13 +87,13 @@ export default function ScoreTable({ iso3, scoresData, pillarData, historyData, 
     return conflictData.find(d => d.year === year) || null
   }
 
-  // Nombre d'observations IOSA distinctes pour une année donnée
+  // Nombre d'observations POA distinctes pour une année donnée
   const getIosaCount = (year) => {
     if (!iosaData || iosaData.length === 0) return 0
     return [...new Set(iosaData.filter(d => d.year === year).map(d => d.indicator_code))].length
   }
 
-  // Indicateur de présence IOSA globale (au moins une observation dans la fenêtre)
+  // Indicateur de présence POA globale (au moins une observation dans la fenêtre)
   const hasIosa = iosaData && iosaData.length > 0
 
   const RiskBadge = ({ band }) => (

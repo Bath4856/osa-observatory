@@ -41,7 +41,7 @@ export default function AppFooter() {
         <span className="footer-col-title">{lang === 'fr' ? 'Produits' : 'Products'}</span>
         <nav className="footer-nav">
           <span className="footer-product">ISA</span>
-          <span className="footer-product">IOSA</span>
+          <span className="footer-product">POA</span>
           <span className="footer-product">GENECO</span>
           <span className="footer-product">AMAR</span>
         </nav>
