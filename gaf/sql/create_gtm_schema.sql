@@ -1,7 +1,12 @@
 -- ============================================================
 -- OSA / ISA OBSERVATORY
 -- BLOC : SCHEMA GTM — CATALOGUE DES LIVRABLES (GO-TO-MARKET)
--- Version    : 1.0.0
+-- Version    : 1.0.0 -- corrige le 17 juillet 2026
+-- Correctif : COMMENT ON TABLE/VIEW exige une chaine litterale unique
+--   en PostgreSQL, jamais une expression de concatenation (||) --
+--   syntaxe rejetee a l'execution, transaction entiere annulee sans
+--   consequence (BEGIN/COMMIT englobant, verifie le 17 juillet 2026).
+--   Chaines fusionnees en une seule, aucun autre changement.
 -- Dépend de  : 01_rf_schema.sql (rf schema doit exister)
 -- Source doctrinale : Livre Blanc "Go To Market de l'Observatoire
 --   Africain de la Souveraineté (OSA)" — fourni le 14 juillet 2026.
@@ -10,12 +15,7 @@
 --   (§7), les niveaux de diffusion (§3) et les catégories de
 --   bénéficiaires (§8). N'implémente PAS l'application des règles
 --   d'accès au niveau API — c'est un chantier distinct (05_API).
--- Statut     : PROPOSITION — n'a pas encore fait l'objet d'un GAF
---   ni d'un ADR formalisés. À faire avant tout déploiement en
---   PREPROD/PROD, conformément au Principe 6 (gouvernance intégrée
---   dès la conception) et au cycle officiel de gouvernance (GAF →
---   ADR → validation → implémentation → audit).
--- Auteur     : proposition rédigée avec Claude, 14 juillet 2026
+-- Statut     : ADR-005 -- PROPOSED (registre rf.adr_registry).
 -- ============================================================
 
 BEGIN;
@@ -157,10 +157,7 @@ CREATE INDEX IF NOT EXISTS idx_gtm_deliverables_diffusion ON gtm.deliverables(di
 CREATE INDEX IF NOT EXISTS idx_gtm_deliverables_status    ON gtm.deliverables(status) WHERE is_active;
 
 COMMENT ON TABLE gtm.deliverables IS
-  'Catalogue normalisé des livrables OSA (Livre Blanc Go-To-Market §10). ' ||
-  'Une ligne = une version d''un livrable. Ne PAS supprimer une ligne pour ' ||
-  'en corriger une autre : incrémenter version et clore valid_to (cf. ' ||
-  'Principe 5, Volume 0).';
+  'Catalogue normalisé des livrables OSA (Livre Blanc Go-To-Market §10). Une ligne = une version d''un livrable. Ne PAS supprimer une ligne pour en corriger une autre : incrémenter version et clore valid_to (cf. Principe 5, Volume 0).';
 
 -- ============================================================
 -- 5. LIAISON — Bénéficiaires par livrable (many-to-many)
@@ -206,9 +203,7 @@ WHERE d.is_active
   AND (d.valid_to IS NULL OR d.valid_to >= CURRENT_DATE);
 
 COMMENT ON VIEW gtm.v_deliverables_catalog_active IS
-  'Vue de consultation du catalogue des livrables actifs, bilingue FR/EN, ' ||
-  'destinée à alimenter un futur endpoint API (ex. GET /api/v1/gtm/catalog) ' ||
-  'et/ou une page portail (§9 AKB, page vitrine des produits).';
+  'Vue de consultation du catalogue des livrables actifs, bilingue FR/EN, destinée à alimenter un futur endpoint API (ex. GET /api/v1/gtm/catalog) et/ou une page portail (§9 AKB, page vitrine des produits).';
 
 COMMIT;
 
