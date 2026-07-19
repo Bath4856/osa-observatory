@@ -37,6 +37,18 @@ export async function getAmarHistory(iso3) {
   }))
 }
 
+// ── Facteurs d'alerte detailles (6 dimensions structurelles) -- AmarDetail.jsx
+// Distinct de getAmarHistory/getCompositeHistory (vue GENECO composite, 5
+// scores de risque differents) -- corrige le 19 juillet 2026 : AmarDetail.jsx
+// attendait structural_fragility_score et les 5 autres facteurs, jamais
+// transmis par getAmarHistory qui ne retourne que 4 champs de synthese.
+export async function getAmarFactorsHistory(iso3) {
+  const res = await fetch(`${API}/api/v2/early-warning/civilian-protection/${iso3}`)
+  if (!res.ok) return []
+  const data = await res.json()
+  return toArray(data)
+}
+
 export async function getConflictEconomyHistory(iso3) {
   const composite = await getCompositeHistory(iso3)
   return composite.map(d => ({
