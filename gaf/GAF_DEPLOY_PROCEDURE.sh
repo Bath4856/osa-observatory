@@ -1,6 +1,14 @@
 # OSA ISA – Sprint 24 GAF
 # Procédure de déploiement sur VPS
 # Rédigée le 2026-06-17
+#
+# CORRECTIF DU 20 JUILLET 2026 -- les 5 occurrences de PGPASSWORD
+# contenaient un mot de passe DB en clair (Il1tRBwubTkPd8jd), deja
+# obsolete au moment de la decouverte (DB_PASSWORD a ete rote depuis,
+# cf. ADR-009). Remplace par une lecture depuis la variable
+# d'environnement DB_PASSWORD (echec explicite si non definie) --
+# exporter DB_PASSWORD depuis api/.env avant d'executer ce script :
+#   export DB_PASSWORD=$(grep '^DB_PASSWORD=' api/.env | cut -d= -f2-)
 # ============================================================
 #
 # Prérequis :
@@ -74,7 +82,7 @@ DB_NAME=osa_db
 DB_USER=postgres
 
 # 4.1 Script 001 : créer les 4 tables + vues + triggers
-PGPASSWORD=Il1tRBwubTkPd8jd psql \
+PGPASSWORD="${DB_PASSWORD:?Variable DB_PASSWORD non definie -- lire depuis api/.env}" psql \
     -h $DB_HOST -p $DB_PORT \
     -U $DB_USER -d $DB_NAME \
     -f gaf/sql/001_create_gaf_tables.sql
@@ -87,7 +95,7 @@ PGPASSWORD=Il1tRBwubTkPd8jd psql \
 #   audit_recommendations   | 8192 bytes
 
 # 4.2 Script 002 : seed des 12 règles d'orientation
-PGPASSWORD=Il1tRBwubTkPd8jd psql \
+PGPASSWORD="${DB_PASSWORD:?Variable DB_PASSWORD non definie -- lire depuis api/.env}" psql \
     -h $DB_HOST -p $DB_PORT \
     -U $DB_USER -d $DB_NAME \
     -f gaf/sql/002_seed_rules.sql
@@ -95,7 +103,7 @@ PGPASSWORD=Il1tRBwubTkPd8jd psql \
 # Attendu en fin de sortie : 12 lignes avec rule_code, severity, owner
 
 # 4.3 Vérification rapide
-PGPASSWORD=Il1tRBwubTkPd8jd psql \
+PGPASSWORD="${DB_PASSWORD:?Variable DB_PASSWORD non definie -- lire depuis api/.env}" psql \
     -h $DB_HOST -p $DB_PORT \
     -U $DB_USER -d $DB_NAME \
     -c "SELECT COUNT(*) AS regles FROM ops.gaf_orientation_rules;"
@@ -237,7 +245,7 @@ python3 gaf/run_gaf.py
 # ÉTAPE 10 — VÉRIFICATION DB FINALE
 # ════════════════════════════════════════════════════════════
 
-PGPASSWORD=Il1tRBwubTkPd8jd psql \
+PGPASSWORD="${DB_PASSWORD:?Variable DB_PASSWORD non definie -- lire depuis api/.env}" psql \
     -h $DB_HOST -p $DB_PORT \
     -U $DB_USER -d $DB_NAME << 'SQL'
 
@@ -283,7 +291,7 @@ git push origin main
 # ════════════════════════════════════════════════════════════
 
 # Si la migration DB échoue ou produit des erreurs :
-PGPASSWORD=Il1tRBwubTkPd8jd psql \
+PGPASSWORD="${DB_PASSWORD:?Variable DB_PASSWORD non definie -- lire depuis api/.env}" psql \
     -h $DB_HOST -p $DB_PORT \
     -U $DB_USER -d $DB_NAME \
     -f gaf/sql/003_rollback.sql
