@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { getAmarHistory } from '../api/alerts'
+import { getAmarFactorsHistory } from '../api/alerts'
 import { useLang } from '../i18n/useLang'
 import { RISK_COLOR, RISK_LABEL } from '../constants/risk'
 import { classifyVariation, generateAmarSummary, generateAmarResilience } from '../constants/amarContent'
@@ -115,7 +115,7 @@ export default function AmarDetail() {
   useEffect(() => {
     setLoading(true)
     setError(null)
-    getAmarHistory(iso3)
+    getAmarFactorsHistory(iso3)
       .then(d => setHistory(d))
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))

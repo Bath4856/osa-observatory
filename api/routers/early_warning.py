@@ -159,16 +159,23 @@ def get_amar_country(
     db: Session = Depends(get_db),
 ):
     iso3 = iso3.upper()
+    # Corrige le 19 juillet 2026 : ma.v_p7i_amar_dashboard (vue non
+    # materialisee, recalculee a chaque appel) prenait ~108s et exposait a
+    # tort la plage 2010-2024 -- la decision de conception initiale limite
+    # la trajectoire AMAR a 2020-2024 (menaces calculees a partir de 2021).
+    # pub.mv_amar_dashboard est la vue materialisee correcte : meme
+    # colonnes utilisees par le frontend, index sur (country_iso3, year),
+    # execution en ~0.1ms au lieu de ~108s.
     rows = db.execute(
         text("""
             SELECT
                 country_iso3, year, risk_band,
                 risk_score, confidence_score,
-                risk_interpretation, recommended_action,
+                recommended_action,
                 structural_fragility_score, conflict_escalation_score,
                 governance_breakdown_score, humanitarian_stress_score,
                 resource_conflict_score, information_polarization_score
-            FROM ma.v_p7i_amar_dashboard
+            FROM pub.mv_amar_dashboard
             WHERE country_iso3 = :iso3
             ORDER BY year DESC
         """),
