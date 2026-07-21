@@ -67,6 +67,12 @@ class OpportunityCreate(BaseModel):
     # Chemin externe (OSOA)
     client_id: Optional[int] = None
     deliverable_id: Optional[int] = None
+    participation_mode: Optional[str] = Field(
+        None,
+        description="Obligatoire si EXTERNAL : PROVIDER (OSA prestataire, cas DP), "
+                     "CONSORTIUM_PARTNER (OSA partenaire technique d'un tiers porteur, "
+                     "cas AMI/AO/AOI depose par un externe), ou WATCH_ONLY (veille, aucun engagement).",
+    )
 
 
 class OpportunityItem(BaseModel):
@@ -75,6 +81,7 @@ class OpportunityItem(BaseModel):
     title_fr: str
     title_en: Optional[str] = None
     origin_type: str
+    participation_mode: Optional[str] = None
     current_phase: int
     status: str
     client_id: Optional[int] = None
@@ -122,16 +129,31 @@ def create_opportunity(
         })
 
     if data.origin_type == "INTERNAL":
-        if not data.origin_project_family_id or data.client_id or data.deliverable_id:
+        if not data.origin_project_family_id or data.client_id or data.deliverable_id or data.participation_mode:
             raise HTTPException(status_code=422, detail={
-                "fr": "Une opportunité INTERNAL exige origin_project_family_id et exclut client_id/deliverable_id.",
-                "en": "An INTERNAL opportunity requires origin_project_family_id and excludes client_id/deliverable_id.",
+                "fr": "Une opportunité INTERNAL exige origin_project_family_id et exclut client_id/deliverable_id/participation_mode.",
+                "en": "An INTERNAL opportunity requires origin_project_family_id and excludes client_id/deliverable_id/participation_mode.",
             })
     else:  # EXTERNAL
-        if not data.client_id or not data.deliverable_id or data.origin_project_family_id:
+        if not data.client_id or data.origin_project_family_id:
             raise HTTPException(status_code=422, detail={
-                "fr": "Une opportunité EXTERNAL exige client_id et deliverable_id, et exclut origin_project_family_id.",
-                "en": "An EXTERNAL opportunity requires client_id and deliverable_id, and excludes origin_project_family_id.",
+                "fr": "Une opportunité EXTERNAL exige client_id, et exclut origin_project_family_id.",
+                "en": "An EXTERNAL opportunity requires client_id, and excludes origin_project_family_id.",
+            })
+        if data.participation_mode not in ("PROVIDER", "CONSORTIUM_PARTNER", "WATCH_ONLY"):
+            raise HTTPException(status_code=422, detail={
+                "fr": "participation_mode obligatoire pour EXTERNAL : PROVIDER, CONSORTIUM_PARTNER ou WATCH_ONLY.",
+                "en": "participation_mode required for EXTERNAL: PROVIDER, CONSORTIUM_PARTNER or WATCH_ONLY.",
+            })
+        if data.participation_mode == "PROVIDER" and not data.deliverable_id:
+            raise HTTPException(status_code=422, detail={
+                "fr": "participation_mode=PROVIDER exige deliverable_id (livrable porté par OSA).",
+                "en": "participation_mode=PROVIDER requires deliverable_id (deliverable owned by OSA).",
+            })
+        if data.participation_mode in ("CONSORTIUM_PARTNER", "WATCH_ONLY") and data.deliverable_id:
+            raise HTTPException(status_code=422, detail={
+                "fr": "deliverable_id doit être vide si OSA n'est pas prestataire principal (CONSORTIUM_PARTNER/WATCH_ONLY).",
+                "en": "deliverable_id must be empty if OSA is not the lead provider (CONSORTIUM_PARTNER/WATCH_ONLY).",
             })
 
         # Blocage KYC -- ADR-010, decision actee le 20 juillet 2026
@@ -156,20 +178,21 @@ def create_opportunity(
         row = db.execute(
             text("""
                 INSERT INTO osoa.opportunities
-                    (code, title_fr, title_en, origin_type,
+                    (code, title_fr, title_en, origin_type, participation_mode,
                      origin_project_family_id, client_id, deliverable_id, created_by)
                 VALUES
-                    (:code, :title_fr, :title_en, :origin_type,
+                    (:code, :title_fr, :title_en, :origin_type, :participation_mode,
                      :origin_project_family_id, :client_id, :deliverable_id, :created_by)
-                RETURNING id, code, title_fr, title_en, origin_type, current_phase,
-                          status, client_id, deliverable_id, origin_project_family_id,
-                          created_at::text, updated_at::text
+                RETURNING id, code, title_fr, title_en, origin_type, participation_mode,
+                          current_phase, status, client_id, deliverable_id,
+                          origin_project_family_id, created_at::text, updated_at::text
             """),
             {
                 "code": data.code,
                 "title_fr": data.title_fr,
                 "title_en": data.title_en,
                 "origin_type": data.origin_type,
+                "participation_mode": data.participation_mode,
                 "origin_project_family_id": data.origin_project_family_id,
                 "client_id": data.client_id,
                 "deliverable_id": data.deliverable_id,
@@ -197,9 +220,9 @@ def create_opportunity(
 def get_opportunity(opportunity_id: int, db: Session = Depends(get_db)):
     row = db.execute(
         text("""
-            SELECT id, code, title_fr, title_en, origin_type, current_phase,
-                   status, client_id, deliverable_id, origin_project_family_id,
-                   created_at::text, updated_at::text
+            SELECT id, code, title_fr, title_en, origin_type, participation_mode,
+                   current_phase, status, client_id, deliverable_id,
+                   origin_project_family_id, created_at::text, updated_at::text
             FROM osoa.opportunities
             WHERE id = :id
         """),
@@ -224,12 +247,13 @@ def get_opportunity(opportunity_id: int, db: Session = Depends(get_db)):
 def list_opportunities(
     status: Optional[str] = Query(default=None, description="ACTIVE, CLOSED ou ABANDONED"),
     origin_type: Optional[str] = Query(default=None, description="INTERNAL ou EXTERNAL"),
+    participation_mode: Optional[str] = Query(default=None, description="PROVIDER, CONSORTIUM_PARTNER ou WATCH_ONLY"),
     db: Session = Depends(get_db),
 ):
     sql = """
-        SELECT id, code, title_fr, title_en, origin_type, current_phase,
-               status, client_id, deliverable_id, origin_project_family_id,
-               created_at::text, updated_at::text
+        SELECT id, code, title_fr, title_en, origin_type, participation_mode,
+               current_phase, status, client_id, deliverable_id,
+               origin_project_family_id, created_at::text, updated_at::text
         FROM osoa.opportunities
         WHERE 1=1
     """
@@ -240,6 +264,9 @@ def list_opportunities(
     if origin_type:
         sql += " AND origin_type = :origin_type"
         params["origin_type"] = origin_type
+    if participation_mode:
+        sql += " AND participation_mode = :participation_mode"
+        params["participation_mode"] = participation_mode
     sql += " ORDER BY created_at DESC"
 
     rows = db.execute(text(sql), params).mappings().all()
