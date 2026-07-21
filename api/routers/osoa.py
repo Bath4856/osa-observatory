@@ -9,10 +9,13 @@ distinct de /api/v2/opportunities (deja pris par api/routers/opportunities.py,
 concept different : pub.mv_isa_opportunity_catalog, catalogue P7Z
 d'opportunites d'intervention souveraine, sans rapport avec OSOA).
 
-Doctrine ADR-010 (20 juillet 2026) appliquee :
-  - Une opportunite EXTERNAL ne peut etre creee que si le client associe a
-    un KYC status='VERIFIED' -- decision actee explicitement, bloque a la
-    creation plutot qu'a une etape ulterieure du workflow.
+Doctrine ADR-010 (20 juillet 2026) appliquee, revisee le 20 juillet au soir :
+  - Une opportunite EXTERNAL peut naitre avec un client au KYC encore
+    PENDING -- la negociation doit pouvoir commencer avant verification
+    complete, toujours mediee par un affilie (aucun acces direct client,
+    "pas de boite noire"). Le passage PENDING -> VERIFIED intervient a la
+    signature/acceptation du contrat (osoa.contracts), endpoint a
+    construire -- pas de blocage a la creation de l'opportunite elle-meme.
   - Disclaimer standard requis sur toute sortie publique OIM/OSOA (recommandation
     d'intervention, jamais une amelioration actee) -- inclus dans les
     reponses de lecture (GET).
@@ -155,23 +158,21 @@ def create_opportunity(
                 "fr": "deliverable_id doit être vide si OSA n'est pas prestataire principal (CONSORTIUM_PARTNER/WATCH_ONLY).",
                 "en": "deliverable_id must be empty if OSA is not the lead provider (CONSORTIUM_PARTNER/WATCH_ONLY).",
             })
-
-        # Blocage KYC -- ADR-010, decision actee le 20 juillet 2026
+        # Pas de blocage KYC a la creation -- une opportunite EXTERNAL peut
+        # naitre avec un client encore PENDING, la negociation devant
+        # pouvoir commencer avant verification complete. Le passage
+        # PENDING -> VERIFIED intervient a la signature/acceptation du
+        # contrat (osoa.contracts), endpoint non encore construit a ce
+        # jour (decision du 20 juillet 2026, revise le blocage initial a
+        # la creation qui etait trop strict).
         client = db.execute(
-            text("SELECT kyc_status FROM osoa.clients WHERE id = :id"),
+            text("SELECT id FROM osoa.clients WHERE id = :id"),
             {"id": data.client_id},
         ).mappings().first()
         if not client:
             raise HTTPException(status_code=404, detail={
                 "fr": "Client introuvable.",
                 "en": "Client not found.",
-            })
-        if client["kyc_status"] != "VERIFIED":
-            raise HTTPException(status_code=403, detail={
-                "fr": f"KYC du client non vérifié (statut actuel : {client['kyc_status']}). "
-                      f"Une opportunité EXTERNAL exige un KYC VERIFIED (ADR-010).",
-                "en": f"Client KYC not verified (current status: {client['kyc_status']}). "
-                      f"An EXTERNAL opportunity requires a VERIFIED KYC (ADR-010).",
             })
 
     try:
