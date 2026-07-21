@@ -272,3 +272,169 @@ def list_opportunities(
 
     rows = db.execute(text(sql), params).mappings().all()
     return {"disclaimer": OSOA_DISCLAIMER, "count": len(rows), "items": [dict(r) for r in rows]}
+
+
+# ── Devis (osoa.quotes) ────────────────────────────────────────────────────────
+# Positionnement dans le tunnel : depot -> etude de faisabilite ->
+# DEVIS (ici) -> negociation -> accord -> contrat. N'affecte jamais
+# osoa.clients.kyc_status -- ce passage reste reserve a la signature
+# du contrat (decision du 20 juillet 2026).
+
+class QuoteCreate(BaseModel):
+    strategic_analysis_id: Optional[int] = None
+    amount: float = Field(..., ge=0)
+    currency: str = Field(..., min_length=3, max_length=3, description="Code devise ISO 4217, ex. XOF, USD, EUR")
+    description_fr: Optional[str] = None
+    valid_until: Optional[str] = Field(None, description="Date limite de validite, format YYYY-MM-DD")
+
+
+class QuoteRespond(BaseModel):
+    status: str = Field(..., description="ACCEPTED ou REJECTED")
+
+
+class QuoteItem(BaseModel):
+    id: int
+    opportunity_id: int
+    strategic_analysis_id: Optional[int] = None
+    amount: float
+    currency: str
+    status: str
+    description_fr: Optional[str] = None
+    valid_until: Optional[str] = None
+    proposed_by: Optional[int] = None
+    proposed_at: str
+    responded_by: Optional[int] = None
+    responded_at: Optional[str] = None
+
+
+@router.post(
+    "/opportunities/{opportunity_id}/quotes",
+    summary="Proposer un devis pour une opportunité OSOA",
+    description=(
+        "Crée une proposition chiffrée (étude d'opportunité et/ou de faisabilité "
+        "monnayable) rattachée à une opportunité. Statut initial PROPOSED."
+    ),
+)
+def create_quote(
+    opportunity_id: int,
+    data: QuoteCreate,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+
+    opp = db.execute(
+        text("SELECT id FROM osoa.opportunities WHERE id = :id"),
+        {"id": opportunity_id},
+    ).mappings().first()
+    if not opp:
+        raise HTTPException(status_code=404, detail={
+            "fr": "Opportunité introuvable.",
+            "en": "Opportunity not found.",
+        })
+
+    try:
+        row = db.execute(
+            text("""
+                INSERT INTO osoa.quotes
+                    (opportunity_id, strategic_analysis_id, amount, currency,
+                     description_fr, valid_until, proposed_by)
+                VALUES
+                    (:opportunity_id, :strategic_analysis_id, :amount, :currency,
+                     :description_fr, :valid_until, :proposed_by)
+                RETURNING id, opportunity_id, strategic_analysis_id, amount, currency,
+                          status, description_fr, valid_until::text, proposed_by,
+                          proposed_at::text, responded_by, responded_at::text
+            """),
+            {
+                "opportunity_id": opportunity_id,
+                "strategic_analysis_id": data.strategic_analysis_id,
+                "amount": data.amount,
+                "currency": data.currency.upper(),
+                "description_fr": data.description_fr,
+                "valid_until": data.valid_until,
+                "proposed_by": affiliate_id,
+            },
+        ).mappings().first()
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=409, detail={
+            "fr": f"Erreur à la création du devis : {e}",
+            "en": f"Error creating quote: {e}",
+        })
+
+    return {"disclaimer": OSOA_DISCLAIMER, "quote": dict(row)}
+
+
+@router.get(
+    "/opportunities/{opportunity_id}/quotes",
+    summary="Lister les devis d'une opportunité OSOA",
+)
+def list_quotes(opportunity_id: int, db: Session = Depends(get_db)):
+    rows = db.execute(
+        text("""
+            SELECT id, opportunity_id, strategic_analysis_id, amount, currency,
+                   status, description_fr, valid_until::text, proposed_by,
+                   proposed_at::text, responded_by, responded_at::text
+            FROM osoa.quotes
+            WHERE opportunity_id = :opportunity_id
+            ORDER BY proposed_at DESC
+        """),
+        {"opportunity_id": opportunity_id},
+    ).mappings().all()
+    return {"disclaimer": OSOA_DISCLAIMER, "count": len(rows), "items": [dict(r) for r in rows]}
+
+
+@router.post(
+    "/quotes/{quote_id}/respond",
+    summary="Répondre à un devis (accepter ou rejeter)",
+    description=(
+        "Transition de statut PROPOSED -> ACCEPTED ou REJECTED. N'affecte pas "
+        "osoa.clients.kyc_status -- ce passage reste reserve a la signature du "
+        "contrat, endpoint distinct non encore construit."
+    ),
+)
+def respond_to_quote(
+    quote_id: int,
+    data: QuoteRespond,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+
+    if data.status not in ("ACCEPTED", "REJECTED"):
+        raise HTTPException(status_code=422, detail={
+            "fr": "status doit être ACCEPTED ou REJECTED.",
+            "en": "status must be ACCEPTED or REJECTED.",
+        })
+
+    quote = db.execute(
+        text("SELECT id, status FROM osoa.quotes WHERE id = :id"),
+        {"id": quote_id},
+    ).mappings().first()
+    if not quote:
+        raise HTTPException(status_code=404, detail={
+            "fr": "Devis introuvable.",
+            "en": "Quote not found.",
+        })
+    if quote["status"] != "PROPOSED":
+        raise HTTPException(status_code=409, detail={
+            "fr": f"Ce devis n'est plus en attente de réponse (statut actuel : {quote['status']}).",
+            "en": f"This quote is no longer awaiting a response (current status: {quote['status']}).",
+        })
+
+    row = db.execute(
+        text("""
+            UPDATE osoa.quotes
+            SET status = :status, responded_by = :responded_by, responded_at = NOW()
+            WHERE id = :id
+            RETURNING id, opportunity_id, strategic_analysis_id, amount, currency,
+                      status, description_fr, valid_until::text, proposed_by,
+                      proposed_at::text, responded_by, responded_at::text
+        """),
+        {"status": data.status, "responded_by": affiliate_id, "id": quote_id},
+    ).mappings().first()
+    db.commit()
+
+    return {"disclaimer": OSOA_DISCLAIMER, "quote": dict(row)}
