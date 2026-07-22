@@ -26,10 +26,11 @@ pas reserve aux seuls ADMIN (les membres du Collège/Comité Technique portent
 couramment les AMI/AO/AOI).
 """
 from typing import Optional, List
+import json
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from api.db import get_db
 from api.routers.auth_affiliates import get_current_affiliate
@@ -282,6 +283,7 @@ def list_opportunities(
 
 class QuoteCreate(BaseModel):
     strategic_analysis_id: Optional[int] = None
+    strategic_deliverable_id: Optional[int] = None
     amount: float = Field(..., ge=0)
     currency: str = Field(..., min_length=3, max_length=3, description="Code devise ISO 4217, ex. XOF, USD, EUR")
     description_fr: Optional[str] = None
@@ -296,6 +298,7 @@ class QuoteItem(BaseModel):
     id: int
     opportunity_id: int
     strategic_analysis_id: Optional[int] = None
+    strategic_deliverable_id: Optional[int] = None
     amount: float
     currency: str
     status: str
@@ -333,22 +336,34 @@ def create_quote(
             "en": "Opportunity not found.",
         })
 
+    if data.strategic_deliverable_id:
+        deliverable = db.execute(
+            text("SELECT id FROM osoa.strategic_deliverables WHERE id = :id AND opportunity_id = :opp_id"),
+            {"id": data.strategic_deliverable_id, "opp_id": opportunity_id},
+        ).mappings().first()
+        if not deliverable:
+            raise HTTPException(status_code=404, detail={
+                "fr": "Livrable synthétique introuvable pour cette opportunité.",
+                "en": "Strategic deliverable not found for this opportunity.",
+            })
+
     try:
         row = db.execute(
             text("""
                 INSERT INTO osoa.quotes
-                    (opportunity_id, strategic_analysis_id, amount, currency,
-                     description_fr, valid_until, proposed_by)
+                    (opportunity_id, strategic_analysis_id, strategic_deliverable_id,
+                     amount, currency, description_fr, valid_until, proposed_by)
                 VALUES
-                    (:opportunity_id, :strategic_analysis_id, :amount, :currency,
-                     :description_fr, :valid_until, :proposed_by)
-                RETURNING id, opportunity_id, strategic_analysis_id, amount, currency,
-                          status, description_fr, valid_until::text, proposed_by,
-                          proposed_at::text, responded_by, responded_at::text
+                    (:opportunity_id, :strategic_analysis_id, :strategic_deliverable_id,
+                     :amount, :currency, :description_fr, :valid_until, :proposed_by)
+                RETURNING id, opportunity_id, strategic_analysis_id, strategic_deliverable_id,
+                          amount, currency, status, description_fr, valid_until::text,
+                          proposed_by, proposed_at::text, responded_by, responded_at::text
             """),
             {
                 "opportunity_id": opportunity_id,
                 "strategic_analysis_id": data.strategic_analysis_id,
+                "strategic_deliverable_id": data.strategic_deliverable_id,
                 "amount": data.amount,
                 "currency": data.currency.upper(),
                 "description_fr": data.description_fr,
@@ -374,9 +389,9 @@ def create_quote(
 def list_quotes(opportunity_id: int, db: Session = Depends(get_db)):
     rows = db.execute(
         text("""
-            SELECT id, opportunity_id, strategic_analysis_id, amount, currency,
-                   status, description_fr, valid_until::text, proposed_by,
-                   proposed_at::text, responded_by, responded_at::text
+            SELECT id, opportunity_id, strategic_analysis_id, strategic_deliverable_id,
+                   amount, currency, status, description_fr, valid_until::text,
+                   proposed_by, proposed_at::text, responded_by, responded_at::text
             FROM osoa.quotes
             WHERE opportunity_id = :opportunity_id
             ORDER BY proposed_at DESC
@@ -429,12 +444,423 @@ def respond_to_quote(
             UPDATE osoa.quotes
             SET status = :status, responded_by = :responded_by, responded_at = NOW()
             WHERE id = :id
-            RETURNING id, opportunity_id, strategic_analysis_id, amount, currency,
-                      status, description_fr, valid_until::text, proposed_by,
-                      proposed_at::text, responded_by, responded_at::text
+            RETURNING id, opportunity_id, strategic_analysis_id, strategic_deliverable_id,
+                      amount, currency, status, description_fr, valid_until::text,
+                      proposed_by, proposed_at::text, responded_by, responded_at::text
         """),
         {"status": data.status, "responded_by": affiliate_id, "id": quote_id},
     ).mappings().first()
     db.commit()
 
     return {"disclaimer": OSOA_DISCLAIMER, "quote": dict(row)}
+
+
+# ── Analyses strategiques (osoa.strategic_analyses) ────────────────────────────
+# 9 methodes, chacune avec une structure de contenu (content, JSONB) validee
+# strictement plutot que libre -- decision du 22 juillet 2026. Le vocabulaire
+# de 5_POURQUOI reprend rf.cause_category_5m (deja utilise par ADR-006,
+# mg.pillar_5whys_analysis) plutot que d'en inventer un nouveau. ZACHMAN
+# reprend la grille 6x6 deja utilisee ailleurs dans le projet (Sprint 8
+# validation des sources, Sprint 19 architecture de publication ISA) --
+# 6 colonnes (quoi/comment/ou/qui/quand/pourquoi) x 6 perspectives.
+
+
+VALID_METHODS = (
+    "5W1H", "SWOT", "5_POURQUOI", "RISQUE", "FAISABILITE",
+    "MULTICRITERE", "ECONOMIQUE", "GOUVERNANCE", "ZACHMAN",
+)
+
+
+class Content5W1H(BaseModel):
+    quoi: str
+    qui: str
+    ou: str
+    quand: str
+    comment: str
+    pourquoi: str
+
+
+class ContentSWOT(BaseModel):
+    forces: List[str] = Field(default_factory=list)
+    faiblesses: List[str] = Field(default_factory=list)
+    opportunites: List[str] = Field(default_factory=list)
+    menaces: List[str] = Field(default_factory=list)
+
+
+class Niveau5Pourquoi(BaseModel):
+    pourquoi: str
+    reponse: str
+
+
+class Content5Pourquoi(BaseModel):
+    constat_initial: str
+    niveaux: List[Niveau5Pourquoi] = Field(..., min_length=1, max_length=5)
+    cause_racine: str
+    categorie_5m: str  # validee contre rf.cause_category_5m dans l'endpoint
+
+
+class RisqueItem(BaseModel):
+    description: str
+    probabilite: str  # FAIBLE, MOYENNE, ELEVEE
+    impact: str  # FAIBLE, MOYEN, ELEVE
+    mitigation: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _check_values(self):
+        if self.probabilite not in ("FAIBLE", "MOYENNE", "ELEVEE"):
+            raise ValueError("probabilite doit être FAIBLE, MOYENNE ou ELEVEE")
+        if self.impact not in ("FAIBLE", "MOYEN", "ELEVE"):
+            raise ValueError("impact doit être FAIBLE, MOYEN ou ELEVE")
+        return self
+
+
+class ContentRisque(BaseModel):
+    risques: List[RisqueItem] = Field(..., min_length=1)
+
+
+class ContentFaisabilite(BaseModel):
+    faisabilite_technique: str
+    faisabilite_financiere: str
+    faisabilite_organisationnelle: str
+    delai_estime_jours: int = Field(..., ge=0)
+    conclusion: str  # FAVORABLE, DEFAVORABLE, CONDITIONNEL
+
+    @model_validator(mode="after")
+    def _check_conclusion(self):
+        if self.conclusion not in ("FAVORABLE", "DEFAVORABLE", "CONDITIONNEL"):
+            raise ValueError("conclusion doit être FAVORABLE, DEFAVORABLE ou CONDITIONNEL")
+        return self
+
+
+class CritereItem(BaseModel):
+    nom: str
+    poids: float = Field(..., ge=0, le=1)
+    score: float = Field(..., ge=0)
+    commentaire: Optional[str] = None
+
+
+class ContentMulticritere(BaseModel):
+    criteres: List[CritereItem] = Field(..., min_length=1)
+    score_global: float
+
+
+class ContentEconomique(BaseModel):
+    cout_estime: float = Field(..., ge=0)
+    devise: str = Field(..., min_length=3, max_length=3)
+    benefices_attendus_fr: str
+    retour_sur_investissement_estime: Optional[str] = None
+    hypotheses_fr: Optional[str] = None
+
+
+class ContentGouvernance(BaseModel):
+    parties_prenantes: List[str] = Field(..., min_length=1)
+    structure_decisionnelle_fr: str
+    risques_gouvernance_fr: Optional[str] = None
+    mecanisme_supervision_fr: Optional[str] = None
+
+
+ZACHMAN_PERSPECTIVES = (
+    "EXECUTIVE", "BUSINESS_MGMT", "ARCHITECT", "ENGINEER", "TECHNICIAN", "ENTERPRISE",
+)
+
+
+class ZachmanRow(BaseModel):
+    perspective: str
+    quoi: Optional[str] = None
+    comment: Optional[str] = None
+    ou: Optional[str] = None
+    qui: Optional[str] = None
+    quand: Optional[str] = None
+    pourquoi: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _check_perspective(self):
+        if self.perspective not in ZACHMAN_PERSPECTIVES:
+            raise ValueError(f"perspective doit être l'une de {ZACHMAN_PERSPECTIVES}")
+        return self
+
+
+class ContentZachman(BaseModel):
+    grille: List[ZachmanRow] = Field(..., min_length=6, max_length=6)
+
+    @model_validator(mode="after")
+    def _check_all_perspectives_present(self):
+        found = {row.perspective for row in self.grille}
+        missing = set(ZACHMAN_PERSPECTIVES) - found
+        if missing:
+            raise ValueError(f"perspectives manquantes dans la grille : {missing}")
+        return self
+
+
+METHOD_MODELS = {
+    "5W1H": Content5W1H,
+    "SWOT": ContentSWOT,
+    "5_POURQUOI": Content5Pourquoi,
+    "RISQUE": ContentRisque,
+    "FAISABILITE": ContentFaisabilite,
+    "MULTICRITERE": ContentMulticritere,
+    "ECONOMIQUE": ContentEconomique,
+    "GOUVERNANCE": ContentGouvernance,
+    "ZACHMAN": ContentZachman,
+}
+
+
+class AnalysisCreate(BaseModel):
+    method: str = Field(..., description=f"Une de : {', '.join(VALID_METHODS)}")
+    content: dict
+
+
+@router.post(
+    "/opportunities/{opportunity_id}/analyses",
+    summary="Créer une analyse stratégique pour une opportunité OSOA",
+    description=(
+        "Crée une analyse (5W1H, SWOT, 5_POURQUOI, RISQUE, FAISABILITE, "
+        "MULTICRITERE, ECONOMIQUE, GOUVERNANCE ou ZACHMAN). Le contenu est "
+        "validé strictement selon la méthode choisie, jamais un JSON libre."
+    ),
+)
+def create_analysis(
+    opportunity_id: int,
+    data: AnalysisCreate,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+
+    if data.method not in VALID_METHODS:
+        raise HTTPException(status_code=422, detail={
+            "fr": f"method doit être l'une de : {', '.join(VALID_METHODS)}.",
+            "en": f"method must be one of: {', '.join(VALID_METHODS)}.",
+        })
+
+    opp = db.execute(
+        text("SELECT id FROM osoa.opportunities WHERE id = :id"),
+        {"id": opportunity_id},
+    ).mappings().first()
+    if not opp:
+        raise HTTPException(status_code=404, detail={
+            "fr": "Opportunité introuvable.",
+            "en": "Opportunity not found.",
+        })
+
+    model_cls = METHOD_MODELS[data.method]
+    try:
+        validated = model_cls(**data.content)
+    except Exception as e:
+        raise HTTPException(status_code=422, detail={
+            "fr": f"Contenu invalide pour la méthode {data.method} : {e}",
+            "en": f"Invalid content for method {data.method}: {e}",
+        })
+
+    # 5_POURQUOI : categorie_5m validee contre le referentiel reel, pas une
+    # simple liste figee cote code (coherent avec ADR-006 / mg.pillar_5whys_analysis).
+    if data.method == "5_POURQUOI":
+        cat = db.execute(
+            text("SELECT code FROM rf.cause_category_5m WHERE code = :code"),
+            {"code": validated.categorie_5m},
+        ).mappings().first()
+        if not cat:
+            raise HTTPException(status_code=422, detail={
+                "fr": f"categorie_5m '{validated.categorie_5m}' introuvable dans rf.cause_category_5m.",
+                "en": f"categorie_5m '{validated.categorie_5m}' not found in rf.cause_category_5m.",
+            })
+
+    content_json = validated.model_dump_json()
+
+    row = db.execute(
+        text("""
+            INSERT INTO osoa.strategic_analyses (opportunity_id, method, content, created_by)
+            VALUES (:opportunity_id, :method, CAST(:content AS jsonb), :created_by)
+            RETURNING id, opportunity_id, method, content, created_by, created_at::text
+        """),
+        {
+            "opportunity_id": opportunity_id,
+            "method": data.method,
+            "content": content_json,
+            "created_by": affiliate_id,
+        },
+    ).mappings().first()
+    db.commit()
+
+    return {"disclaimer": OSOA_DISCLAIMER, "analysis": dict(row)}
+
+
+@router.get(
+    "/opportunities/{opportunity_id}/analyses",
+    summary="Lister les analyses stratégiques d'une opportunité OSOA",
+)
+def list_analyses(
+    opportunity_id: int,
+    method: Optional[str] = Query(default=None, description="Filtrer par méthode"),
+    db: Session = Depends(get_db),
+):
+    sql = """
+        SELECT id, opportunity_id, method, content, created_by, created_at::text
+        FROM osoa.strategic_analyses
+        WHERE opportunity_id = :opportunity_id
+    """
+    params: dict = {"opportunity_id": opportunity_id}
+    if method:
+        sql += " AND method = :method"
+        params["method"] = method
+    sql += " ORDER BY created_at DESC"
+
+    rows = db.execute(text(sql), params).mappings().all()
+    return {"disclaimer": OSOA_DISCLAIMER, "count": len(rows), "items": [dict(r) for r in rows]}
+
+
+# ── Livrables synthetiques (osoa.strategic_deliverables) ───────────────────────
+# Combine plusieurs osoa.strategic_analyses en un document coherent,
+# monnayable -- ce que Théo appelle "étude d'opportunité et/ou de
+# faisabilité". Snapshot fige a la generation, jamais recalcule
+# automatiquement. Decision du 22 juillet 2026 : le devis (osoa.quotes)
+# justifie desormais son prix par un de ces livrables plutot que par
+# une simple analyse isolee (meme si strategic_analysis_id reste
+# disponible en coexistence).
+
+
+DELIVERABLE_REQUIRED_METHODS = {
+    "ETUDE_OPPORTUNITE": ["5W1H", "SWOT", "ZACHMAN", "RISQUE", "ECONOMIQUE"],
+    "ETUDE_FAISABILITE": ["FAISABILITE", "MULTICRITERE", "ECONOMIQUE", "RISQUE"],
+}
+
+
+class DeliverableCreate(BaseModel):
+    deliverable_type: str = Field(..., description="ETUDE_OPPORTUNITE ou ETUDE_FAISABILITE")
+
+
+def _latest_analysis_by_method(db: Session, opportunity_id: int, method: str):
+    return db.execute(
+        text("""
+            SELECT id, content FROM osoa.strategic_analyses
+            WHERE opportunity_id = :opportunity_id AND method = :method
+            ORDER BY created_at DESC LIMIT 1
+        """),
+        {"opportunity_id": opportunity_id, "method": method},
+    ).mappings().first()
+
+
+def _build_etude_opportunite(analyses: dict) -> dict:
+    econ = analyses["ECONOMIQUE"]["content"]
+    zach = analyses["ZACHMAN"]["content"]
+    executive_row = next(
+        (row for row in zach.get("grille", []) if row.get("perspective") == "EXECUTIVE"), None
+    )
+    return {
+        "cadrage": analyses["5W1H"]["content"],
+        "swot": analyses["SWOT"]["content"],
+        "architecture_perspective_executive": executive_row,
+        "risques": analyses["RISQUE"]["content"].get("risques"),
+        "benefices": econ.get("benefices_attendus_fr"),
+        "roi_preliminaire": econ.get("retour_sur_investissement_estime"),
+    }
+
+
+def _build_etude_faisabilite(analyses: dict) -> dict:
+    econ = analyses["ECONOMIQUE"]["content"]
+    return {
+        "faisabilite": analyses["FAISABILITE"]["content"],
+        "score_multicritere": analyses["MULTICRITERE"]["content"].get("score_global"),
+        "couts": econ.get("cout_estime"),
+        "devise": econ.get("devise"),
+        "hypotheses": econ.get("hypotheses_fr"),
+        "risques": analyses["RISQUE"]["content"].get("risques"),
+    }
+
+
+DELIVERABLE_BUILDERS = {
+    "ETUDE_OPPORTUNITE": _build_etude_opportunite,
+    "ETUDE_FAISABILITE": _build_etude_faisabilite,
+}
+
+
+@router.post(
+    "/opportunities/{opportunity_id}/deliverables",
+    summary="Générer un livrable synthétique (étude d'opportunité ou de faisabilité)",
+    description=(
+        "Combine les dernières analyses stratégiques disponibles de l'opportunité "
+        "en un document synthétique et figé (snapshot), monnayable via un devis. "
+        "Échoue explicitement si une méthode requise n'a pas encore d'analyse."
+    ),
+)
+def create_deliverable(
+    opportunity_id: int,
+    data: DeliverableCreate,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+
+    if data.deliverable_type not in DELIVERABLE_REQUIRED_METHODS:
+        raise HTTPException(status_code=422, detail={
+            "fr": f"deliverable_type doit être l'une de : {', '.join(DELIVERABLE_REQUIRED_METHODS)}.",
+            "en": f"deliverable_type must be one of: {', '.join(DELIVERABLE_REQUIRED_METHODS)}.",
+        })
+
+    opp = db.execute(
+        text("SELECT id FROM osoa.opportunities WHERE id = :id"),
+        {"id": opportunity_id},
+    ).mappings().first()
+    if not opp:
+        raise HTTPException(status_code=404, detail={
+            "fr": "Opportunité introuvable.",
+            "en": "Opportunity not found.",
+        })
+
+    required = DELIVERABLE_REQUIRED_METHODS[data.deliverable_type]
+    analyses = {}
+    missing = []
+    for method in required:
+        row = _latest_analysis_by_method(db, opportunity_id, method)
+        if not row:
+            missing.append(method)
+        else:
+            analyses[method] = {"id": row["id"], "content": row["content"]}
+
+    if missing:
+        raise HTTPException(status_code=422, detail={
+            "fr": f"Analyses manquantes pour générer {data.deliverable_type} : {', '.join(missing)}.",
+            "en": f"Missing analyses to generate {data.deliverable_type}: {', '.join(missing)}.",
+        })
+
+    content = DELIVERABLE_BUILDERS[data.deliverable_type](analyses)
+    source_ids = [a["id"] for a in analyses.values()]
+
+    row = db.execute(
+        text("""
+            INSERT INTO osoa.strategic_deliverables
+                (opportunity_id, deliverable_type, content, source_analysis_ids, generated_by)
+            VALUES
+                (:opportunity_id, :deliverable_type, CAST(:content AS jsonb), :source_ids, :generated_by)
+            RETURNING id, opportunity_id, deliverable_type, content, source_analysis_ids,
+                      generated_by, generated_at::text
+        """),
+        {
+            "opportunity_id": opportunity_id,
+            "deliverable_type": data.deliverable_type,
+            "content": json.dumps(content),
+            "source_ids": source_ids,
+            "generated_by": affiliate_id,
+        },
+    ).mappings().first()
+    db.commit()
+
+    return {"disclaimer": OSOA_DISCLAIMER, "deliverable": dict(row)}
+
+
+@router.get(
+    "/opportunities/{opportunity_id}/deliverables",
+    summary="Lister les livrables synthétiques d'une opportunité OSOA",
+)
+def list_deliverables(opportunity_id: int, db: Session = Depends(get_db)):
+    rows = db.execute(
+        text("""
+            SELECT id, opportunity_id, deliverable_type, content, source_analysis_ids,
+                   generated_by, generated_at::text
+            FROM osoa.strategic_deliverables
+            WHERE opportunity_id = :opportunity_id
+            ORDER BY generated_at DESC
+        """),
+        {"opportunity_id": opportunity_id},
+    ).mappings().all()
+    return {"disclaimer": OSOA_DISCLAIMER, "count": len(rows), "items": [dict(r) for r in rows]}
