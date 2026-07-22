@@ -722,11 +722,13 @@ def list_analyses(
 DELIVERABLE_REQUIRED_METHODS = {
     "ETUDE_OPPORTUNITE": ["5W1H", "SWOT", "ZACHMAN", "RISQUE", "ECONOMIQUE"],
     "ETUDE_FAISABILITE": ["FAISABILITE", "MULTICRITERE", "ECONOMIQUE", "RISQUE"],
+    "SCHEMA_DIRECTEUR": ["ZACHMAN", "GOUVERNANCE", "MULTICRITERE", "FAISABILITE", "RISQUE"],
+    "PLAN_ACTION": ["5_POURQUOI", "GOUVERNANCE", "MULTICRITERE", "RISQUE"],
 }
 
 
 class DeliverableCreate(BaseModel):
-    deliverable_type: str = Field(..., description="ETUDE_OPPORTUNITE ou ETUDE_FAISABILITE")
+    deliverable_type: str = Field(..., description="ETUDE_OPPORTUNITE, ETUDE_FAISABILITE, SCHEMA_DIRECTEUR ou PLAN_ACTION")
 
 
 def _latest_analysis_by_method(db: Session, opportunity_id: int, method: str):
@@ -768,9 +770,43 @@ def _build_etude_faisabilite(analyses: dict) -> dict:
     }
 
 
+def _build_schema_directeur(analyses: dict) -> dict:
+    return {
+        "architecture_complete": analyses["ZACHMAN"]["content"].get("grille"),
+        "gouvernance": analyses["GOUVERNANCE"]["content"],
+        "priorisation": analyses["MULTICRITERE"]["content"],
+        "contraintes": analyses["FAISABILITE"]["content"],
+        "risques_structurels": analyses["RISQUE"]["content"].get("risques"),
+    }
+
+
+def _derive_actions_from_5why(content: dict) -> List[str]:
+    niveaux = content.get("niveaux", [])
+    cause = content.get("cause_racine", "")
+    actions = []
+    if cause:
+        actions.append(f"Traiter la cause racine : {cause}")
+    for i, n in enumerate(niveaux, start=1):
+        actions.append(f"Action liée au niveau {i} : {n.get('reponse', '')}")
+    return actions
+
+
+def _build_plan_action(analyses: dict) -> dict:
+    pourquoi_content = analyses["5_POURQUOI"]["content"]
+    return {
+        "cause_racine": pourquoi_content.get("cause_racine"),
+        "actions_correctives": _derive_actions_from_5why(pourquoi_content),
+        "responsables": analyses["GOUVERNANCE"]["content"].get("parties_prenantes"),
+        "priorisation": analyses["MULTICRITERE"]["content"].get("criteres"),
+        "mitigation": analyses["RISQUE"]["content"].get("risques"),
+    }
+
+
 DELIVERABLE_BUILDERS = {
     "ETUDE_OPPORTUNITE": _build_etude_opportunite,
     "ETUDE_FAISABILITE": _build_etude_faisabilite,
+    "SCHEMA_DIRECTEUR": _build_schema_directeur,
+    "PLAN_ACTION": _build_plan_action,
 }
 
 
