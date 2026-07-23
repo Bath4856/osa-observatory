@@ -11,6 +11,12 @@ from api.routers.early_warning import router as early_warning_router
 from api.routers.amar_triggers import router as amar_triggers_router  # SPRINT25
 from api.routers.sovereignty import router as sovereignty_router
 from api.routers.osoa import router as osoa_router
+from api.routers.oim_diagnostic import router as oim_diagnostic_router
+from api.routers.oim_levers import router as oim_levers_router
+from api.routers.oim_objectives import router as oim_objectives_router
+from api.routers.oim_requirements import router as oim_requirements_router
+from api.routers.oim_patterns import router as oim_patterns_router
+from api.routers.oim_projects import router as oim_projects_router
 # SPRINT14 DEPRECATED -- from api.routers.early_warning_sprint7 import router as early_warning_sprint7_router
 # SPRINT14 DEPRECATED -- from api.routers.decision_scenarios_sprint7 import (
 # SPRINT14 DEPRECATED --     decision_router, sovereignty_router as sovereignty_readiness_router,
@@ -125,6 +131,12 @@ app.include_router(sovereign_router)
 app.include_router(early_warning_router)
 app.include_router(amar_triggers_router)  # SPRINT25
 app.include_router(osoa_router)
+app.include_router(oim_diagnostic_router)
+app.include_router(oim_levers_router)
+app.include_router(oim_objectives_router)
+app.include_router(oim_requirements_router)
+app.include_router(oim_patterns_router)
+app.include_router(oim_projects_router)
 app.include_router(sovereignty_router)
 # SPRINT14 DEPRECATED -- app.include_router(early_warning_sprint7_router)
 # SPRINT14 DEPRECATED -- app.include_router(decision_router)
