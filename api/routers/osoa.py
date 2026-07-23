@@ -467,7 +467,7 @@ def respond_to_quote(
 
 VALID_METHODS = (
     "5W1H", "SWOT", "5_POURQUOI", "RISQUE", "FAISABILITE",
-    "MULTICRITERE", "ECONOMIQUE", "GOUVERNANCE", "ZACHMAN",
+    "MULTICRITERE", "ECONOMIQUE", "GOUVERNANCE", "ZACHMAN", "INTERDEPENDANCE",
 )
 
 
@@ -592,6 +592,60 @@ class ContentZachman(BaseModel):
         return self
 
 
+class ContentInterdependance(BaseModel):
+    # 10eme methode -- interdependance entre piliers et/ou indicateurs POA,
+    # exclusivement pays-specifique (jamais un referentiel general, cf.
+    # abandon de rf.poa_pillar_interdependence le 22-23 juillet 2026).
+    country_iso3: str = Field(..., min_length=3, max_length=3)
+    source_type: str  # PILLAR ou POA
+    source_pillar_code: Optional[str] = None
+    source_indicator_codes: Optional[List[str]] = None
+    source_primary_indicator_code: Optional[str] = None
+    target_type: str  # PILLAR ou POA
+    target_pillar_code: Optional[str] = None
+    target_indicator_codes: Optional[List[str]] = None
+    target_primary_indicator_code: Optional[str] = None
+    relation_type: str  # PRIMAIRE ou SECONDAIRE
+    weight: float = Field(..., gt=0, le=1)
+    basis_type: str  # STATISTICAL_CORRELATION, COMITE_SCIENTIFIQUE_DECISION, AI_PREDICTIVE_ESTIMATE
+    lag_years_observed: Optional[int] = Field(None, ge=0)
+    known_intervention_requirement_id: Optional[int] = None
+    methodology_note_fr: str
+
+    @model_validator(mode="after")
+    def _check_all(self):
+        self.country_iso3 = self.country_iso3.upper()
+
+        for side, side_type, pillar, codes, primary in (
+            ("source", self.source_type, self.source_pillar_code, self.source_indicator_codes, self.source_primary_indicator_code),
+            ("target", self.target_type, self.target_pillar_code, self.target_indicator_codes, self.target_primary_indicator_code),
+        ):
+            if side_type not in ("PILLAR", "POA"):
+                raise ValueError(f"{side}_type doit être PILLAR ou POA")
+            if side_type == "PILLAR":
+                if not pillar or codes or primary:
+                    raise ValueError(
+                        f"{side}_type=PILLAR exige {side}_pillar_code et exclut "
+                        f"{side}_indicator_codes/{side}_primary_indicator_code"
+                    )
+            else:  # POA
+                if pillar or not codes:
+                    raise ValueError(
+                        f"{side}_type=POA exige {side}_indicator_codes (liste non vide) "
+                        f"et exclut {side}_pillar_code"
+                    )
+                if primary and primary not in codes:
+                    raise ValueError(f"{side}_primary_indicator_code doit être membre de {side}_indicator_codes")
+
+        if self.relation_type not in ("PRIMAIRE", "SECONDAIRE"):
+            raise ValueError("relation_type doit être PRIMAIRE ou SECONDAIRE")
+        if self.basis_type not in ("STATISTICAL_CORRELATION", "COMITE_SCIENTIFIQUE_DECISION", "AI_PREDICTIVE_ESTIMATE"):
+            raise ValueError(
+                "basis_type doit être STATISTICAL_CORRELATION, COMITE_SCIENTIFIQUE_DECISION ou AI_PREDICTIVE_ESTIMATE"
+            )
+        return self
+
+
 METHOD_MODELS = {
     "5W1H": Content5W1H,
     "SWOT": ContentSWOT,
@@ -602,6 +656,7 @@ METHOD_MODELS = {
     "ECONOMIQUE": ContentEconomique,
     "GOUVERNANCE": ContentGouvernance,
     "ZACHMAN": ContentZachman,
+    "INTERDEPENDANCE": ContentInterdependance,
 }
 
 
@@ -664,6 +719,47 @@ def create_analysis(
                 "fr": f"categorie_5m '{validated.categorie_5m}' introuvable dans rf.cause_category_5m.",
                 "en": f"categorie_5m '{validated.categorie_5m}' not found in rf.cause_category_5m.",
             })
+
+    # INTERDEPENDANCE : pillar_code et indicator_codes valides contre les
+    # referentiels reels (rf.pillars, rf.poa_catalog), pas une simple
+    # supposition -- meme discipline que categorie_5m ci-dessus.
+    if data.method == "INTERDEPENDANCE":
+        for side, side_type, pillar, codes in (
+            ("source", validated.source_type, validated.source_pillar_code, validated.source_indicator_codes),
+            ("target", validated.target_type, validated.target_pillar_code, validated.target_indicator_codes),
+        ):
+            if side_type == "PILLAR":
+                row_p = db.execute(
+                    text("SELECT code FROM rf.pillars WHERE code = :code"),
+                    {"code": pillar},
+                ).mappings().first()
+                if not row_p:
+                    raise HTTPException(status_code=422, detail={
+                        "fr": f"{side}_pillar_code '{pillar}' introuvable dans rf.pillars.",
+                        "en": f"{side}_pillar_code '{pillar}' not found in rf.pillars.",
+                    })
+            else:  # POA
+                for code in codes:
+                    row_i = db.execute(
+                        text("SELECT indicator_code FROM rf.poa_catalog WHERE indicator_code = :code"),
+                        {"code": code},
+                    ).mappings().first()
+                    if not row_i:
+                        raise HTTPException(status_code=422, detail={
+                            "fr": f"{side}_indicator_codes contient '{code}', introuvable dans rf.poa_catalog.",
+                            "en": f"{side}_indicator_codes contains '{code}', not found in rf.poa_catalog.",
+                        })
+
+        if validated.known_intervention_requirement_id:
+            row_req = db.execute(
+                text("SELECT id FROM mg.transformation_requirements WHERE id = :id"),
+                {"id": validated.known_intervention_requirement_id},
+            ).mappings().first()
+            if not row_req:
+                raise HTTPException(status_code=422, detail={
+                    "fr": f"known_intervention_requirement_id {validated.known_intervention_requirement_id} introuvable dans mg.transformation_requirements.",
+                    "en": f"known_intervention_requirement_id {validated.known_intervention_requirement_id} not found in mg.transformation_requirements.",
+                })
 
     content_json = validated.model_dump_json()
 
