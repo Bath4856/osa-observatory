@@ -321,6 +321,8 @@ def list_opportunities(
     status: Optional[str] = Query(default=None, description="ACTIVE, CLOSED ou ABANDONED"),
     origin_type: Optional[str] = Query(default=None, description="INTERNAL ou EXTERNAL"),
     participation_mode: Optional[str] = Query(default=None, description="PROVIDER, CONSORTIUM_PARTNER ou WATCH_ONLY"),
+    country_iso3: Optional[str] = Query(default=None, description="Code pays ISO3, ex. SEN"),
+    principal_pillar_code: Optional[str] = Query(default=None, description="Code du pilier principal, ex. PMIN"),
     db: Session = Depends(get_db),
 ):
     sql = """
@@ -341,6 +343,12 @@ def list_opportunities(
     if participation_mode:
         sql += " AND participation_mode = :participation_mode"
         params["participation_mode"] = participation_mode
+    if country_iso3:
+        sql += " AND country_iso3 = :country_iso3"
+        params["country_iso3"] = country_iso3.upper()
+    if principal_pillar_code:
+        sql += " AND principal_pillar_code = :principal_pillar_code"
+        params["principal_pillar_code"] = principal_pillar_code
     sql += " ORDER BY created_at DESC"
 
     rows = db.execute(text(sql), params).mappings().all()
