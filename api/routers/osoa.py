@@ -260,16 +260,19 @@ def get_opportunity(opportunity_id: int, db: Session = Depends(get_db)):
 
 
 class PrincipalPillarUpdate(BaseModel):
-    principal_pillar_code: str
+    principal_pillar_code: Optional[str] = None
+    country_iso3: Optional[str] = Field(None, min_length=3, max_length=3)
 
 
 @router.post(
     "/opportunities/{opportunity_id}/principal-pillar",
-    summary="Déclarer le pilier principal découvert pour une opportunité",
+    summary="Déclarer le pilier principal et/ou le pays découverts pour une opportunité",
     description=(
-        "Pour OSOA : le pilier n'est pas connu à la création, découvert après "
-        "analyse (5W1H/ZACHMAN). Pour OIM : généralement déjà connu à la création, "
-        "cet endpoint permet néanmoins une correction si nécessaire."
+        "Pour OSOA : ni le pilier ni le pays ne sont necessairement connus a la "
+        "creation, decouverts apres analyse (5W1H/ZACHMAN). Pour OIM : generalement "
+        "deja connus a la creation, cet endpoint permet neanmoins une correction. "
+        "Chaque champ est independant -- fournir seulement l'un des deux ne modifie "
+        "pas l'autre."
     ),
 )
 def set_principal_pillar(
@@ -285,24 +288,37 @@ def set_principal_pillar(
     if not opp:
         raise HTTPException(status_code=404, detail={"fr": "Opportunité introuvable.", "en": "Opportunity not found."})
 
-    pillar = db.execute(
-        text("SELECT pillar_code FROM mg.working_groups WHERE pillar_code = :code"),
-        {"code": data.principal_pillar_code},
-    ).mappings().first()
-    if not pillar:
+    if data.principal_pillar_code is None and data.country_iso3 is None:
         raise HTTPException(status_code=422, detail={
-            "fr": f"principal_pillar_code '{data.principal_pillar_code}' introuvable dans mg.working_groups.",
-            "en": f"principal_pillar_code '{data.principal_pillar_code}' not found in mg.working_groups.",
+            "fr": "Au moins un champ (principal_pillar_code ou country_iso3) doit être fourni.",
+            "en": "At least one field (principal_pillar_code or country_iso3) must be provided.",
         })
+
+    if data.principal_pillar_code is not None:
+        pillar = db.execute(
+            text("SELECT pillar_code FROM mg.working_groups WHERE pillar_code = :code"),
+            {"code": data.principal_pillar_code},
+        ).mappings().first()
+        if not pillar:
+            raise HTTPException(status_code=422, detail={
+                "fr": f"principal_pillar_code '{data.principal_pillar_code}' introuvable dans mg.working_groups.",
+                "en": f"principal_pillar_code '{data.principal_pillar_code}' not found in mg.working_groups.",
+            })
 
     row = db.execute(
         text("""
             UPDATE osoa.opportunities
-            SET principal_pillar_code = :code, updated_at = NOW()
+            SET principal_pillar_code = COALESCE(:pillar_code, principal_pillar_code),
+                country_iso3 = COALESCE(:country_iso3, country_iso3),
+                updated_at = NOW()
             WHERE id = :id
             RETURNING id, code, principal_pillar_code, country_iso3, updated_at::text
         """),
-        {"code": data.principal_pillar_code, "id": opportunity_id},
+        {
+            "pillar_code": data.principal_pillar_code,
+            "country_iso3": data.country_iso3.upper() if data.country_iso3 else None,
+            "id": opportunity_id,
+        },
     ).mappings().first()
     db.commit()
 
