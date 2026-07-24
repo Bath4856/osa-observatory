@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useLang } from '../i18n/useLang'
 import { getOpportunities } from '../api/osoa'
 import './MgsOpportunities.css'
@@ -22,6 +23,9 @@ const PARTICIPATION_LABEL = {
 
 export default function MgsOpportunities() {
   const { lang } = useLang()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const countryParam = searchParams.get('country_iso3')
+  const pillarParam = searchParams.get('principal_pillar_code')
   const [items, setItems] = useState(null)
   const [disclaimer, setDisclaimer] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -32,16 +36,23 @@ export default function MgsOpportunities() {
   useEffect(() => {
     setLoading(true)
     setError(null)
-    getOpportunities({ status: statusFilter || undefined, origin_type: originFilter || undefined })
+    getOpportunities({
+      status: statusFilter || undefined,
+      origin_type: originFilter || undefined,
+      country_iso3: countryParam || undefined,
+      principal_pillar_code: pillarParam || undefined,
+    })
       .then(d => {
         setItems(d.items || [])
         setDisclaimer(d.disclaimer || null)
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
-  }, [statusFilter, originFilter])
+  }, [statusFilter, originFilter, countryParam, pillarParam])
 
   const t = (fr, en) => (lang === 'fr' ? fr : en)
+
+  const clearUrlFilter = () => setSearchParams({})
 
   return (
     <div className="mgs-opp-page">
@@ -55,6 +66,19 @@ export default function MgsOpportunities() {
           )}
         </p>
       </div>
+
+      {(countryParam || pillarParam) && (
+        <div className="mgs-opp-url-filter-banner">
+          <span>
+            {t('Filtré depuis le catalogue P7J', 'Filtered from the P7J catalog')}
+            {countryParam && ` · ${countryParam}`}
+            {pillarParam && ` · ${pillarParam}`}
+          </span>
+          <button className="mgs-opp-url-filter-clear" onClick={clearUrlFilter}>
+            {t('Retirer le filtre ✕', 'Clear filter ✕')}
+          </button>
+        </div>
+      )}
 
       <div className="mgs-opp-filters">
         <div className="mgs-opp-filter-group">
