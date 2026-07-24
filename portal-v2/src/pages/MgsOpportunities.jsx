@@ -11,7 +11,7 @@ const STATUS_LABEL = {
 
 const ORIGIN_LABEL = {
   INTERNAL: { fr: 'Interne (OIM)', en: 'Internal (OIM)' },
-  EXTERNAL: { fr: 'Externe',       en: 'External' },
+  EXTERNAL: { fr: 'Externe (OSOA)', en: 'External (OSOA)' },
 }
 
 const PARTICIPATION_LABEL = {
