@@ -43,18 +43,19 @@ router = APIRouter(
 # ── Disclaimer standard OIM/OSOA (ADR-010, symetrique a celui d'AMAR) ─────────
 OSOA_DISCLAIMER = {
     "fr": (
-        "OSOA est un outil d'aide a la decision d'engagement -- il ne remplace "
-        "pas l'evaluation finale des instances competentes. Une recommandation "
-        "d'intervention n'equivaut jamais a une amelioration actee : seule une "
-        "donnee reellement collectee lors d'un cycle futur peut faire evoluer "
-        "l'Indice de Souverainete Africaine (ISA)."
+        "Le Moteur de génie scientifique (OIM/OSOA) est un outil d'aide à la "
+        "décision d'engagement -- il ne remplace pas l'évaluation finale des "
+        "instances compétentes. Une recommandation d'intervention n'équivaut "
+        "jamais à une amélioration actée : seule une donnée réellement "
+        "collectée lors d'un cycle futur peut faire évoluer l'Indice de "
+        "Souveraineté Africaine (ISA)."
     ),
     "en": (
-        "OSOA is a decision-support tool for engagement assessment -- it does "
-        "not replace the final evaluation of competent bodies. An intervention "
-        "recommendation never equates to an enacted improvement: only data "
-        "actually collected in a future cycle can move the African Sovereignty "
-        "Index (ISA)."
+        "The Scientific Engineering Engine (OIM/OSOA) is a decision-support "
+        "tool for engagement assessment -- it does not replace the final "
+        "evaluation of competent bodies. An intervention recommendation never "
+        "equates to an enacted improvement: only data actually collected in a "
+        "future cycle can move the African Sovereignty Index (ISA)."
     ),
 }
 
