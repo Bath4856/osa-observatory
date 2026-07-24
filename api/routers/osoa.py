@@ -77,8 +77,10 @@ class OpportunityCreate(BaseModel):
                      "CONSORTIUM_PARTNER (OSA partenaire technique d'un tiers porteur, "
                      "cas AMI/AO/AOI depose par un externe), ou WATCH_ONLY (veille, aucun engagement).",
     )
-
-
+    # Pilier/pays -- connus des la creation pour OIM, decouverts plus
+    # tard pour OSOA (cf. endpoint dedie /opportunities/{id}/principal-pillar)
+    principal_pillar_code: Optional[str] = Field(None, description="Code du pilier principal, si deja connu")
+    country_iso3: Optional[str] = Field(None, min_length=3, max_length=3)
 class OpportunityItem(BaseModel):
     id: int
     code: str
@@ -91,6 +93,8 @@ class OpportunityItem(BaseModel):
     client_id: Optional[int] = None
     deliverable_id: Optional[int] = None
     origin_project_family_id: Optional[int] = None
+    principal_pillar_code: Optional[str] = None
+    country_iso3: Optional[str] = None
     created_at: str
     updated_at: str
 
@@ -176,18 +180,32 @@ def create_opportunity(
                 "en": "Client not found.",
             })
 
+    if data.principal_pillar_code:
+        pillar = db.execute(
+            text("SELECT pillar_code FROM mg.working_groups WHERE pillar_code = :code"),
+            {"code": data.principal_pillar_code},
+        ).mappings().first()
+        if not pillar:
+            raise HTTPException(status_code=422, detail={
+                "fr": f"principal_pillar_code '{data.principal_pillar_code}' introuvable dans mg.working_groups.",
+                "en": f"principal_pillar_code '{data.principal_pillar_code}' not found in mg.working_groups.",
+            })
+
     try:
         row = db.execute(
             text("""
                 INSERT INTO osoa.opportunities
                     (code, title_fr, title_en, origin_type, participation_mode,
-                     origin_project_family_id, client_id, deliverable_id, created_by)
+                     origin_project_family_id, client_id, deliverable_id,
+                     principal_pillar_code, country_iso3, created_by)
                 VALUES
                     (:code, :title_fr, :title_en, :origin_type, :participation_mode,
-                     :origin_project_family_id, :client_id, :deliverable_id, :created_by)
+                     :origin_project_family_id, :client_id, :deliverable_id,
+                     :principal_pillar_code, :country_iso3, :created_by)
                 RETURNING id, code, title_fr, title_en, origin_type, participation_mode,
                           current_phase, status, client_id, deliverable_id,
-                          origin_project_family_id, created_at::text, updated_at::text
+                          origin_project_family_id, principal_pillar_code, country_iso3,
+                          created_at::text, updated_at::text
             """),
             {
                 "code": data.code,
@@ -198,6 +216,8 @@ def create_opportunity(
                 "origin_project_family_id": data.origin_project_family_id,
                 "client_id": data.client_id,
                 "deliverable_id": data.deliverable_id,
+                "principal_pillar_code": data.principal_pillar_code,
+                "country_iso3": data.country_iso3.upper() if data.country_iso3 else None,
                 "created_by": affiliate_id,
             },
         ).mappings().first()
@@ -224,7 +244,8 @@ def get_opportunity(opportunity_id: int, db: Session = Depends(get_db)):
         text("""
             SELECT id, code, title_fr, title_en, origin_type, participation_mode,
                    current_phase, status, client_id, deliverable_id,
-                   origin_project_family_id, created_at::text, updated_at::text
+                   origin_project_family_id, principal_pillar_code, country_iso3,
+                   created_at::text, updated_at::text
             FROM osoa.opportunities
             WHERE id = :id
         """),
@@ -236,6 +257,56 @@ def get_opportunity(opportunity_id: int, db: Session = Depends(get_db)):
             "en": "Opportunity not found.",
         })
     return {"disclaimer": OSOA_DISCLAIMER, "opportunity": dict(row)}
+
+
+class PrincipalPillarUpdate(BaseModel):
+    principal_pillar_code: str
+
+
+@router.post(
+    "/opportunities/{opportunity_id}/principal-pillar",
+    summary="Déclarer le pilier principal découvert pour une opportunité",
+    description=(
+        "Pour OSOA : le pilier n'est pas connu à la création, découvert après "
+        "analyse (5W1H/ZACHMAN). Pour OIM : généralement déjà connu à la création, "
+        "cet endpoint permet néanmoins une correction si nécessaire."
+    ),
+)
+def set_principal_pillar(
+    opportunity_id: int,
+    data: PrincipalPillarUpdate,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    opp = db.execute(
+        text("SELECT id FROM osoa.opportunities WHERE id = :id"),
+        {"id": opportunity_id},
+    ).mappings().first()
+    if not opp:
+        raise HTTPException(status_code=404, detail={"fr": "Opportunité introuvable.", "en": "Opportunity not found."})
+
+    pillar = db.execute(
+        text("SELECT pillar_code FROM mg.working_groups WHERE pillar_code = :code"),
+        {"code": data.principal_pillar_code},
+    ).mappings().first()
+    if not pillar:
+        raise HTTPException(status_code=422, detail={
+            "fr": f"principal_pillar_code '{data.principal_pillar_code}' introuvable dans mg.working_groups.",
+            "en": f"principal_pillar_code '{data.principal_pillar_code}' not found in mg.working_groups.",
+        })
+
+    row = db.execute(
+        text("""
+            UPDATE osoa.opportunities
+            SET principal_pillar_code = :code, updated_at = NOW()
+            WHERE id = :id
+            RETURNING id, code, principal_pillar_code, country_iso3, updated_at::text
+        """),
+        {"code": data.principal_pillar_code, "id": opportunity_id},
+    ).mappings().first()
+    db.commit()
+
+    return dict(row)
 
 
 # ── Endpoint 3 : liste des opportunites ────────────────────────────────────────
@@ -255,7 +326,8 @@ def list_opportunities(
     sql = """
         SELECT id, code, title_fr, title_en, origin_type, participation_mode,
                current_phase, status, client_id, deliverable_id,
-               origin_project_family_id, created_at::text, updated_at::text
+               origin_project_family_id, principal_pillar_code, country_iso3,
+               created_at::text, updated_at::text
         FROM osoa.opportunities
         WHERE 1=1
     """
