@@ -43,18 +43,19 @@ router = APIRouter(
 # ── Disclaimer standard OIM/OSOA (ADR-010, symetrique a celui d'AMAR) ─────────
 OSOA_DISCLAIMER = {
     "fr": (
-        "OSOA est un outil d'aide a la decision d'engagement -- il ne remplace "
-        "pas l'evaluation finale des instances competentes. Une recommandation "
-        "d'intervention n'equivaut jamais a une amelioration actee : seule une "
-        "donnee reellement collectee lors d'un cycle futur peut faire evoluer "
-        "l'Indice de Souverainete Africaine (ISA)."
+        "Le Moteur de génie scientifique (OIM/OSOA) est un outil d'aide à la "
+        "décision d'engagement -- il ne remplace pas l'évaluation finale des "
+        "instances compétentes. Une recommandation d'intervention n'équivaut "
+        "jamais à une amélioration actée : seule une donnée réellement "
+        "collectée lors d'un cycle futur peut faire évoluer l'Indice de "
+        "Souveraineté Africaine (ISA)."
     ),
     "en": (
-        "OSOA is a decision-support tool for engagement assessment -- it does "
-        "not replace the final evaluation of competent bodies. An intervention "
-        "recommendation never equates to an enacted improvement: only data "
-        "actually collected in a future cycle can move the African Sovereignty "
-        "Index (ISA)."
+        "The Scientific Engineering Engine (OIM/OSOA) is a decision-support "
+        "tool for engagement assessment -- it does not replace the final "
+        "evaluation of competent bodies. An intervention recommendation never "
+        "equates to an enacted improvement: only data actually collected in a "
+        "future cycle can move the African Sovereignty Index (ISA)."
     ),
 }
 
@@ -77,8 +78,10 @@ class OpportunityCreate(BaseModel):
                      "CONSORTIUM_PARTNER (OSA partenaire technique d'un tiers porteur, "
                      "cas AMI/AO/AOI depose par un externe), ou WATCH_ONLY (veille, aucun engagement).",
     )
-
-
+    # Pilier/pays -- connus des la creation pour OIM, decouverts plus
+    # tard pour OSOA (cf. endpoint dedie /opportunities/{id}/principal-pillar)
+    principal_pillar_code: Optional[str] = Field(None, description="Code du pilier principal, si deja connu")
+    country_iso3: Optional[str] = Field(None, min_length=3, max_length=3)
 class OpportunityItem(BaseModel):
     id: int
     code: str
@@ -91,6 +94,8 @@ class OpportunityItem(BaseModel):
     client_id: Optional[int] = None
     deliverable_id: Optional[int] = None
     origin_project_family_id: Optional[int] = None
+    principal_pillar_code: Optional[str] = None
+    country_iso3: Optional[str] = None
     created_at: str
     updated_at: str
 
@@ -176,18 +181,32 @@ def create_opportunity(
                 "en": "Client not found.",
             })
 
+    if data.principal_pillar_code:
+        pillar = db.execute(
+            text("SELECT pillar_code FROM mg.working_groups WHERE pillar_code = :code"),
+            {"code": data.principal_pillar_code},
+        ).mappings().first()
+        if not pillar:
+            raise HTTPException(status_code=422, detail={
+                "fr": f"principal_pillar_code '{data.principal_pillar_code}' introuvable dans mg.working_groups.",
+                "en": f"principal_pillar_code '{data.principal_pillar_code}' not found in mg.working_groups.",
+            })
+
     try:
         row = db.execute(
             text("""
                 INSERT INTO osoa.opportunities
                     (code, title_fr, title_en, origin_type, participation_mode,
-                     origin_project_family_id, client_id, deliverable_id, created_by)
+                     origin_project_family_id, client_id, deliverable_id,
+                     principal_pillar_code, country_iso3, created_by)
                 VALUES
                     (:code, :title_fr, :title_en, :origin_type, :participation_mode,
-                     :origin_project_family_id, :client_id, :deliverable_id, :created_by)
+                     :origin_project_family_id, :client_id, :deliverable_id,
+                     :principal_pillar_code, :country_iso3, :created_by)
                 RETURNING id, code, title_fr, title_en, origin_type, participation_mode,
                           current_phase, status, client_id, deliverable_id,
-                          origin_project_family_id, created_at::text, updated_at::text
+                          origin_project_family_id, principal_pillar_code, country_iso3,
+                          created_at::text, updated_at::text
             """),
             {
                 "code": data.code,
@@ -198,6 +217,8 @@ def create_opportunity(
                 "origin_project_family_id": data.origin_project_family_id,
                 "client_id": data.client_id,
                 "deliverable_id": data.deliverable_id,
+                "principal_pillar_code": data.principal_pillar_code,
+                "country_iso3": data.country_iso3.upper() if data.country_iso3 else None,
                 "created_by": affiliate_id,
             },
         ).mappings().first()
@@ -224,7 +245,8 @@ def get_opportunity(opportunity_id: int, db: Session = Depends(get_db)):
         text("""
             SELECT id, code, title_fr, title_en, origin_type, participation_mode,
                    current_phase, status, client_id, deliverable_id,
-                   origin_project_family_id, created_at::text, updated_at::text
+                   origin_project_family_id, principal_pillar_code, country_iso3,
+                   created_at::text, updated_at::text
             FROM osoa.opportunities
             WHERE id = :id
         """),
@@ -236,6 +258,72 @@ def get_opportunity(opportunity_id: int, db: Session = Depends(get_db)):
             "en": "Opportunity not found.",
         })
     return {"disclaimer": OSOA_DISCLAIMER, "opportunity": dict(row)}
+
+
+class PrincipalPillarUpdate(BaseModel):
+    principal_pillar_code: Optional[str] = None
+    country_iso3: Optional[str] = Field(None, min_length=3, max_length=3)
+
+
+@router.post(
+    "/opportunities/{opportunity_id}/principal-pillar",
+    summary="Déclarer le pilier principal et/ou le pays découverts pour une opportunité",
+    description=(
+        "Pour OSOA : ni le pilier ni le pays ne sont necessairement connus a la "
+        "creation, decouverts apres analyse (5W1H/ZACHMAN). Pour OIM : generalement "
+        "deja connus a la creation, cet endpoint permet neanmoins une correction. "
+        "Chaque champ est independant -- fournir seulement l'un des deux ne modifie "
+        "pas l'autre."
+    ),
+)
+def set_principal_pillar(
+    opportunity_id: int,
+    data: PrincipalPillarUpdate,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    opp = db.execute(
+        text("SELECT id FROM osoa.opportunities WHERE id = :id"),
+        {"id": opportunity_id},
+    ).mappings().first()
+    if not opp:
+        raise HTTPException(status_code=404, detail={"fr": "Opportunité introuvable.", "en": "Opportunity not found."})
+
+    if data.principal_pillar_code is None and data.country_iso3 is None:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Au moins un champ (principal_pillar_code ou country_iso3) doit être fourni.",
+            "en": "At least one field (principal_pillar_code or country_iso3) must be provided.",
+        })
+
+    if data.principal_pillar_code is not None:
+        pillar = db.execute(
+            text("SELECT pillar_code FROM mg.working_groups WHERE pillar_code = :code"),
+            {"code": data.principal_pillar_code},
+        ).mappings().first()
+        if not pillar:
+            raise HTTPException(status_code=422, detail={
+                "fr": f"principal_pillar_code '{data.principal_pillar_code}' introuvable dans mg.working_groups.",
+                "en": f"principal_pillar_code '{data.principal_pillar_code}' not found in mg.working_groups.",
+            })
+
+    row = db.execute(
+        text("""
+            UPDATE osoa.opportunities
+            SET principal_pillar_code = COALESCE(:pillar_code, principal_pillar_code),
+                country_iso3 = COALESCE(:country_iso3, country_iso3),
+                updated_at = NOW()
+            WHERE id = :id
+            RETURNING id, code, principal_pillar_code, country_iso3, updated_at::text
+        """),
+        {
+            "pillar_code": data.principal_pillar_code,
+            "country_iso3": data.country_iso3.upper() if data.country_iso3 else None,
+            "id": opportunity_id,
+        },
+    ).mappings().first()
+    db.commit()
+
+    return dict(row)
 
 
 # ── Endpoint 3 : liste des opportunites ────────────────────────────────────────
@@ -250,12 +338,15 @@ def list_opportunities(
     status: Optional[str] = Query(default=None, description="ACTIVE, CLOSED ou ABANDONED"),
     origin_type: Optional[str] = Query(default=None, description="INTERNAL ou EXTERNAL"),
     participation_mode: Optional[str] = Query(default=None, description="PROVIDER, CONSORTIUM_PARTNER ou WATCH_ONLY"),
+    country_iso3: Optional[str] = Query(default=None, description="Code pays ISO3, ex. SEN"),
+    principal_pillar_code: Optional[str] = Query(default=None, description="Code du pilier principal, ex. PMIN"),
     db: Session = Depends(get_db),
 ):
     sql = """
         SELECT id, code, title_fr, title_en, origin_type, participation_mode,
                current_phase, status, client_id, deliverable_id,
-               origin_project_family_id, created_at::text, updated_at::text
+               origin_project_family_id, principal_pillar_code, country_iso3,
+               created_at::text, updated_at::text
         FROM osoa.opportunities
         WHERE 1=1
     """
@@ -269,6 +360,12 @@ def list_opportunities(
     if participation_mode:
         sql += " AND participation_mode = :participation_mode"
         params["participation_mode"] = participation_mode
+    if country_iso3:
+        sql += " AND country_iso3 = :country_iso3"
+        params["country_iso3"] = country_iso3.upper()
+    if principal_pillar_code:
+        sql += " AND principal_pillar_code = :principal_pillar_code"
+        params["principal_pillar_code"] = principal_pillar_code
     sql += " ORDER BY created_at DESC"
 
     rows = db.execute(text(sql), params).mappings().all()

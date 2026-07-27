@@ -211,3 +211,35 @@
   }
   .mgs-opp-filter-group:last-child { border-bottom: none; padding-bottom: 0; }
 }
+
+/* ── Bandeau de filtre actif (venant d'un lien profond, ex. P7J) ─────────── */
+
+.mgs-opp-url-filter-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(200, 151, 58, 0.12);
+  border: 1px solid var(--color-accent);
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-bottom: 20px;
+  font-size: 0.85rem;
+  color: var(--color-primary-dk);
+}
+
+.mgs-opp-url-filter-clear {
+  border: 1px solid var(--color-accent);
+  background: #fff;
+  color: var(--color-primary-dk);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mgs-opp-url-filter-clear:hover {
+  background: var(--color-accent);
+  color: #fff;
+}
