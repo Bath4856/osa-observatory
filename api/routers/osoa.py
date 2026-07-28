@@ -1098,6 +1098,11 @@ def list_deliverables(opportunity_id: int, db: Session = Depends(get_db)):
 # ── Resume executif IA (livrable ETUDE_OPPORTUNITE = Vision uniquement) ──────────
 # Ajoute le 28 juillet 2026 -- donnees ouvertes. SCHEMA_DIRECTEUR et PLAN_ACTION
 # restent payants (Go-To-Market), aucun resume public prevu pour eux.
+#
+# Double fournisseur possible (AI_SUMMARY_PROVIDER=anthropic|openai, variable
+# d'environnement) -- choix acte le 28 juillet 2026 pour ne pas dependre d'un
+# seul fournisseur. Echec explicite si le fournisseur choisi n'a pas sa cle
+# correspondante configuree, jamais de repli silencieux.
 
 import os as _os_summary
 
@@ -1105,6 +1110,60 @@ try:
     import anthropic as _anthropic_sdk
 except ImportError:
     _anthropic_sdk = None
+
+try:
+    import openai as _openai_sdk
+except ImportError:
+    _openai_sdk = None
+
+
+SUMMARY_SYSTEM_PROMPT = (
+    "Tu rediges un resume executif d'une vision strategique de souverainete "
+    "africaine, a partir d'un contenu JSON structure (5W1H, SWOT, architecture "
+    "Zachman, risques, analyse economique). Le resume doit etre : academique, "
+    "de niveau executif, ultra synthetique (150-200 mots par langue maximum), "
+    "scientifique (jamais de langage promotionnel ou d'affirmation non etayee "
+    "par le contenu fourni). Reponds UNIQUEMENT en JSON valide, sans aucun texte "
+    "avant ou apres, au format exact : "
+    '{"summary_fr": "...", "summary_en": "..."}'
+)
+
+
+def _generate_summary_anthropic(content_json: str) -> dict:
+    api_key = _os_summary.environ.get("ANTHROPIC_API_KEY")
+    if not api_key or _anthropic_sdk is None:
+        raise HTTPException(status_code=503, detail={
+            "fr": "AI_SUMMARY_PROVIDER=anthropic mais ANTHROPIC_API_KEY n'est pas configurée sur ce serveur.",
+            "en": "AI_SUMMARY_PROVIDER=anthropic but ANTHROPIC_API_KEY is not configured on this server.",
+        })
+    client = _anthropic_sdk.Anthropic(api_key=api_key)
+    response = client.messages.create(
+        model="claude-sonnet-5",
+        max_tokens=1200,
+        system=SUMMARY_SYSTEM_PROMPT,
+        messages=[{"role": "user", "content": content_json}],
+    )
+    raw_text = "".join(block.text for block in response.content if block.type == "text")
+    return json.loads(raw_text)
+
+
+def _generate_summary_openai(content_json: str) -> dict:
+    api_key = _os_summary.environ.get("OPENAI_API_KEY")
+    if not api_key or _openai_sdk is None:
+        raise HTTPException(status_code=503, detail={
+            "fr": "AI_SUMMARY_PROVIDER=openai mais OPENAI_API_KEY n'est pas configurée sur ce serveur.",
+            "en": "AI_SUMMARY_PROVIDER=openai but OPENAI_API_KEY is not configured on this server.",
+        })
+    client = _openai_sdk.OpenAI(api_key=api_key)
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        response_format={"type": "json_object"},
+        messages=[
+            {"role": "system", "content": SUMMARY_SYSTEM_PROMPT},
+            {"role": "user", "content": content_json},
+        ],
+    )
+    return json.loads(response.choices[0].message.content)
 
 
 class SummaryValidateUpdate(BaseModel):
@@ -1117,9 +1176,11 @@ class SummaryValidateUpdate(BaseModel):
     summary="Générer le résumé exécutif académique/scientifique bilingue (IA) -- ETUDE_OPPORTUNITE uniquement",
     description=(
         "Reservé au livrable ETUDE_OPPORTUNITE (= la Vision), destine aux donnees "
-        "ouvertes. Genere un brouillon via IA a partir du contenu JSON structure -- "
-        "DOIT etre valide par un humain (endpoint validate-summary) avant toute "
-        "publication reelle. Echoue explicitement si aucune cle API n'est configuree."
+        "ouvertes. Fournisseur IA selectionne via AI_SUMMARY_PROVIDER "
+        "(anthropic ou openai, defaut anthropic). Genere un brouillon -- DOIT "
+        "etre valide par un humain (endpoint validate-summary) avant toute "
+        "publication reelle. Echoue explicitement si la cle correspondante "
+        "n'est pas configuree."
     ),
 )
 def generate_deliverable_summary(
@@ -1140,41 +1201,27 @@ def generate_deliverable_summary(
             "en": "The public executive summary is only available for ETUDE_OPPORTUNITE (= the Vision) -- SCHEMA_DIRECTEUR and PLAN_ACTION remain paid (Go-To-Market).",
         })
 
-    api_key = _os_summary.environ.get("ANTHROPIC_API_KEY")
-    if not api_key or _anthropic_sdk is None:
-        raise HTTPException(status_code=503, detail={
-            "fr": "Génération IA indisponible : aucune clé API configurée sur ce serveur. Provisionner ANTHROPIC_API_KEY avant d'utiliser cet endpoint.",
-            "en": "AI generation unavailable: no API key configured on this server. Provision ANTHROPIC_API_KEY before using this endpoint.",
-        })
-
-    client = _anthropic_sdk.Anthropic(api_key=api_key)
-
-    system_prompt = (
-        "Tu rediges un resume executif d'une vision strategique de souverainete "
-        "africaine, a partir d'un contenu JSON structure (5W1H, SWOT, architecture "
-        "Zachman, risques, analyse economique). Le resume doit etre : academique, "
-        "de niveau executif, ultra synthetique (150-200 mots par langue maximum), "
-        "scientifique (jamais de langage promotionnel ou d'affirmation non etayee "
-        "par le contenu fourni). Reponds UNIQUEMENT en JSON valide, sans aucun texte "
-        "avant ou apres, au format exact : "
-        '{"summary_fr": "...", "summary_en": "..."}'
-    )
+    provider = _os_summary.environ.get("AI_SUMMARY_PROVIDER", "anthropic").lower()
+    content_json = json.dumps(deliverable["content"], ensure_ascii=False)
 
     try:
-        response = client.messages.create(
-            model="claude-sonnet-5",
-            max_tokens=1200,
-            system=system_prompt,
-            messages=[{"role": "user", "content": json.dumps(deliverable["content"], ensure_ascii=False)}],
-        )
-        raw_text = "".join(block.text for block in response.content if block.type == "text")
-        parsed = json.loads(raw_text)
+        if provider == "anthropic":
+            parsed = _generate_summary_anthropic(content_json)
+        elif provider == "openai":
+            parsed = _generate_summary_openai(content_json)
+        else:
+            raise HTTPException(status_code=500, detail={
+                "fr": f"AI_SUMMARY_PROVIDER='{provider}' invalide -- doit être 'anthropic' ou 'openai'.",
+                "en": f"AI_SUMMARY_PROVIDER='{provider}' invalid -- must be 'anthropic' or 'openai'.",
+            })
         summary_fr = parsed["summary_fr"]
         summary_en = parsed["summary_en"]
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=502, detail={
-            "fr": f"Échec de la génération IA : {e}",
-            "en": f"AI generation failed: {e}",
+            "fr": f"Échec de la génération IA ({provider}) : {e}",
+            "en": f"AI generation failed ({provider}): {e}",
         })
 
     row = db.execute(
