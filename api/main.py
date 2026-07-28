@@ -17,6 +17,7 @@ from api.routers.oim_objectives import router as oim_objectives_router
 from api.routers.oim_requirements import router as oim_requirements_router
 from api.routers.oim_patterns import router as oim_patterns_router
 from api.routers.oim_projects import router as oim_projects_router
+from api.routers.oim_vision import router as oim_vision_router
 from api.routers.osoa_documents import router as osoa_documents_router
 # SPRINT14 DEPRECATED -- from api.routers.early_warning_sprint7 import router as early_warning_sprint7_router
 # SPRINT14 DEPRECATED -- from api.routers.decision_scenarios_sprint7 import (
@@ -138,6 +139,7 @@ app.include_router(oim_objectives_router)
 app.include_router(oim_requirements_router)
 app.include_router(oim_patterns_router)
 app.include_router(oim_projects_router)
+app.include_router(oim_vision_router)
 app.include_router(osoa_documents_router)
 app.include_router(sovereignty_router)
 # SPRINT14 DEPRECATED -- app.include_router(early_warning_sprint7_router)
