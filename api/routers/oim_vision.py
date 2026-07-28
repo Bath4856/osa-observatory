@@ -12,6 +12,12 @@ Reutilise les modeles Pydantic et la logique de construction de
 livrables deja definis dans osoa.py (METHOD_MODELS, VALID_METHODS,
 DELIVERABLE_REQUIRED_METHODS, DELIVERABLE_BUILDERS) -- pas de
 duplication des 9-10 methodes d'analyse.
+
+Ajout du 28 juillet 2026 (nouvelle session) : explosion d'un
+PLAN_ACTION en projets nommes (mg.plan_action_projects), meme patron
+double fournisseur IA (AI_SUMMARY_PROVIDER) que le resume executif
+Vision -- IA propose, humain valide, puis promotion en vrai projet
+du catalogue (rf.sovereign_project_catalog, doctrinal_status=OIM_GENERATED).
 """
 import json
 from typing import Optional
@@ -367,3 +373,314 @@ def list_vision_deliverables(vision_id: int, db: Session = Depends(get_db)):
         {"vision_id": vision_id},
     ).mappings().all()
     return {"count": len(rows), "items": [dict(r) for r in rows]}
+
+
+# ── Explosion d'un PLAN_ACTION en projets nommes ──────────────────────────────
+# Ajoute le 28 juillet 2026. Exemple de Theo : PMIN fuite de minerais (POA) ->
+# plan d'actions -> actions concretes nommees ("Systeme numerique de
+# tracabilite", "Systeme de certification", "Fonds souverain tokenise").
+# Chaque action DEVIENT un projet reel dans rf.sovereign_project_catalog,
+# jamais construit a la main (doctrine LEGACY_MANUAL rejetee la veille).
+#
+# Meme patron double fournisseur (AI_SUMMARY_PROVIDER=anthropic|openai) que
+# le resume executif Vision -- IA propose, humain valide, PUIS SEULEMENT
+# promotion en catalogue reel.
+
+import os as _os_actions
+
+try:
+    import anthropic as _anthropic_sdk_actions
+except ImportError:
+    _anthropic_sdk_actions = None
+
+try:
+    import openai as _openai_sdk_actions
+except ImportError:
+    _openai_sdk_actions = None
+
+
+ACTIONS_SYSTEM_PROMPT = (
+    "Tu proposes des actions-projets concretes et nommees a partir du contenu "
+    "JSON d'un plan d'actions de souverainete africaine (cause racine, actions "
+    "correctives generiques, parties prenantes, criteres de priorisation). "
+    "Propose entre 3 et 6 actions CONCRETES, chacune formulee comme un vrai nom "
+    "de projet (exemple : 'Systeme numerique de tracabilite', pas 'ameliorer la "
+    "tracabilite'). Chaque action doit etre directement justifiee par le contenu "
+    "fourni, jamais inventee sans lien. Reponds UNIQUEMENT en JSON valide, sans "
+    "aucun texte avant ou apres, au format exact : "
+    '{"actions": [{"name_fr": "...", "name_en": "...", "description_fr": "...", "description_en": "..."}]}'
+)
+
+
+def _generate_actions_anthropic(content_json: str) -> dict:
+    api_key = _os_actions.environ.get("ANTHROPIC_API_KEY")
+    if not api_key or _anthropic_sdk_actions is None:
+        raise HTTPException(status_code=503, detail={
+            "fr": "AI_SUMMARY_PROVIDER=anthropic mais ANTHROPIC_API_KEY n'est pas configurée sur ce serveur.",
+            "en": "AI_SUMMARY_PROVIDER=anthropic but ANTHROPIC_API_KEY is not configured on this server.",
+        })
+    client = _anthropic_sdk_actions.Anthropic(api_key=api_key)
+    response = client.messages.create(
+        model="claude-sonnet-5",
+        max_tokens=1800,
+        system=ACTIONS_SYSTEM_PROMPT,
+        messages=[{"role": "user", "content": content_json}],
+    )
+    raw_text = "".join(block.text for block in response.content if block.type == "text")
+    return json.loads(raw_text)
+
+
+def _generate_actions_openai(content_json: str) -> dict:
+    api_key = _os_actions.environ.get("OPENAI_API_KEY")
+    if not api_key or _openai_sdk_actions is None:
+        raise HTTPException(status_code=503, detail={
+            "fr": "AI_SUMMARY_PROVIDER=openai mais OPENAI_API_KEY n'est pas configurée sur ce serveur.",
+            "en": "AI_SUMMARY_PROVIDER=openai but OPENAI_API_KEY is not configured on this server.",
+        })
+    client = _openai_sdk_actions.OpenAI(api_key=api_key)
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        response_format={"type": "json_object"},
+        messages=[
+            {"role": "system", "content": ACTIONS_SYSTEM_PROMPT},
+            {"role": "user", "content": content_json},
+        ],
+    )
+    return json.loads(response.choices[0].message.content)
+
+
+@router.post(
+    "/deliverables/{deliverable_id}/generate-actions",
+    summary="Générer des propositions d'actions-projets (IA) à partir d'un PLAN_ACTION",
+    description="Réservé au livrable PLAN_ACTION. Brouillon IA -- DOIT être validé avant promotion en catalogue.",
+)
+def generate_plan_action_projects(
+    deliverable_id: int,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+
+    deliverable = db.execute(
+        text("SELECT id, deliverable_type, content FROM osoa.strategic_deliverables WHERE id = :id"),
+        {"id": deliverable_id},
+    ).mappings().first()
+    if not deliverable:
+        raise HTTPException(status_code=404, detail={"fr": "Livrable introuvable.", "en": "Deliverable not found."})
+
+    if deliverable["deliverable_type"] != "PLAN_ACTION":
+        raise HTTPException(status_code=422, detail={
+            "fr": "L'explosion en projets n'est disponible que pour PLAN_ACTION.",
+            "en": "Project explosion is only available for PLAN_ACTION.",
+        })
+
+    provider = _os_actions.environ.get("AI_SUMMARY_PROVIDER", "anthropic").lower()
+    content_json = json.dumps(deliverable["content"], ensure_ascii=False)
+
+    try:
+        if provider == "anthropic":
+            parsed = _generate_actions_anthropic(content_json)
+        elif provider == "openai":
+            parsed = _generate_actions_openai(content_json)
+        else:
+            raise HTTPException(status_code=500, detail={
+                "fr": f"AI_SUMMARY_PROVIDER='{provider}' invalide.",
+                "en": f"AI_SUMMARY_PROVIDER='{provider}' invalid.",
+            })
+        actions = parsed["actions"]
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail={
+            "fr": f"Échec de la génération IA ({provider}) : {e}",
+            "en": f"AI generation failed ({provider}): {e}",
+        })
+
+    created = []
+    for action in actions:
+        row = db.execute(
+            text("""
+                INSERT INTO mg.plan_action_projects
+                    (deliverable_id, action_name_fr, action_name_en, action_description_fr, action_description_en, created_by)
+                VALUES (:deliverable_id, :name_fr, :name_en, :desc_fr, :desc_en, :created_by)
+                RETURNING id, deliverable_id, action_name_fr, action_name_en, action_description_fr, action_description_en, status, created_at::text
+            """),
+            {
+                "deliverable_id": deliverable_id,
+                "name_fr": action["name_fr"],
+                "name_en": action.get("name_en"),
+                "desc_fr": action["description_fr"],
+                "desc_en": action.get("description_en"),
+                "created_by": affiliate_id,
+            },
+        ).mappings().first()
+        created.append(dict(row))
+    db.commit()
+
+    return {"count": len(created), "items": created}
+
+
+@router.get("/deliverables/{deliverable_id}/plan-action-projects", summary="Lister les actions proposées d'un PLAN_ACTION")
+def list_plan_action_projects(deliverable_id: int, db: Session = Depends(get_db)):
+    rows = db.execute(
+        text("""
+            SELECT id, deliverable_id, action_name_fr, action_name_en, action_description_fr,
+                   action_description_en, status, promoted_project_code, created_at::text
+            FROM mg.plan_action_projects WHERE deliverable_id = :deliverable_id
+            ORDER BY created_at
+        """),
+        {"deliverable_id": deliverable_id},
+    ).mappings().all()
+    return {"count": len(rows), "items": [dict(r) for r in rows]}
+
+
+class ActionProjectValidate(BaseModel):
+    action_name_fr: Optional[str] = None
+    action_name_en: Optional[str] = None
+    action_description_fr: Optional[str] = None
+    action_description_en: Optional[str] = None
+
+
+@router.post(
+    "/plan-action-projects/{action_id}/validate",
+    summary="Valider (et éventuellement corriger) une action proposée",
+)
+def validate_plan_action_project(
+    action_id: int,
+    data: ActionProjectValidate,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    action = db.execute(
+        text("SELECT id, status FROM mg.plan_action_projects WHERE id = :id"),
+        {"id": action_id},
+    ).mappings().first()
+    if not action:
+        raise HTTPException(status_code=404, detail={"fr": "Action introuvable.", "en": "Action not found."})
+    if action["status"] == "PROMOTED":
+        raise HTTPException(status_code=409, detail={
+            "fr": "Cette action a déjà été promue en projet réel.",
+            "en": "This action has already been promoted to a real project.",
+        })
+
+    row = db.execute(
+        text("""
+            UPDATE mg.plan_action_projects
+            SET action_name_fr = COALESCE(:name_fr, action_name_fr),
+                action_name_en = COALESCE(:name_en, action_name_en),
+                action_description_fr = COALESCE(:desc_fr, action_description_fr),
+                action_description_en = COALESCE(:desc_en, action_description_en),
+                status = 'HUMAN_VALIDATED',
+                updated_at = NOW()
+            WHERE id = :id
+            RETURNING id, action_name_fr, action_name_en, action_description_fr, action_description_en, status
+        """),
+        {
+            "name_fr": data.action_name_fr, "name_en": data.action_name_en,
+            "desc_fr": data.action_description_fr, "desc_en": data.action_description_en,
+            "id": action_id,
+        },
+    ).mappings().first()
+    db.commit()
+    return dict(row)
+
+
+@router.post(
+    "/plan-action-projects/{action_id}/promote",
+    summary="Promouvoir une action validée en vrai projet du catalogue (rf.sovereign_project_catalog)",
+    description="Réservé aux actions HUMAN_VALIDATED. Crée une ligne doctrinal_status=OIM_GENERATED, tracée vers son plan d'actions source.",
+)
+def promote_plan_action_project(
+    action_id: int,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    action = db.execute(
+        text("""
+            SELECT pap.id, pap.status, pap.action_name_fr, pap.action_name_en,
+                   pap.action_description_fr, pap.action_description_en, pap.deliverable_id,
+                   sd.vision_id
+            FROM mg.plan_action_projects pap
+            JOIN osoa.strategic_deliverables sd ON sd.id = pap.deliverable_id
+            WHERE pap.id = :id
+        """),
+        {"id": action_id},
+    ).mappings().first()
+    if not action:
+        raise HTTPException(status_code=404, detail={"fr": "Action introuvable.", "en": "Action not found."})
+    if action["status"] != "HUMAN_VALIDATED":
+        raise HTTPException(status_code=422, detail={
+            "fr": "Seule une action HUMAN_VALIDATED peut être promue.",
+            "en": "Only a HUMAN_VALIDATED action can be promoted.",
+        })
+    if not action["vision_id"]:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Ce livrable n'est pas rattaché à une vision -- promotion impossible.",
+            "en": "This deliverable is not attached to a vision -- promotion not possible.",
+        })
+
+    vision = db.execute(
+        text("SELECT country_iso3, pillar_code FROM mg.pillar_strategic_vision WHERE id = :id"),
+        {"id": action["vision_id"]},
+    ).mappings().first()
+
+    family = db.execute(
+        text("SELECT project_family_code FROM rf.structuring_project_catalog WHERE pillar_code = :pillar_code LIMIT 1"),
+        {"pillar_code": vision["pillar_code"]},
+    ).mappings().first()
+    if not family:
+        raise HTTPException(status_code=422, detail={
+            "fr": f"Aucune famille de projets trouvée pour le pilier {vision['pillar_code']}.",
+            "en": f"No project family found for pillar {vision['pillar_code']}.",
+        })
+
+    project_code = f"OIM_{vision['country_iso3']}_{vision['pillar_code']}_{action_id}"
+
+    try:
+        project_row = db.execute(
+            text("""
+                INSERT INTO rf.sovereign_project_catalog
+                    (project_code, project_family_code, pillar_code, country_iso3, project_name,
+                     project_description, strategic_objective, deliverable_public, deliverable_premium,
+                     doctrinal_status, project_name_fr, project_name_en, project_description_fr, project_description_en)
+                VALUES
+                    (:project_code, :family_code, :pillar_code, :country_iso3, :name,
+                     :description, :objective, :deliverable_public, :deliverable_premium,
+                     'OIM_GENERATED', :name_fr, :name_en, :desc_fr, :desc_en)
+                RETURNING project_code
+            """),
+            {
+                "project_code": project_code,
+                "family_code": family["project_family_code"],
+                "pillar_code": vision["pillar_code"],
+                "country_iso3": vision["country_iso3"],
+                "name": action["action_name_fr"],
+                "description": action["action_description_fr"],
+                "objective": action["action_description_fr"],
+                "deliverable_public": "Note d'opportunité disponible sur demande institutionnelle.",
+                "deliverable_premium": "Étude de faisabilité complète disponible sur demande institutionnelle.",
+                "name_fr": action["action_name_fr"],
+                "name_en": action["action_name_en"],
+                "desc_fr": action["action_description_fr"],
+                "desc_en": action["action_description_en"],
+            },
+        ).mappings().first()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=409, detail={
+            "fr": f"Erreur lors de la création du projet : {e}",
+            "en": f"Error creating the project: {e}",
+        })
+
+    row = db.execute(
+        text("""
+            UPDATE mg.plan_action_projects
+            SET status = 'PROMOTED', promoted_project_code = :project_code, updated_at = NOW()
+            WHERE id = :id
+            RETURNING id, status, promoted_project_code
+        """),
+        {"project_code": project_row["project_code"], "id": action_id},
+    ).mappings().first()
+    db.commit()
+
+    return dict(row)
