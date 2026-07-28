@@ -1093,3 +1093,186 @@ def list_deliverables(opportunity_id: int, db: Session = Depends(get_db)):
         {"opportunity_id": opportunity_id},
     ).mappings().all()
     return {"disclaimer": OSOA_DISCLAIMER, "count": len(rows), "items": [dict(r) for r in rows]}
+
+
+# ── Resume executif IA (livrable ETUDE_OPPORTUNITE = Vision uniquement) ──────────
+# Ajoute le 28 juillet 2026 -- donnees ouvertes. SCHEMA_DIRECTEUR et PLAN_ACTION
+# restent payants (Go-To-Market), aucun resume public prevu pour eux.
+#
+# Double fournisseur possible (AI_SUMMARY_PROVIDER=anthropic|openai, variable
+# d'environnement) -- choix acte le 28 juillet 2026 pour ne pas dependre d'un
+# seul fournisseur. Echec explicite si le fournisseur choisi n'a pas sa cle
+# correspondante configuree, jamais de repli silencieux.
+
+import os as _os_summary
+
+try:
+    import anthropic as _anthropic_sdk
+except ImportError:
+    _anthropic_sdk = None
+
+try:
+    import openai as _openai_sdk
+except ImportError:
+    _openai_sdk = None
+
+
+SUMMARY_SYSTEM_PROMPT = (
+    "Tu rediges un resume executif d'une vision strategique de souverainete "
+    "africaine, a partir d'un contenu JSON structure (5W1H, SWOT, architecture "
+    "Zachman, risques, analyse economique). Le resume doit etre : academique, "
+    "de niveau executif, ultra synthetique (150-200 mots par langue maximum), "
+    "scientifique (jamais de langage promotionnel ou d'affirmation non etayee "
+    "par le contenu fourni). Reponds UNIQUEMENT en JSON valide, sans aucun texte "
+    "avant ou apres, au format exact : "
+    '{"summary_fr": "...", "summary_en": "..."}'
+)
+
+
+def _generate_summary_anthropic(content_json: str) -> dict:
+    api_key = _os_summary.environ.get("ANTHROPIC_API_KEY")
+    if not api_key or _anthropic_sdk is None:
+        raise HTTPException(status_code=503, detail={
+            "fr": "AI_SUMMARY_PROVIDER=anthropic mais ANTHROPIC_API_KEY n'est pas configurée sur ce serveur.",
+            "en": "AI_SUMMARY_PROVIDER=anthropic but ANTHROPIC_API_KEY is not configured on this server.",
+        })
+    client = _anthropic_sdk.Anthropic(api_key=api_key)
+    response = client.messages.create(
+        model="claude-sonnet-5",
+        max_tokens=1200,
+        system=SUMMARY_SYSTEM_PROMPT,
+        messages=[{"role": "user", "content": content_json}],
+    )
+    raw_text = "".join(block.text for block in response.content if block.type == "text")
+    return json.loads(raw_text)
+
+
+def _generate_summary_openai(content_json: str) -> dict:
+    api_key = _os_summary.environ.get("OPENAI_API_KEY")
+    if not api_key or _openai_sdk is None:
+        raise HTTPException(status_code=503, detail={
+            "fr": "AI_SUMMARY_PROVIDER=openai mais OPENAI_API_KEY n'est pas configurée sur ce serveur.",
+            "en": "AI_SUMMARY_PROVIDER=openai but OPENAI_API_KEY is not configured on this server.",
+        })
+    client = _openai_sdk.OpenAI(api_key=api_key)
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        response_format={"type": "json_object"},
+        messages=[
+            {"role": "system", "content": SUMMARY_SYSTEM_PROMPT},
+            {"role": "user", "content": content_json},
+        ],
+    )
+    return json.loads(response.choices[0].message.content)
+
+
+class SummaryValidateUpdate(BaseModel):
+    public_summary_fr: Optional[str] = None
+    public_summary_en: Optional[str] = None
+
+
+@router.post(
+    "/deliverables/{deliverable_id}/generate-summary",
+    summary="Générer le résumé exécutif académique/scientifique bilingue (IA) -- ETUDE_OPPORTUNITE uniquement",
+    description=(
+        "Reservé au livrable ETUDE_OPPORTUNITE (= la Vision), destine aux donnees "
+        "ouvertes. Fournisseur IA selectionne via AI_SUMMARY_PROVIDER "
+        "(anthropic ou openai, defaut anthropic). Genere un brouillon -- DOIT "
+        "etre valide par un humain (endpoint validate-summary) avant toute "
+        "publication reelle. Echoue explicitement si la cle correspondante "
+        "n'est pas configuree."
+    ),
+)
+def generate_deliverable_summary(
+    deliverable_id: int,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    deliverable = db.execute(
+        text("SELECT id, deliverable_type, content FROM osoa.strategic_deliverables WHERE id = :id"),
+        {"id": deliverable_id},
+    ).mappings().first()
+    if not deliverable:
+        raise HTTPException(status_code=404, detail={"fr": "Livrable introuvable.", "en": "Deliverable not found."})
+
+    if deliverable["deliverable_type"] != "ETUDE_OPPORTUNITE":
+        raise HTTPException(status_code=422, detail={
+            "fr": "Le résumé exécutif public n'est disponible que pour ETUDE_OPPORTUNITE (= la Vision) -- SCHEMA_DIRECTEUR et PLAN_ACTION restent payants (Go-To-Market).",
+            "en": "The public executive summary is only available for ETUDE_OPPORTUNITE (= the Vision) -- SCHEMA_DIRECTEUR and PLAN_ACTION remain paid (Go-To-Market).",
+        })
+
+    provider = _os_summary.environ.get("AI_SUMMARY_PROVIDER", "anthropic").lower()
+    content_json = json.dumps(deliverable["content"], ensure_ascii=False)
+
+    try:
+        if provider == "anthropic":
+            parsed = _generate_summary_anthropic(content_json)
+        elif provider == "openai":
+            parsed = _generate_summary_openai(content_json)
+        else:
+            raise HTTPException(status_code=500, detail={
+                "fr": f"AI_SUMMARY_PROVIDER='{provider}' invalide -- doit être 'anthropic' ou 'openai'.",
+                "en": f"AI_SUMMARY_PROVIDER='{provider}' invalid -- must be 'anthropic' or 'openai'.",
+            })
+        summary_fr = parsed["summary_fr"]
+        summary_en = parsed["summary_en"]
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail={
+            "fr": f"Échec de la génération IA ({provider}) : {e}",
+            "en": f"AI generation failed ({provider}): {e}",
+        })
+
+    row = db.execute(
+        text("""
+            UPDATE osoa.strategic_deliverables
+            SET public_summary_fr = :summary_fr, public_summary_en = :summary_en, summary_status = 'AI_DRAFTED'
+            WHERE id = :id
+            RETURNING id, deliverable_type, public_summary_fr, public_summary_en, summary_status
+        """),
+        {"summary_fr": summary_fr, "summary_en": summary_en, "id": deliverable_id},
+    ).mappings().first()
+    db.commit()
+
+    return dict(row)
+
+
+@router.post(
+    "/deliverables/{deliverable_id}/validate-summary",
+    summary="Valider (et éventuellement corriger) le résumé exécutif avant publication",
+    description="Passage obligatoire par un humain -- jamais de publication directe d'un résumé AI_DRAFTED.",
+)
+def validate_deliverable_summary(
+    deliverable_id: int,
+    data: SummaryValidateUpdate,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    deliverable = db.execute(
+        text("SELECT id, summary_status FROM osoa.strategic_deliverables WHERE id = :id"),
+        {"id": deliverable_id},
+    ).mappings().first()
+    if not deliverable:
+        raise HTTPException(status_code=404, detail={"fr": "Livrable introuvable.", "en": "Deliverable not found."})
+
+    if deliverable["summary_status"] == "PENDING":
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucun résumé n'a encore été généré -- utiliser generate-summary d'abord.",
+            "en": "No summary has been generated yet -- use generate-summary first.",
+        })
+
+    row = db.execute(
+        text("""
+            UPDATE osoa.strategic_deliverables
+            SET public_summary_fr = COALESCE(:summary_fr, public_summary_fr),
+                public_summary_en = COALESCE(:summary_en, public_summary_en),
+                summary_status = 'HUMAN_VALIDATED'
+            WHERE id = :id
+            RETURNING id, deliverable_type, public_summary_fr, public_summary_en, summary_status
+        """),
+        {"summary_fr": data.public_summary_fr, "summary_en": data.public_summary_en, "id": deliverable_id},
+    ).mappings().first()
+    db.commit()
+
+    return dict(row)
