@@ -1118,13 +1118,26 @@ except ImportError:
 
 
 SUMMARY_SYSTEM_PROMPT = (
-    "Tu rediges un resume executif d'une vision strategique de souverainete "
+    "Tu rediges le resume executif d'une ETUDE D'OPPORTUNITE de souverainete "
     "africaine, a partir d'un contenu JSON structure (5W1H, SWOT, architecture "
-    "Zachman, risques, analyse economique). Le resume doit etre : academique, "
-    "de niveau executif, ultra synthetique (150-200 mots par langue maximum), "
-    "scientifique (jamais de langage promotionnel ou d'affirmation non etayee "
-    "par le contenu fourni). Reponds UNIQUEMENT en JSON valide, sans aucun texte "
-    "avant ou apres, au format exact : "
+    "Zachman, risques, analyse economique). Ce texte n'est PAS une simple "
+    "restitution scientifique d'un constat -- c'est une mini-etude d'opportunite "
+    "orientee Go-To-Market, destinee a faire emerger une demande d'intervention. "
+    "Il doit accomplir DEUX fonctions dans l'ordre : "
+    "1) ETABLIR l'opportunite a partir des faits observes (forces/faiblesses/"
+    "risques/potentiel economique) -- academique, scientifique, jamais de "
+    "langage promotionnel ni d'affirmation non etayee par le contenu fourni ; "
+    "2) TERMINER par une invitation EXPLICITE (pas implicite) a commander "
+    "l'intervention (schema directeur et plan d'actions) qui permettrait de "
+    "DEFINIR la reponse a cette opportunite. Ne JAMAIS presenter une strategie "
+    "ou un plan d'actions comme deja existant ou deja mis en oeuvre -- a ce "
+    "stade, ils n'existent pas encore, ils sont precisement ce que "
+    "l'intervention proposee permettrait de produire. Formuler la derniere "
+    "phrase comme une invitation claire (ex. 'Cette analyse invite a la "
+    "commande d'un schema directeur et d'un plan d'actions pour...' plutot "
+    "que 'La strategie consiste a...'). Longueur : 150-200 mots par langue "
+    "maximum. Reponds UNIQUEMENT en JSON valide, sans aucun texte avant ou "
+    "apres, au format exact : "
     '{"summary_fr": "...", "summary_en": "..."}'
 )
 
