@@ -217,6 +217,13 @@ export default function Pillar() {
                 : 'No strategic diagnosis available for this country on this pillar.'}
             </p>
           )}
+          <Link
+            to={`/country/${iso3}/vision/${code}`}
+            className="reco-projects-link"
+            style={{ marginTop: '12px', display: 'inline-block' }}
+          >
+            {lang === 'fr' ? 'Voir la vision stratégique OIM →' : 'View OIM strategic vision →'}
+          </Link>
         </section>
       )}
 
