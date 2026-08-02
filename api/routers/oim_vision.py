@@ -366,7 +366,8 @@ def create_vision_deliverable(
 def list_vision_deliverables(vision_id: int, db: Session = Depends(get_db)):
     rows = db.execute(
         text("""
-            SELECT id, vision_id, deliverable_type, content, source_analysis_ids, generated_by, generated_at::text
+            SELECT id, vision_id, deliverable_type, content, source_analysis_ids, generated_by, generated_at::text,
+                   public_summary_fr, public_summary_en, summary_status
             FROM osoa.strategic_deliverables WHERE vision_id = :vision_id
             ORDER BY generated_at DESC
         """),
