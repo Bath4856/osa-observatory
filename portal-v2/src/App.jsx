@@ -24,7 +24,6 @@ import AmarDetail from './pages/AmarDetail'
 import ConflictEconomyDetail from './pages/ConflictEconomyDetail'
 import PoaDetail from './pages/PoaDetail'
 import MgsOpportunities from './pages/MgsOpportunities'
-import VisionDetail from './pages/VisionDetail'
 import './App.css'
 
 function Layout() {
@@ -58,7 +57,6 @@ const router = createBrowserRouter([
       { path: '/country/:iso3/conflict-economy', element: <ConflictEconomyDetail /> },
       { path: '/country/:iso3/poa',              element: <PoaDetail /> },
       { path: '/mgs/opportunities',              element: <MgsOpportunities /> },
-      { path: '/country/:iso3/vision/:pillarCode', element: <VisionDetail /> },
       { path: '/register',                       element: <Register /> },
       { path: '/login',                          element: <Login /> },
       { path: '/forgot-password',                element: <ForgotPassword /> },

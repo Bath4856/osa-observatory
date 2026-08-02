@@ -276,7 +276,7 @@ export default function Country() {
               <div className="pillar-row-actions">
                 <button className="pillar-btn pillar-btn--analyse"
                   onClick={() => navigate(`/pillar/${p.code}?country=${iso3}`)}>
-                  {lang === 'fr' ? 'Analyse →' : 'Analysis →'}
+                  {lang === 'fr' ? 'Opportunité stratégique →' : 'Strategic opportunity →'}
                 </button>
               </div>
             </div>

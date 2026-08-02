@@ -226,3 +226,144 @@
   line-height: 1.6;
   margin-top: 4px;
 }
+
+/* ── Vision stratégique intégrée (section "Opportunité stratégique") ──────── */
+
+.vision-detail-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.vision-detail-year {
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  color: var(--color-primary-dk);
+  background: rgba(26, 107, 42, 0.08);
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.vision-detail-status {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  color: #fff;
+}
+.vision-detail-status.status-draft     { background: #B0B0B0; }
+.vision-detail-status.status-validated { background: var(--color-primary); }
+.vision-detail-status.status-archived  { background: var(--color-muted); }
+
+.vision-detail-summary {
+  line-height: 1.6;
+  color: #2a2a2a;
+  background: var(--color-bg-light);
+  border-left: 3px solid var(--color-primary);
+  padding: 16px 20px;
+  border-radius: 4px;
+  white-space: pre-line;
+}
+
+.vision-detail-pending {
+  color: var(--color-muted);
+  font-style: italic;
+  font-size: 0.92rem;
+  background: var(--color-bg-light);
+  padding: 16px 20px;
+  border-radius: 4px;
+}
+
+.vision-detail-premium-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.vision-detail-premium-card {
+  background: var(--color-bg-light);
+  border-top: 3px solid var(--color-accent);
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.vision-detail-premium-card h3 {
+  font-size: 1rem;
+  color: var(--color-primary-dk);
+  margin: 0 0 8px;
+}
+
+.vision-detail-premium-card p {
+  font-size: 0.88rem;
+  color: var(--color-muted);
+  margin: 0 0 12px;
+}
+
+.vision-detail-premium-tag {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+@media (max-width: 600px) {
+  .vision-detail-premium-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Liste détaillée des indicateurs (page pilier générique, sans pays) ──── */
+
+.indicators-detailed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.indicator-detail-row {
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  padding-bottom: 12px;
+}
+
+.indicator-detail-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.indicator-detail-code {
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: var(--color-primary-dk);
+  background: rgba(26, 107, 42, 0.08);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.indicator-detail-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: #2a2a2a;
+}
+
+.indicator-detail-pending-tag {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  border: 1px solid var(--color-muted);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.indicator-detail-description {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  margin: 0;
+  line-height: 1.5;
+}

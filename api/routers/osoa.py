@@ -1139,12 +1139,17 @@ SUMMARY_SYSTEM_PROMPT = (
     "proposer les deux options. Ne JAMAIS presenter une strategie ou un plan "
     "d'actions comme deja existant ou deja mis en oeuvre -- a ce stade, ils "
     "n'existent pas encore, ils sont precisement ce que l'intervention "
-    "proposee permettrait de produire. Formuler la derniere phrase comme une "
-    "invitation claire (ex. 'Cette analyse invite a la commande d'une etude "
-    "de faisabilite et/ou d'un schema directeur et d'un plan d'actions "
-    "pour...' plutot que 'La strategie consiste a...'). Longueur : 150-200 "
-    "mots par langue maximum. Reponds UNIQUEMENT en JSON valide, sans aucun "
-    "texte avant ou apres, au format exact : "
+    "proposee permettrait de produire. Ne JAMAIS parler de 'le projet' au "
+    "singulier comme s'il etait deja identifie -- a ce stade aucun projet "
+    "precis n'existe, seul un futur plan d'actions les definirait (et "
+    "generalement plusieurs, pas un seul). Utiliser 'certains projets' ou "
+    "'les projets qui pourraient en decouler' au pluriel et au conditionnel. "
+    "Formuler la derniere phrase comme une invitation claire (ex. 'Cette "
+    "analyse invite a la commande d'une etude de faisabilite et/ou d'un "
+    "schema directeur et d'un plan d'actions pour...' plutot que 'La "
+    "strategie consiste a...'). Longueur : 150-200 mots par langue maximum. "
+    "Reponds UNIQUEMENT en JSON valide, sans aucun texte avant ou apres, au "
+    "format exact : "
     '{"summary_fr": "...", "summary_en": "..."}'
 )
 
