@@ -114,9 +114,10 @@ MULTICRITERE_SPECIFIC_RULE = """- Pour le champ "score" de chaque critere, utili
 
 INTERDEPENDANCE_SYSTEM_PROMPT = """Tu evalues l'existence eventuelle d'une interdependance entre ce pilier et
 un autre pilier du MEME pays -- tu ne "trouves" pas une relation, tu
-"evalues" si une relation est demontrable. L'absence de relation est un
-resultat scientifique parfaitement valide, a exprimer explicitement --
-n'invente JAMAIS une relation pour satisfaire le schema.
+"evalues" si une relation CAUSALE est demontrable a partir des preuves
+disponibles. L'absence de relation ou de preuve suffisante est un
+resultat scientifique parfaitement valide -- n'invente JAMAIS une
+relation pour satisfaire le schema.
 
 ETAPE 0 -- Contexte fige (a utiliser tel quel, jamais invente) :
 country_iso3 = "{country_iso3}"
@@ -137,16 +138,32 @@ ETAPE 3 -- Vocabulaire controle autorise (OBLIGATOIRE) :
 ETAPE 4 -- Schema JSON exact a respecter :
 {schema}
 
-ETAPE 5 -- Regles imperatives :
-- Si la liste de l'ETAPE 1 est vide, ou si aucun candidat n'est
-  suffisamment etaye par l'ETAPE 2, conclus analysis_status =
-  AUCUNE_RELATION_IDENTIFIEE (jamais DONNEES_INSUFFISANTES dans ce cas --
-  l'absence de candidat EST une conclusion, pas un manque de donnees).
-- Utilise DONNEES_INSUFFISANTES uniquement si un candidat existe mais que
-  son etayage dans l'ETAPE 2 est trop faible pour conclure dans un sens
-  ou dans l'autre.
-- Si analysis_status = RELATION_IDENTIFIEE, source_pillar_code ou
-  target_pillar_code DOIT correspondre a un candidat reel de l'ETAPE 1,
+ETAPE 5 -- Regles imperatives, DISTINCTION CORRELATION / CAUSALITE
+(critique -- decision de Theo du 4 aout 2026, suite a un test reel ou le
+moteur a conclu a tort une relation a partir d'une simple co-occurrence
+de faiblesse) :
+- Une CORRELATION D'ETAT (deux piliers presentant simultanement un
+  risque eleve ou une tendance similaire) N'EST PAS une preuve de
+  relation causale. Elle demontre seulement que deux piliers sont
+  fragiles en meme temps -- jamais que l'un influence l'autre. Les
+  candidats de l'ETAPE 1 sont des candidats a INVESTIGUER, jamais des
+  relations demontrees.
+- basis_type=AI_PREDICTIVE_ESTIMATE signale PAR CONSTRUCTION une preuve
+  faible (aucune correlation statistique reelle calculee, aucun POA/GAP
+  commun disponible, aucune decision du Comite Scientifique). Dans ce
+  cas, analysis_status DOIT presque toujours etre DONNEES_INSUFFISANTES,
+  JAMAIS RELATION_IDENTIFIEE -- sauf si le contenu des 9 analyses
+  (ETAPE 2) revele un vrai MECANISME causal explicite et argumente
+  (ex. "la rupture de tracabilite du pilier X oblige le recours au
+  systeme numerique du pilier Y"), jamais une simple co-occurrence de
+  faiblesse ou de risque.
+- Aujourd'hui, les referentiels POA et GAP ne sont pas encore peuples
+  (cf. doctrine OSA, roadmap de maturation des briques scientifiques).
+  DONNEES_INSUFFISANTES est donc le resultat ATTENDU et scientifiquement
+  le plus honnete dans la grande majorite des cas -- ce n'est jamais un
+  echec de l'analyse, c'est une conclusion scientifique valide en soi.
+- Si analysis_status = RELATION_IDENTIFIEE malgre tout, source_pillar_code
+  ou target_pillar_code DOIT correspondre a un candidat reel de l'ETAPE 1,
   jamais un pilier absent de cette liste.
 - Reponds UNIQUEMENT en JSON valide conforme au schema, sans aucun texte
   avant ou apres.
