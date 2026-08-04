@@ -25,7 +25,7 @@ toute personne affiliee authentifiee peut creer/consulter une opportunite,
 pas reserve aux seuls ADMIN (les membres du Collège/Comité Technique portent
 couramment les AMI/AO/AOI).
 """
-from typing import Optional, List
+from typing import Optional, List, Literal
 import json
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -598,17 +598,9 @@ class Content5Pourquoi(BaseModel):
 
 class RisqueItem(BaseModel):
     description: str
-    probabilite: str  # FAIBLE, MOYENNE, ELEVEE
-    impact: str  # FAIBLE, MOYEN, ELEVE
+    probabilite: Literal["FAIBLE", "MOYENNE", "ELEVEE"]
+    impact: Literal["FAIBLE", "MOYEN", "ELEVE"]
     mitigation: Optional[str] = None
-
-    @model_validator(mode="after")
-    def _check_values(self):
-        if self.probabilite not in ("FAIBLE", "MOYENNE", "ELEVEE"):
-            raise ValueError("probabilite doit être FAIBLE, MOYENNE ou ELEVEE")
-        if self.impact not in ("FAIBLE", "MOYEN", "ELEVE"):
-            raise ValueError("impact doit être FAIBLE, MOYEN ou ELEVE")
-        return self
 
 
 class ContentRisque(BaseModel):
@@ -621,12 +613,10 @@ class ContentFaisabilite(BaseModel):
     faisabilite_organisationnelle: str
     delai_estime_jours_min: int = Field(..., ge=0)
     delai_estime_jours_max: int = Field(..., ge=0)
-    conclusion: str  # FAVORABLE, DEFAVORABLE, CONDITIONNEL
+    conclusion: Literal["FAVORABLE", "DEFAVORABLE", "CONDITIONNEL"]
 
     @model_validator(mode="after")
-    def _check_conclusion(self):
-        if self.conclusion not in ("FAVORABLE", "DEFAVORABLE", "CONDITIONNEL"):
-            raise ValueError("conclusion doit être FAVORABLE, DEFAVORABLE ou CONDITIONNEL")
+    def _check_delai_range(self):
         if self.delai_estime_jours_max < self.delai_estime_jours_min:
             raise ValueError("delai_estime_jours_max doit être >= delai_estime_jours_min")
         return self
@@ -645,17 +635,20 @@ class ContentMulticritere(BaseModel):
 
 
 class ContentEconomique(BaseModel):
-    cout_estime_min: float = Field(..., ge=0)
-    cout_estime_max: float = Field(..., ge=0)
-    devise: str = Field(..., min_length=3, max_length=3)
+    # Renommee "Analyse Economique Strategique" le 4 aout 2026 (decision de
+    # Theo) : la Vision OIM ne vend pas un projet chiffre -- elle demontre
+    # qu'un probleme est objectivable et qu'il est scientifiquement pertinent
+    # d'engager les etapes suivantes. Les estimations financieres detaillees
+    # viennent plus tard (Schema Directeur, puis le projet). AUCUN chiffre
+    # ici -- uniquement des niveaux qualitatifs, jamais un cout invente.
+    impact_attendu: Literal["FAIBLE", "MOYEN", "ELEVE"]
+    potentiel_creation_valeur: Literal["FAIBLE", "MOYEN", "ELEVE"]
+    potentiel_reduction_pertes: Literal["FAIBLE", "MOYEN", "ELEVE"]
+    potentiel_recettes_publiques: Literal["FAIBLE", "MOYEN", "ELEVE"]
+    ordre_de_grandeur_investissement: Literal["FAIBLE", "MOYEN", "ELEVE"]
+    horizon_benefices: Literal["COURT_TERME", "MOYEN_TERME", "LONG_TERME"]
     benefices_attendus_fr: str
-    retour_sur_investissement_estime: Optional[str] = None
     hypotheses_fr: Optional[str] = None
-    @model_validator(mode="after")
-    def _check_cout_range(self):
-        if self.cout_estime_max < self.cout_estime_min:
-            raise ValueError("cout_estime_max doit être >= cout_estime_min")
-        return self
 
 
 class ContentGouvernance(BaseModel):
@@ -671,19 +664,13 @@ ZACHMAN_PERSPECTIVES = (
 
 
 class ZachmanRow(BaseModel):
-    perspective: str
+    perspective: Literal["EXECUTIVE", "BUSINESS_MGMT", "ARCHITECT", "ENGINEER", "TECHNICIAN", "ENTERPRISE"]
     quoi: Optional[str] = None
     comment: Optional[str] = None
     ou: Optional[str] = None
     qui: Optional[str] = None
     quand: Optional[str] = None
     pourquoi: Optional[str] = None
-
-    @model_validator(mode="after")
-    def _check_perspective(self):
-        if self.perspective not in ZACHMAN_PERSPECTIVES:
-            raise ValueError(f"perspective doit être l'une de {ZACHMAN_PERSPECTIVES}")
-        return self
 
 
 class ContentZachman(BaseModel):
