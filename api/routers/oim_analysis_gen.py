@@ -100,6 +100,11 @@ ETAPE 4 -- Regles imperatives :
   valeurs autorisees, jamais une autre formulation ni une traduction.
 - Utilise EXCLUSIVEMENT les donnees fournies en ETAPE 1 -- si une donnee
   manque, reste generique plutot que d'inventer un chiffre precis.
+- Si poa_observations est present dans l'ETAPE 1, CE SONT DE VRAIS
+  PHENOMENES OBSERVES independants du score ISA (ex. fuite de valeur
+  miniere, signal de contrebande) -- prends-les serieusement en compte,
+  surtout pour les forces/faiblesses/risques/causes racines, ne les
+  ignore jamais s'ils sont presents.
 {method_specific_rules}
 ETAPE 5 -- Reponds UNIQUEMENT en JSON valide conforme au schema, sans
 aucun texte avant ou apres.
@@ -293,6 +298,62 @@ def _call_ai(system_prompt: str, user_content: str) -> dict:
         })
 
 
+def _get_poa_observations(db: Session, country_iso3: str, pillar_code: str, year: int) -> list:
+    """Recupere les vraies observations POA (Phenomenes Observables
+    Autonomes) pour ce pilier -- donnees REELLES et independantes du
+    score ISA, qui influencent directement le pilier meme si elles
+    n'entrent pas dans son calcul (ex. fuite de valeur miniere, signal
+    de contrebande). Correction du 4 aout 2026 (Theo) : cette source
+    avait ete omise a tort du snapshot, en confondant rf.poa_catalog
+    (donnees reelles observees, existe depuis Sprint 31) avec la
+    nouvelle taxonomie ma.poa_gap_observation (encore vide, distincte).
+    Deux sources possibles selon l'indicateur -- meme logique que
+    GET /api/v2/sovereignty/poa-catalog."""
+    poa_indicators = db.execute(
+        text("""
+            SELECT p.indicator_code, p.delta_desc_fr, p.metric_label_fr
+            FROM rf.poa_catalog p
+            JOIN rf.indicators i ON i.code = p.indicator_code
+            WHERE i.pillar_code = :pillar_code
+        """),
+        {"pillar_code": pillar_code},
+    ).mappings().all()
+
+    observations = []
+    for ind in poa_indicators:
+        code = ind["indicator_code"]
+        row = db.execute(
+            text("""
+                SELECT processed_value AS value
+                FROM ma.indicator_values
+                WHERE indicator_code = :code AND country_iso3 = :country_iso3 AND year = :year AND layer_id = 3
+                ORDER BY id DESC LIMIT 1
+            """),
+            {"code": code, "country_iso3": country_iso3, "year": year},
+        ).mappings().first()
+        source = "ma.indicator_values"
+        if not row or row["value"] is None:
+            row = db.execute(
+                text("""
+                    SELECT value_raw AS value
+                    FROM collect.raw_data
+                    WHERE indicator_code = :code AND country_iso3 = :country_iso3 AND year = :year
+                    ORDER BY id_raw DESC LIMIT 1
+                """),
+                {"code": code, "country_iso3": country_iso3, "year": year},
+            ).mappings().first()
+            source = "collect.raw_data"
+        if row and row["value"] is not None:
+            observations.append({
+                "indicator_code": code,
+                "description": ind["delta_desc_fr"],
+                "metric_label": ind["metric_label_fr"],
+                "value": float(row["value"]),
+                "source": source,
+            })
+    return observations
+
+
 def _get_pillar_data_snapshot(db: Session, country_iso3: str, pillar_code: str, year: int) -> dict:
     row = db.execute(
         text("""
@@ -308,7 +369,12 @@ def _get_pillar_data_snapshot(db: Session, country_iso3: str, pillar_code: str, 
         """),
         {"country_iso3": country_iso3, "pillar_code": pillar_code, "year": year},
     ).mappings().first()
-    return dict(row) if row else {}
+    snapshot = dict(row) if row else {}
+    if snapshot:
+        poa_observations = _get_poa_observations(db, country_iso3, pillar_code, year)
+        if poa_observations:
+            snapshot["poa_observations"] = poa_observations
+    return snapshot
 
 
 # ── Etape 1 : generation des 9 analyses primaires ────────────────────────────
