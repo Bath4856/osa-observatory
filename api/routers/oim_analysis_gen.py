@@ -7,23 +7,29 @@ analyses primaires (5W1H, SWOT, ZACHMAN, RISQUE, ECONOMIQUE, GOUVERNANCE,
 MULTICRITERE, FAISABILITE, 5_POURQUOI) par pays+pilier, a partir des
 vraies donnees ISA/POA (ma.mv_isa_observed_scores_by_pillar +
 ma.mv_p7i_risk_source) -- condition prealable a tout lancement en masse
-(540 visions/an).
+(540 visions/an). Cf. ADR-011 (roadmap V1-V6, registre de maturite des
+briques scientifiques) -- ce fichier implemente OIM V1.
 
-INTERDEPENDANCE (10eme methode) traitee separement : jamais generee a
-partir des donnees brutes comme les 9 primaires, mais comme une SYNTHESE
-deduite du contenu des 9 autres, une fois PROMUES (validees) -- decision
-de Theo pour eviter d'inventer une relation inter-pilier a partir de
-chiffres seuls.
+INTERDEPENDANCE (10eme methode) traitee separement, en 2 temps (Theo,
+4 aout 2026, suite a l'echec reel du premier test) :
+1. DETECTEUR DE CANDIDATS (deterministe, jamais le LLM) -- compare ce
+   pilier aux 9 autres piliers du MEME pays+annee sur des donnees ISA
+   REELLES (forecast_trend_class, strategic_risk_score partages) --
+   heuristique de premiere generation, a affiner en V6 (cf. ADR-011,
+   POA/GAP encore trop immatures pour une vraie correlation).
+2. Le LLM REDIGE une synthese a partir de ces candidats REELS + du
+   contenu des 9 analyses deja PROMOTED -- jamais a partir de rien.
+Le schema ContentInterdependance est a 4 etats (analysis_status) :
+l'absence de relation demontree est un resultat scientifique valide,
+jamais force par le schema (cf. commit du 4 aout 2026 sur osoa.py).
 
 Reutilise METHOD_MODELS (schema JSON automatique via model_json_schema(),
 pas de prompt ecrit a la main par methode) et VALID_METHODS de osoa.py.
 
-PROMPT EN 5 ETAPES (structure proposee par Theo le 4 aout 2026, suite au
-diagnostic du premier test reel -- le schema JSON seul ne suffit PAS a
-contraindre un LLM, il faut le vocabulaire autorise explicite en langage
-naturel EN PLUS du schema) : donnees -> vocabulaire autorise (extrait
-automatiquement du schema via scan des enum/$defs, jamais ecrit a la
-main) -> schema JSON -> regles imperatives -> reponse JSON seule.
+PROMPT DES 9 PRIMAIRES EN 5 ETAPES (structure proposee par Theo le 4 aout
+2026) : donnees -> vocabulaire autorise (extrait automatiquement du
+schema via scan des enum/$defs, jamais ecrit a la main) -> schema JSON ->
+regles imperatives -> reponse JSON seule.
 """
 import json
 import os
@@ -69,6 +75,10 @@ BOUNDED_SCORE_FIELDS = (
     "strategic_risk_score", "strategic_upside_score", "data_completeness",
 )
 
+# Seuil documente (pas invente par le LLM) pour le detecteur de candidats
+# d'interdependance -- a affiner en V6 quand POA/GAP seront matures.
+INTERDEPENDANCE_RISK_THRESHOLD = 0.4
+
 PRIMARY_ANALYSIS_SYSTEM_PROMPT = """Tu rediges une analyse strategique de type {method} pour un pilier de
 souverainete africaine.
 
@@ -102,26 +112,40 @@ MULTICRITERE_SPECIFIC_RULE = """- Pour le champ "score" de chaque critere, utili
   des pentes/deltas, pas des scores.
 """
 
-INTERDEPENDANCE_SYSTEM_PROMPT = """Tu identifies une eventuelle interdependance entre ce pilier et un autre
-pilier ou indicateur POA, en SYNTHESE des 9 analyses deja validees
-fournies ci-dessous -- jamais a partir de donnees brutes. Cherche une
-relation reelle qui ressort de leur contenu (ex. une cause racine du
-5 Pourquoi qui pointe vers un autre secteur, un risque du RISQUE qui
-depend d'un autre pilier). Si aucune interdependance claire ne ressort,
-reponds avec basis_type="AUCUNE_IDENTIFIEE" et une methodology_note_fr
-expliquant pourquoi.
+INTERDEPENDANCE_SYSTEM_PROMPT = """Tu evalues l'existence eventuelle d'une interdependance entre ce pilier et
+un autre pilier du MEME pays -- tu ne "trouves" pas une relation, tu
+"evalues" si une relation est demontrable. L'absence de relation est un
+resultat scientifique parfaitement valide, a exprimer explicitement --
+n'invente JAMAIS une relation pour satisfaire le schema.
 
-Vocabulaire controle autorise (OBLIGATOIRE) :
+ETAPE 1 -- Candidats identifies par OSA (donnees ISA reelles et
+deterministes -- OSA identifie les candidats possibles, toi tu redige,
+tu n'inventes jamais un candidat qui n'est pas dans cette liste) :
+{candidates}
+
+ETAPE 2 -- Contenu des 9 analyses primaires deja validees pour ce pilier
+(utilise-les pour etayer ou nuancer les candidats de l'ETAPE 1) :
+{analyses_content}
+
+ETAPE 3 -- Vocabulaire controle autorise (OBLIGATOIRE) :
 {vocabulary}
 
-Reponds UNIQUEMENT en JSON valide conforme au schema exact fourni, sans
-aucun texte avant ou apres.
-
-Schema JSON attendu :
+ETAPE 4 -- Schema JSON exact a respecter :
 {schema}
 
-Contenu des 9 analyses deja validees :
-{analyses_content}
+ETAPE 5 -- Regles imperatives :
+- Si la liste de l'ETAPE 1 est vide, ou si aucun candidat n'est
+  suffisamment etaye par l'ETAPE 2, conclus analysis_status =
+  AUCUNE_RELATION_IDENTIFIEE (jamais DONNEES_INSUFFISANTES dans ce cas --
+  l'absence de candidat EST une conclusion, pas un manque de donnees).
+- Utilise DONNEES_INSUFFISANTES uniquement si un candidat existe mais que
+  son etayage dans l'ETAPE 2 est trop faible pour conclure dans un sens
+  ou dans l'autre.
+- Si analysis_status = RELATION_IDENTIFIEE, source_pillar_code ou
+  target_pillar_code DOIT correspondre a un candidat reel de l'ETAPE 1,
+  jamais un pilier absent de cette liste.
+- Reponds UNIQUEMENT en JSON valide conforme au schema, sans aucun texte
+  avant ou apres.
 """
 
 
@@ -146,6 +170,59 @@ def _extract_controlled_vocabulary(schema: dict) -> str:
 
     scan(schema.get("properties", {}))
     return "\n".join(lines) if lines else "(aucun vocabulaire controle specifique pour cette methode)"
+
+
+def _find_interdependance_candidates(db: Session, country_iso3: str, pillar_code: str, year: int) -> list:
+    """Detecteur heuristique de candidats d'interdependance -- DETERMINISTE,
+    jamais le LLM (doctrine actee le 4 aout 2026 : OSA identifie les
+    candidats a partir de donnees reelles, le LLM redige seulement).
+    Compare ce pilier aux 9 AUTRES piliers du MEME pays+annee, sur des
+    donnees ISA REELLES deja existantes (contrairement a POA/GAP, encore
+    vides -- cf. ADR-011, brique Interdependance classee EXPERIMENTATION).
+    Un pilier est candidat s'il partage la meme classe de tendance
+    (forecast_trend_class) OU s'il a lui aussi un risque strategique eleve
+    (>= INTERDEPENDANCE_RISK_THRESHOLD, seuil documente, pas invente par
+    le LLM). Heuristique de premiere generation -- a affiner en V6."""
+    this_pillar = db.execute(
+        text("""
+            SELECT forecast_trend_class, strategic_risk_score
+            FROM ma.mv_p7i_risk_source
+            WHERE country_iso3 = :country_iso3 AND pillar_code = :pillar_code AND year = :year
+        """),
+        {"country_iso3": country_iso3, "pillar_code": pillar_code, "year": year},
+    ).mappings().first()
+    if not this_pillar:
+        return []
+
+    others = db.execute(
+        text("""
+            SELECT r.pillar_code, r.forecast_trend_class, r.strategic_risk_score, s.isa_observed_score
+            FROM ma.mv_p7i_risk_source r
+            JOIN ma.mv_isa_observed_scores_by_pillar s
+                ON s.country_iso3 = r.country_iso3 AND s.pillar_code = r.pillar_code AND s.year = r.year
+            WHERE r.country_iso3 = :country_iso3 AND r.year = :year AND r.pillar_code != :pillar_code
+        """),
+        {"country_iso3": country_iso3, "year": year, "pillar_code": pillar_code},
+    ).mappings().all()
+
+    candidates = []
+    for other in others:
+        reasons = []
+        if this_pillar["forecast_trend_class"] and other["forecast_trend_class"] == this_pillar["forecast_trend_class"]:
+            reasons.append(f"même classe de tendance ({other['forecast_trend_class']})")
+        this_risk = this_pillar["strategic_risk_score"]
+        other_risk = other["strategic_risk_score"]
+        if this_risk is not None and other_risk is not None and this_risk >= INTERDEPENDANCE_RISK_THRESHOLD and other_risk >= INTERDEPENDANCE_RISK_THRESHOLD:
+            reasons.append(f"risque stratégique élevé partagé (seuil {INTERDEPENDANCE_RISK_THRESHOLD})")
+        if reasons:
+            candidates.append({
+                "pillar_code": other["pillar_code"],
+                "isa_observed_score": float(other["isa_observed_score"]) if other["isa_observed_score"] is not None else None,
+                "forecast_trend_class": other["forecast_trend_class"],
+                "strategic_risk_score": float(other["strategic_risk_score"]) if other["strategic_risk_score"] is not None else None,
+                "reasons": reasons,
+            })
+    return candidates
 
 
 def _ai_client_and_provider():
@@ -426,12 +503,17 @@ def promote_analysis_draft(
     return dict(row)
 
 
-# ── Etape 2 : synthese INTERDEPENDANCE, a partir des 9 promues ────────────────
+# ── Etape 2 : synthese INTERDEPENDANCE, a partir des 9 promues + candidats reels ─
 
 @router.post(
     "/visions/{vision_id}/generate-interdependance-draft",
-    summary="Générer le brouillon INTERDEPENDANCE (IA) en synthèse des 9 analyses déjà promues",
-    description="Réservé aux visions dont les 9 méthodes primaires sont déjà PROMOTED -- jamais généré à partir de données brutes.",
+    summary="Générer le brouillon INTERDEPENDANCE (IA) en synthèse des 9 analyses déjà promues + candidats réels",
+    description=(
+        "Réservé aux visions dont les 9 méthodes primaires sont déjà PROMOTED. "
+        "Les candidats sont d'abord identifiés par un détecteur déterministe "
+        "(données ISA réelles, jamais le LLM) -- le LLM ne fait que rédiger "
+        "la synthèse à partir de ces candidats réels."
+    ),
 )
 def generate_interdependance_draft(
     vision_id: int,
@@ -441,7 +523,7 @@ def generate_interdependance_draft(
     affiliate_id = int(payload["sub"])
 
     vision = db.execute(
-        text("SELECT id FROM mg.pillar_strategic_vision WHERE id = :id"),
+        text("SELECT id, country_iso3, pillar_code, year FROM mg.pillar_strategic_vision WHERE id = :id"),
         {"id": vision_id},
     ).mappings().first()
     if not vision:
@@ -464,6 +546,9 @@ def generate_interdependance_draft(
             "en": f"Missing primary methods (must be promoted): {', '.join(missing)}.",
         })
 
+    candidates = _find_interdependance_candidates(db, vision["country_iso3"], vision["pillar_code"], vision["year"])
+    candidates_json = json.dumps(candidates, ensure_ascii=False, default=str)
+
     analyses_content = {r["method"]: r["content"] for r in promoted}
     analyses_json = json.dumps(analyses_content, ensure_ascii=False, default=str)
 
@@ -471,7 +556,12 @@ def generate_interdependance_draft(
     schema = model_cls.model_json_schema()
     schema_json = json.dumps(schema, ensure_ascii=False)
     vocabulary = _extract_controlled_vocabulary(schema)
-    system_prompt = INTERDEPENDANCE_SYSTEM_PROMPT.format(vocabulary=vocabulary, schema=schema_json, analyses_content=analyses_json)
+    system_prompt = INTERDEPENDANCE_SYSTEM_PROMPT.format(
+        candidates=candidates_json,
+        analyses_content=analyses_json,
+        vocabulary=vocabulary,
+        schema=schema_json,
+    )
 
     try:
         parsed = _call_ai(system_prompt, analyses_json)
