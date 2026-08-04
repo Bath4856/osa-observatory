@@ -142,7 +142,7 @@ def _get_pillar_data_snapshot(db: Session, country_iso3: str, pillar_code: str, 
         text("""
             SELECT s.isa_observed_score, s.sovereignty_observed_score, s.vulnerability_observed_score,
                    s.resilience_observed_score, s.data_completeness, s.certification_status,
-                   r.trend_slope, r.volatility, r.strategic_risk_score, r.strategic_upside_score,
+                   r.isa_trend_slope, r.isa_volatility, r.strategic_risk_score, r.strategic_upside_score,
                    r.forecast_trend_class, r.swot_data_status,
                    r.central_isa_delta, r.ambitious_isa_delta, r.stress_isa_delta
             FROM ma.mv_isa_observed_scores_by_pillar s
