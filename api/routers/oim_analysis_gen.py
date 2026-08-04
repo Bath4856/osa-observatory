@@ -118,6 +118,10 @@ un autre pilier du MEME pays -- tu ne "trouves" pas une relation, tu
 resultat scientifique parfaitement valide, a exprimer explicitement --
 n'invente JAMAIS une relation pour satisfaire le schema.
 
+ETAPE 0 -- Contexte fige (a utiliser tel quel, jamais invente) :
+country_iso3 = "{country_iso3}"
+pillar_code (ce pilier) = "{pillar_code}"
+
 ETAPE 1 -- Candidats identifies par OSA (donnees ISA reelles et
 deterministes -- OSA identifie les candidats possibles, toi tu redige,
 tu n'inventes jamais un candidat qui n'est pas dans cette liste) :
@@ -557,6 +561,8 @@ def generate_interdependance_draft(
     schema_json = json.dumps(schema, ensure_ascii=False)
     vocabulary = _extract_controlled_vocabulary(schema)
     system_prompt = INTERDEPENDANCE_SYSTEM_PROMPT.format(
+        country_iso3=vision["country_iso3"],
+        pillar_code=vision["pillar_code"],
         candidates=candidates_json,
         analyses_content=analyses_json,
         vocabulary=vocabulary,
