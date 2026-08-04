@@ -685,36 +685,35 @@ class ContentZachman(BaseModel):
         return self
 
 
-class ContentInterdependance(BaseModel):
-    # 10eme methode -- interdependance entre piliers et/ou indicateurs POA,
-    # exclusivement pays-specifique (jamais un referentiel general, cf.
-    # abandon de rf.poa_pillar_interdependence le 22-23 juillet 2026).
+class InterdependencyRelation(BaseModel):
+    # Contenu d'une relation d'interdependance REELLE -- rempli
+    # uniquement si analysis_status == "RELATION_IDENTIFIEE" (cf.
+    # ContentInterdependance ci-dessous). Restructuration du 4 aout 2026
+    # (decision de Theo) : l'absence de relation est un resultat
+    # scientifique legitime, jamais une erreur a forcer.
     country_iso3: str = Field(..., min_length=3, max_length=3)
-    source_type: str  # PILLAR ou POA
+    source_type: Literal["PILLAR", "POA"]
     source_pillar_code: Optional[str] = None
     source_indicator_codes: Optional[List[str]] = None
     source_primary_indicator_code: Optional[str] = None
-    target_type: str  # PILLAR ou POA
+    target_type: Literal["PILLAR", "POA"]
     target_pillar_code: Optional[str] = None
     target_indicator_codes: Optional[List[str]] = None
     target_primary_indicator_code: Optional[str] = None
-    relation_type: str  # PRIMAIRE ou SECONDAIRE
+    relation_type: Literal["PRIMAIRE", "SECONDAIRE"]
     weight: float = Field(..., gt=0, le=1)
-    basis_type: str  # STATISTICAL_CORRELATION, COMITE_SCIENTIFIQUE_DECISION, AI_PREDICTIVE_ESTIMATE
+    basis_type: Literal["STATISTICAL_CORRELATION", "COMITE_SCIENTIFIQUE_DECISION", "AI_PREDICTIVE_ESTIMATE"]
     lag_years_observed: Optional[int] = Field(None, ge=0)
     known_intervention_requirement_id: Optional[int] = None
     methodology_note_fr: str
 
     @model_validator(mode="after")
-    def _check_all(self):
+    def _check_sides(self):
         self.country_iso3 = self.country_iso3.upper()
-
         for side, side_type, pillar, codes, primary in (
             ("source", self.source_type, self.source_pillar_code, self.source_indicator_codes, self.source_primary_indicator_code),
             ("target", self.target_type, self.target_pillar_code, self.target_indicator_codes, self.target_primary_indicator_code),
         ):
-            if side_type not in ("PILLAR", "POA"):
-                raise ValueError(f"{side}_type doit être PILLAR ou POA")
             if side_type == "PILLAR":
                 if not pillar or codes or primary:
                     raise ValueError(
@@ -729,13 +728,30 @@ class ContentInterdependance(BaseModel):
                     )
                 if primary and primary not in codes:
                     raise ValueError(f"{side}_primary_indicator_code doit être membre de {side}_indicator_codes")
+        return self
 
-        if self.relation_type not in ("PRIMAIRE", "SECONDAIRE"):
-            raise ValueError("relation_type doit être PRIMAIRE ou SECONDAIRE")
-        if self.basis_type not in ("STATISTICAL_CORRELATION", "COMITE_SCIENTIFIQUE_DECISION", "AI_PREDICTIVE_ESTIMATE"):
-            raise ValueError(
-                "basis_type doit être STATISTICAL_CORRELATION, COMITE_SCIENTIFIQUE_DECISION ou AI_PREDICTIVE_ESTIMATE"
-            )
+
+class ContentInterdependance(BaseModel):
+    # 10eme methode -- interdependance entre piliers et/ou indicateurs POA,
+    # exclusivement pays-specifique (jamais un referentiel general, cf.
+    # abandon de rf.poa_pillar_interdependence le 22-23 juillet 2026).
+    # Modele a 4 etats (Theo, 4 aout 2026) : l'absence de relation
+    # demontree est un resultat scientifique valide, distinct d'un manque
+    # de donnees -- jamais force par le schema a produire une relation.
+    analysis_status: Literal[
+        "RELATION_IDENTIFIEE", "AUCUNE_RELATION_IDENTIFIEE",
+        "DONNEES_INSUFFISANTES", "ANALYSE_NON_REALISEE",
+    ]
+    confidence_level: Optional[Literal["LOW", "MODERATE", "HIGH", "VERY_HIGH"]] = None
+    scientific_rationale: str
+    relation: Optional[InterdependencyRelation] = None
+
+    @model_validator(mode="after")
+    def _check_relation_consistency(self):
+        if self.analysis_status == "RELATION_IDENTIFIEE" and self.relation is None:
+            raise ValueError("relation est obligatoire quand analysis_status = RELATION_IDENTIFIEE")
+        if self.analysis_status != "RELATION_IDENTIFIEE" and self.relation is not None:
+            raise ValueError("relation doit être vide quand analysis_status != RELATION_IDENTIFIEE")
         return self
 
 
