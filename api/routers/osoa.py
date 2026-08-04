@@ -598,7 +598,7 @@ class Content5Pourquoi(BaseModel):
 
 class RisqueItem(BaseModel):
     description: str
-    probabilite: Literal["FAIBLE", "MOYENNE", "ELEVEE"]
+    probabilite: Literal["FAIBLE", "MOYEN", "ELEVE"]
     impact: Literal["FAIBLE", "MOYEN", "ELEVE"]
     mitigation: Optional[str] = None
 
