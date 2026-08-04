@@ -619,13 +619,16 @@ class ContentFaisabilite(BaseModel):
     faisabilite_technique: str
     faisabilite_financiere: str
     faisabilite_organisationnelle: str
-    delai_estime_jours: int = Field(..., ge=0)
+    delai_estime_jours_min: int = Field(..., ge=0)
+    delai_estime_jours_max: int = Field(..., ge=0)
     conclusion: str  # FAVORABLE, DEFAVORABLE, CONDITIONNEL
 
     @model_validator(mode="after")
     def _check_conclusion(self):
         if self.conclusion not in ("FAVORABLE", "DEFAVORABLE", "CONDITIONNEL"):
             raise ValueError("conclusion doit être FAVORABLE, DEFAVORABLE ou CONDITIONNEL")
+        if self.delai_estime_jours_max < self.delai_estime_jours_min:
+            raise ValueError("delai_estime_jours_max doit être >= delai_estime_jours_min")
         return self
 
 
@@ -642,11 +645,17 @@ class ContentMulticritere(BaseModel):
 
 
 class ContentEconomique(BaseModel):
-    cout_estime: float = Field(..., ge=0)
+    cout_estime_min: float = Field(..., ge=0)
+    cout_estime_max: float = Field(..., ge=0)
     devise: str = Field(..., min_length=3, max_length=3)
     benefices_attendus_fr: str
     retour_sur_investissement_estime: Optional[str] = None
     hypotheses_fr: Optional[str] = None
+    @model_validator(mode="after")
+    def _check_cout_range(self):
+        if self.cout_estime_max < self.cout_estime_min:
+            raise ValueError("cout_estime_max doit être >= cout_estime_min")
+        return self
 
 
 class ContentGouvernance(BaseModel):
