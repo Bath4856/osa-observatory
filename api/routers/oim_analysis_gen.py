@@ -17,6 +17,13 @@ chiffres seuls.
 
 Reutilise METHOD_MODELS (schema JSON automatique via model_json_schema(),
 pas de prompt ecrit a la main par methode) et VALID_METHODS de osoa.py.
+
+PROMPT EN 5 ETAPES (structure proposee par Theo le 4 aout 2026, suite au
+diagnostic du premier test reel -- le schema JSON seul ne suffit PAS a
+contraindre un LLM, il faut le vocabulaire autorise explicite en langage
+naturel EN PLUS du schema) : donnees -> vocabulaire autorise (extrait
+automatiquement du schema via scan des enum/$defs, jamais ecrit a la
+main) -> schema JSON -> regles imperatives -> reponse JSON seule.
 """
 import json
 import os
@@ -50,24 +57,49 @@ PRIMARY_METHODS = [
     "GOUVERNANCE", "MULTICRITERE", "FAISABILITE", "5_POURQUOI",
 ]
 
+# MULTICRITERE -- ne jamais laisser le LLM inventer une transformation
+# indicateur -> score. Seuls les champs deja bornes [0,1] par construction
+# (des scores/taux reels, jamais une pente ou un delta) sont eligibles
+# comme "score" d'un critere. Chantier futur note par Theo : une vraie
+# couche de transformation normee OSA (indicateur -> transformation ->
+# score) reste a construire -- ceci est un garde-fou minimal en attendant.
+BOUNDED_SCORE_FIELDS = (
+    "isa_observed_score", "sovereignty_observed_score",
+    "vulnerability_observed_score", "resilience_observed_score",
+    "strategic_risk_score", "strategic_upside_score", "data_completeness",
+)
+
 PRIMARY_ANALYSIS_SYSTEM_PROMPT = """Tu rediges une analyse strategique de type {method} pour un pilier de
-souverainete africaine, a partir de donnees ISA reelles et observees
-(jamais inventees). Utilise EXCLUSIVEMENT les donnees fournies -- si une
-donnee manque, reste generique plutot que d'inventer un chiffre precis.
+souverainete africaine.
 
-Regles imperatives :
-- Vocabulaire mesure : jamais d'adjectif absolu ou promotionnel
-  (indeniable, majeur, enorme) -- preferer documente/observe/identifie.
-- Tout champ numerique de cout ou de delai DOIT etre une fourchette
-  (min/max), jamais un chiffre unique presente comme certain.
-- Reponds UNIQUEMENT en JSON valide conforme au schema exact fourni,
-  sans aucun texte avant ou apres.
+ETAPE 1 -- Donnees reelles du pilier (pays+pilier+annee, jamais inventees) :
+{data_snapshot}
 
-Schema JSON attendu :
+ETAPE 2 -- Vocabulaire controle autorise (OBLIGATOIRE -- tu n'as PAS le
+droit d'utiliser une autre valeur que celles listees ici pour les champs
+concernes, aucune exception) :
+{vocabulary}
+
+ETAPE 3 -- Schema JSON exact a respecter :
 {schema}
 
-Donnees reelles du pilier (pays+pilier+annee) :
-{data_snapshot}
+ETAPE 4 -- Regles imperatives :
+- Vocabulaire mesure : jamais d'adjectif absolu ou promotionnel
+  (indeniable, majeur, enorme) -- preferer documente/observe/identifie.
+- Pour tout champ liste en ETAPE 2, utilise EXCLUSIVEMENT l'une des
+  valeurs autorisees, jamais une autre formulation ni une traduction.
+- Utilise EXCLUSIVEMENT les donnees fournies en ETAPE 1 -- si une donnee
+  manque, reste generique plutot que d'inventer un chiffre precis.
+{method_specific_rules}
+ETAPE 5 -- Reponds UNIQUEMENT en JSON valide conforme au schema, sans
+aucun texte avant ou apres.
+"""
+
+MULTICRITERE_SPECIFIC_RULE = """- Pour le champ "score" de chaque critere, utilise EXCLUSIVEMENT l'une
+  des donnees suivantes de l'ETAPE 1, deja bornees [0,1] par construction :
+  {bounded_fields}. Ne JAMAIS utiliser isa_trend_slope, isa_volatility, ni
+  les champs central/ambitious/stress_isa_delta comme "score" -- ce sont
+  des pentes/deltas, pas des scores.
 """
 
 INTERDEPENDANCE_SYSTEM_PROMPT = """Tu identifies une eventuelle interdependance entre ce pilier et un autre
@@ -79,6 +111,9 @@ depend d'un autre pilier). Si aucune interdependance claire ne ressort,
 reponds avec basis_type="AUCUNE_IDENTIFIEE" et une methodology_note_fr
 expliquant pourquoi.
 
+Vocabulaire controle autorise (OBLIGATOIRE) :
+{vocabulary}
+
 Reponds UNIQUEMENT en JSON valide conforme au schema exact fourni, sans
 aucun texte avant ou apres.
 
@@ -88,6 +123,29 @@ Schema JSON attendu :
 Contenu des 9 analyses deja validees :
 {analyses_content}
 """
+
+
+def _extract_controlled_vocabulary(schema: dict) -> str:
+    """Parcourt le schema JSON (properties + $defs pour les sous-modeles
+    imbriques) et liste tout champ "enum" trouve -- une seule source de
+    verite (le modele Pydantic lui-meme), jamais une liste ecrite a la
+    main a synchroniser separement."""
+    defs = schema.get("$defs", {})
+    lines = []
+
+    def scan(properties: dict, prefix: str = ""):
+        for field_name, field_schema in properties.items():
+            enum_values = field_schema.get("enum")
+            if enum_values:
+                lines.append(f"- {prefix}{field_name} : UNIQUEMENT l'une de {enum_values}, aucune autre valeur.")
+            ref = field_schema.get("$ref") or (field_schema.get("items") or {}).get("$ref")
+            if ref:
+                def_name = ref.split("/")[-1]
+                nested = defs.get(def_name, {})
+                scan(nested.get("properties", {}), prefix=f"{field_name}[].")
+
+    scan(schema.get("properties", {}))
+    return "\n".join(lines) if lines else "(aucun vocabulaire controle specifique pour cette methode)"
 
 
 def _ai_client_and_provider():
@@ -142,7 +200,7 @@ def _get_pillar_data_snapshot(db: Session, country_iso3: str, pillar_code: str, 
         text("""
             SELECT s.isa_observed_score, s.sovereignty_observed_score, s.vulnerability_observed_score,
                    s.resilience_observed_score, s.data_completeness, s.certification_status,
-                   r.trend_slope, r.volatility, r.strategic_risk_score, r.strategic_upside_score,
+                   r.isa_trend_slope, r.isa_volatility, r.strategic_risk_score, r.strategic_upside_score,
                    r.forecast_trend_class, r.swot_data_status,
                    r.central_isa_delta, r.ambitious_isa_delta, r.stress_isa_delta
             FROM ma.mv_isa_observed_scores_by_pillar s
@@ -188,8 +246,21 @@ def generate_analysis_drafts(
     errors = []
     for method in PRIMARY_METHODS:
         model_cls = METHOD_MODELS[method]
-        schema_json = json.dumps(model_cls.model_json_schema(), ensure_ascii=False)
-        system_prompt = PRIMARY_ANALYSIS_SYSTEM_PROMPT.format(method=method, schema=schema_json, data_snapshot=snapshot_json)
+        schema = model_cls.model_json_schema()
+        schema_json = json.dumps(schema, ensure_ascii=False)
+        vocabulary = _extract_controlled_vocabulary(schema)
+
+        method_specific_rules = ""
+        if method == "MULTICRITERE":
+            method_specific_rules = MULTICRITERE_SPECIFIC_RULE.format(bounded_fields=", ".join(BOUNDED_SCORE_FIELDS))
+
+        system_prompt = PRIMARY_ANALYSIS_SYSTEM_PROMPT.format(
+            method=method,
+            data_snapshot=snapshot_json,
+            vocabulary=vocabulary,
+            schema=schema_json,
+            method_specific_rules=method_specific_rules,
+        )
 
         try:
             parsed = _call_ai(system_prompt, snapshot_json)
@@ -397,8 +468,10 @@ def generate_interdependance_draft(
     analyses_json = json.dumps(analyses_content, ensure_ascii=False, default=str)
 
     model_cls = METHOD_MODELS["INTERDEPENDANCE"]
-    schema_json = json.dumps(model_cls.model_json_schema(), ensure_ascii=False)
-    system_prompt = INTERDEPENDANCE_SYSTEM_PROMPT.format(schema=schema_json, analyses_content=analyses_json)
+    schema = model_cls.model_json_schema()
+    schema_json = json.dumps(schema, ensure_ascii=False)
+    vocabulary = _extract_controlled_vocabulary(schema)
+    system_prompt = INTERDEPENDANCE_SYSTEM_PROMPT.format(vocabulary=vocabulary, schema=schema_json, analyses_content=analyses_json)
 
     try:
         parsed = _call_ai(system_prompt, analyses_json)
