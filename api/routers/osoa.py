@@ -689,12 +689,25 @@ PILLAR_CODES = ("PECO", "PENV", "PGEO", "PHUM", "PMIL", "PMIN", "PMON", "PNUM", 
 
 
 class ContentStrategicLever(BaseModel):
-    # Levier strategique -- PAS un projet nomme. Un domaine d'intervention
-    # identifie a partir des 9 analyses (surtout 5_POURQUOI/RISQUE), avant
-    # qu'aucun projet concret n'existe. Refonte du 5 aout 2026 (Theo) :
-    # POA -> GAP -> 5 Pourquoi -> Cause racine -> LEVIER -> Projet.
+    # Levier strategique -- PAS un projet nomme. Correctif du 5 aout 2026
+    # (echec reel) : mg.strategic_levers est un CATALOGUE PARTAGE existant
+    # (lever_code, Sprint OIM Lot 1/2, ADR004_strategic_chain_draft.md du
+    # 14 juillet) -- l'IA doit REUTILISER un code existant si pertinent,
+    # jamais l'ecrire directement (vocabulaire partage entre visions,
+    # controle humain obligatoire avant tout ajout au catalogue).
+    reuses_existing_code: bool
+    lever_code: Optional[str] = None
     label_fr: str
+    label_en: str
     description_fr: str
+    description_en: Optional[str] = None
+    relevance_weight: float = Field(..., ge=0, le=1)
+
+    @model_validator(mode="after")
+    def _check_code_consistency(self):
+        if self.reuses_existing_code and not self.lever_code:
+            raise ValueError("lever_code est obligatoire quand reuses_existing_code=True")
+        return self
 
 
 class LeverEffect(BaseModel):
