@@ -407,8 +407,11 @@ ACTIONS_SYSTEM_PROMPT = (
     "Propose entre 3 et 6 actions CONCRETES, chacune formulee comme un vrai nom "
     "de projet (exemple : 'Systeme numerique de tracabilite', pas 'ameliorer la "
     "tracabilite'). Chaque action doit etre directement justifiee par le contenu "
-    "fourni, jamais inventee sans lien. Reponds UNIQUEMENT en JSON valide, sans "
-    "aucun texte avant ou apres, au format exact : "
+    "fourni, jamais inventee sans lien. Le contenu fourni inclut un champ "
+    "levier_strategique (label_fr, description_fr) -- chaque action proposee "
+    "doit repondre directement a ce levier, jamais une action deconnectee de "
+    "lui. Reponds UNIQUEMENT en JSON valide, sans aucun texte avant ou apres, "
+    "au format exact : "
     '{"actions": [{"name_fr": "...", "name_en": "...", "description_fr": "...", "description_en": "..."}]}'
 )
 
@@ -461,23 +464,55 @@ def generate_plan_action_projects(
     db: Session = Depends(get_db),
 ):
     affiliate_id = int(payload["sub"])
-
     deliverable = db.execute(
-        text("SELECT id, deliverable_type, content FROM osoa.strategic_deliverables WHERE id = :id"),
+        text("SELECT id, vision_id, deliverable_type, content FROM osoa.strategic_deliverables WHERE id = :id"),
         {"id": deliverable_id},
     ).mappings().first()
     if not deliverable:
         raise HTTPException(status_code=404, detail={"fr": "Livrable introuvable.", "en": "Deliverable not found."})
-
     if deliverable["deliverable_type"] != "PLAN_ACTION":
         raise HTTPException(status_code=422, detail={
             "fr": "L'explosion en projets n'est disponible que pour PLAN_ACTION.",
             "en": "Project explosion is only available for PLAN_ACTION.",
         })
 
-    provider = _os_actions.environ.get("AI_SUMMARY_PROVIDER", "anthropic").lower()
-    content_json = json.dumps(deliverable["content"], ensure_ascii=False)
+    # Le levier strategique promu devient le point d'entree unique -- garde-fou
+    # ajoute le 5 aout 2026 (Theo) : un seul pivot pour eviter les trous
+    # techniques et incoherences entre les differents generateurs IA.
+    pourquoi_analysis = db.execute(
+        text("""
+            SELECT id FROM osoa.strategic_analyses
+            WHERE vision_id = :vision_id AND method = '5_POURQUOI'
+            ORDER BY created_at DESC LIMIT 1
+        """),
+        {"vision_id": deliverable["vision_id"]},
+    ).mappings().first()
+    lever = None
+    if pourquoi_analysis:
+        lever = db.execute(
+            text("""
+                SELECT sl.lever_code, sl.label_fr, sl.description_fr
+                FROM mg.root_cause_levers rcl
+                JOIN mg.strategic_levers sl ON sl.lever_code = rcl.lever_code
+                WHERE rcl.analysis_id = :analysis_id
+                ORDER BY rcl.relevance_weight DESC LIMIT 1
+            """),
+            {"analysis_id": pourquoi_analysis["id"]},
+        ).mappings().first()
+    if not lever:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucun levier stratégique promu pour cette vision -- générez et promouvez un levier avant de générer les actions.",
+            "en": "No promoted strategic lever for this vision -- generate and promote a lever before generating actions.",
+        })
 
+    provider = _os_actions.environ.get("AI_SUMMARY_PROVIDER", "anthropic").lower()
+    content_with_lever = dict(deliverable["content"])
+    content_with_lever["levier_strategique"] = {
+        "lever_code": lever["lever_code"],
+        "label_fr": lever["label_fr"],
+        "description_fr": lever["description_fr"],
+    }
+    content_json = json.dumps(content_with_lever, ensure_ascii=False)
     try:
         if provider == "anthropic":
             parsed = _generate_actions_anthropic(content_json)
@@ -488,6 +523,7 @@ def generate_plan_action_projects(
                 "fr": f"AI_SUMMARY_PROVIDER='{provider}' invalide.",
                 "en": f"AI_SUMMARY_PROVIDER='{provider}' invalid.",
             })
+        actions = parsed["actions"]
         actions = parsed["actions"]
     except HTTPException:
         raise
