@@ -685,73 +685,68 @@ class ContentZachman(BaseModel):
         return self
 
 
-class InterdependencyRelation(BaseModel):
-    # Contenu d'une relation d'interdependance REELLE -- rempli
-    # uniquement si analysis_status == "RELATION_IDENTIFIEE" (cf.
-    # ContentInterdependance ci-dessous). Restructuration du 4 aout 2026
-    # (decision de Theo) : l'absence de relation est un resultat
-    # scientifique legitime, jamais une erreur a forcer.
-    country_iso3: str = Field(..., min_length=3, max_length=3)
-    source_type: Literal["PILLAR", "POA"]
-    source_pillar_code: Optional[str] = None
-    source_indicator_codes: Optional[List[str]] = None
-    source_primary_indicator_code: Optional[str] = None
-    target_type: Literal["PILLAR", "POA"]
-    target_pillar_code: Optional[str] = None
-    target_indicator_codes: Optional[List[str]] = None
-    target_primary_indicator_code: Optional[str] = None
-    relation_type: Literal["PRIMAIRE", "SECONDAIRE"]
-    weight: float = Field(..., gt=0, le=1)
-    basis_type: Literal["STATISTICAL_CORRELATION", "COMITE_SCIENTIFIQUE_DECISION", "AI_PREDICTIVE_ESTIMATE"]
-    lag_years_observed: Optional[int] = Field(None, ge=0)
-    known_intervention_requirement_id: Optional[int] = None
-    methodology_note_fr: str
+PILLAR_CODES = ("PECO", "PENV", "PGEO", "PHUM", "PMIL", "PMIN", "PMON", "PNUM", "PRES", "PTRA")
 
-    @model_validator(mode="after")
-    def _check_sides(self):
-        self.country_iso3 = self.country_iso3.upper()
-        for side, side_type, pillar, codes, primary in (
-            ("source", self.source_type, self.source_pillar_code, self.source_indicator_codes, self.source_primary_indicator_code),
-            ("target", self.target_type, self.target_pillar_code, self.target_indicator_codes, self.target_primary_indicator_code),
-        ):
-            if side_type == "PILLAR":
-                if not pillar or codes or primary:
-                    raise ValueError(
-                        f"{side}_type=PILLAR exige {side}_pillar_code et exclut "
-                        f"{side}_indicator_codes/{side}_primary_indicator_code"
-                    )
-            else:  # POA
-                if pillar or not codes:
-                    raise ValueError(
-                        f"{side}_type=POA exige {side}_indicator_codes (liste non vide) "
-                        f"et exclut {side}_pillar_code"
-                    )
-                if primary and primary not in codes:
-                    raise ValueError(f"{side}_primary_indicator_code doit être membre de {side}_indicator_codes")
-        return self
+
+class ContentStrategicLever(BaseModel):
+    # Levier strategique -- PAS un projet nomme. Un domaine d'intervention
+    # identifie a partir des 9 analyses (surtout 5_POURQUOI/RISQUE), avant
+    # qu'aucun projet concret n'existe. Refonte du 5 aout 2026 (Theo) :
+    # POA -> GAP -> 5 Pourquoi -> Cause racine -> LEVIER -> Projet.
+    label_fr: str
+    description_fr: str
+
+
+class LeverEffect(BaseModel):
+    target_pillar_code: Literal["PECO", "PENV", "PGEO", "PHUM", "PMIL", "PMIN", "PMON", "PNUM", "PRES", "PTRA"]
+    expected_effect_fr: str
+    confidence: Literal["LOW", "MODERATE", "HIGH", "VERY_HIGH"]
 
 
 class ContentInterdependance(BaseModel):
-    # 10eme methode -- interdependance entre piliers et/ou indicateurs POA,
-    # exclusivement pays-specifique (jamais un referentiel general, cf.
-    # abandon de rf.poa_pillar_interdependence le 22-23 juillet 2026).
-    # Modele a 4 etats (Theo, 4 aout 2026) : l'absence de relation
-    # demontree est un resultat scientifique valide, distinct d'un manque
-    # de donnees -- jamais force par le schema a produire une relation.
-    analysis_status: Literal[
-        "RELATION_IDENTIFIEE", "AUCUNE_RELATION_IDENTIFIEE",
-        "DONNEES_INSUFFISANTES", "ANALYSE_NON_REALISEE",
-    ]
-    confidence_level: Optional[Literal["LOW", "MODERATE", "HIGH", "VERY_HIGH"]] = None
+    # 10eme methode -- NIVEAU VISION. Refonte du 5 aout 2026 (Theo) :
+    # l'interdependance de la Vision n'est PLUS une relation scientifique
+    # entre deux piliers (corr(A,B) -- releve de la recherche, pas d'OIM),
+    # mais l'effet attendu d'un LEVIER STRATEGIQUE (pas encore un projet
+    # nomme) sur d'autres piliers. Distinct du niveau Plan d'action
+    # (ContentInterventionInterdependance ci-dessous, sur un vrai projet).
+    primary_pillar_code: Literal["PECO", "PENV", "PGEO", "PHUM", "PMIL", "PMIN", "PMON", "PNUM", "PRES", "PTRA"]
+    strategic_lever_id: int
+    strategic_lever_label: str
+    expected_effects: List[LeverEffect] = Field(default_factory=list)
     scientific_rationale: str
-    relation: Optional[InterdependencyRelation] = None
 
     @model_validator(mode="after")
-    def _check_relation_consistency(self):
-        if self.analysis_status == "RELATION_IDENTIFIEE" and self.relation is None:
-            raise ValueError("relation est obligatoire quand analysis_status = RELATION_IDENTIFIEE")
-        if self.analysis_status != "RELATION_IDENTIFIEE" and self.relation is not None:
-            raise ValueError("relation doit être vide quand analysis_status != RELATION_IDENTIFIEE")
+    def _check_no_self_effect(self):
+        for effect in self.expected_effects:
+            if effect.target_pillar_code == self.primary_pillar_code:
+                raise ValueError("target_pillar_code d'un effet ne peut pas être le pilier principal lui-même")
+        return self
+
+
+class InterventionEffect(BaseModel):
+    target_pillar_code: Literal["PECO", "PENV", "PGEO", "PHUM", "PMIL", "PMIN", "PMON", "PNUM", "PRES", "PTRA"]
+    effect_fr: str
+    confidence: Literal["LOW", "MODERATE", "HIGH", "VERY_HIGH"]
+
+
+class ContentInterventionInterdependance(BaseModel):
+    # NIVEAU PLAN D'ACTION -- une fois qu'un projet REEL existe
+    # (rf.sovereign_project_catalog), analyse ses effets attendus sur
+    # d'autres piliers. Distinct du niveau Vision ci-dessus (base sur un
+    # levier, avant tout projet nomme). N'appartient PAS aux 10 methodes
+    # d'analyse (pas dans METHOD_MODELS) -- objet de niveau projet.
+    primary_pillar_code: Literal["PECO", "PENV", "PGEO", "PHUM", "PMIL", "PMIN", "PMON", "PNUM", "PRES", "PTRA"]
+    project_code: str
+    project_name: str
+    expected_effects: List[InterventionEffect] = Field(default_factory=list)
+    scientific_rationale: str
+
+    @model_validator(mode="after")
+    def _check_no_self_effect(self):
+        for effect in self.expected_effects:
+            if effect.target_pillar_code == self.primary_pillar_code:
+                raise ValueError("target_pillar_code d'un effet ne peut pas être le pilier principal lui-même")
         return self
 
 
