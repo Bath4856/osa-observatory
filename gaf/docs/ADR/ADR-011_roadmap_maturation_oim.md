@@ -52,7 +52,7 @@ avancement réel — jamais supposé :
 | Brique | Statut au 4 août 2026 |
 | --- | --- |
 | Scores des piliers (ISA) | ✅ Production |
-| POA | 🟡 Construction (taxonomie `rf.poa_phenomenon_domain/type` créée, aucune observation réelle) |
+| POA | 🟡 Construction — **corrigé le 4 août 2026 (addendum ci-dessous)** : le système hérité `rf.poa_catalog` (Sprint 31) a de vraies observations pour certains indicateurs (ex. fuite de valeur minière), distinct de la nouvelle taxonomie `rf.poa_phenomenon_domain/type`, elle sans observation réelle |
 | GAP | 🟡 Prototype (schéma `ma.poa_gap_observation` créé, table vide) |
 | Référentiels métiers (règles) | 🔵 Conception (n'existe nulle part) |
 | Référentiels normatifs (ISO, FAO, UNODC...) | 🔵 Conception (n'existe nulle part) |
@@ -97,3 +97,70 @@ la refonte de l'analyse économique du pilier (ce jour) en "Analyse
   livrables rapidement (OIM V1 opérationnel) tout en renforçant en continu
   leur qualité scientifique, sans jamais anticiper une donnée qui n'existe
   pas encore.
+
+
+---
+
+## Addendum du 4 août 2026 (même jour) — Correction du statut POA et séparation doctrinale ISA/POA
+
+### Correction factuelle
+
+Le tableau de maturité ci-dessus (section 2) classait POA comme sans
+observation réelle. **C'est inexact.** Théo a démontré, via la page
+publique `/poa/CMR` du portail, que `rf.poa_catalog` — le système hérité
+du Sprint 31, distinct de la nouvelle taxonomie `rf.poa_phenomenon_domain/
+type` construite le 27 juillet — porte bien de vraies observations pour
+certains indicateurs (ex. `PMIN_VALUE_LEAKAGE`, fuite de valeur minière
+déclarée, donnée réelle dans `ma.indicator_values`). Erreur venant d'avoir
+traité les deux systèmes POA comme un seul et même ensemble immature.
+
+**Correction technique déjà appliquée** (même session) : le snapshot
+transmis aux 9 méthodes primaires d'OIM V1 (`_get_pillar_data_snapshot`,
+`api/routers/oim_analysis_gen.py`) interroge désormais aussi
+`rf.poa_catalog` + `ma.indicator_values`/`collect.raw_data` pour les
+observations POA réellement disponibles sur le pilier étudié, en plus des
+scores ISA. Testé avec succès sur CMR/PMIN/2024 — la fuite de valeur
+minière apparaît désormais explicitement dans les analyses SWOT/RISQUE
+générées.
+
+### Séparation doctrinale ISA / POA (décision de Théo)
+
+Le prompt des 9 méthodes primaires doit demander d'analyser le pilier en
+utilisant **simultanément** :
+
+- le score observé du pilier (patrimoine ISA) ;
+- les phénomènes observés et les GAP disponibles (patrimoine POA) ;
+- **sans jamais considérer que les POA interviennent dans le calcul du
+  score** — cette dernière précision est jugée essentielle par Théo.
+
+Cette règle établit une séparation doctrinale nette entre les deux
+patrimoines scientifiques :
+
+- **ISA** mesure l'état de la souveraineté à travers les scores des
+  piliers.
+- **POA** observe des phénomènes objectivables, indépendants des calculs
+  ISA.
+- **GAP** quantifie les écarts liés à ces phénomènes observés.
+- **OIM ne cherche pas à expliquer le calcul d'ISA.** Il exploite deux
+  patrimoines scientifiques indépendants — les résultats d'ISA et ceux du
+  moteur POA — pour concevoir des interventions susceptibles, à terme, de
+  modifier les indicateurs réels. Ce n'est qu'après la mise en œuvre de
+  ces interventions et lors d'un nouveau cycle d'observation qu'ISA pourra
+  éventuellement mesurer une évolution du score du pilier.
+
+Cette séparation clarifie définitivement les responsabilités de chaque
+moteur et renforce l'indépendance scientifique de l'architecture OSA —
+cohérent avec le cadre probabiliste déjà acté à l'ADR-010 (POA/AMAR/
+GENECO détectent, OIM/OSOA recommandent, seule une donnée réellement
+collectée à un cycle futur fait évoluer l'ISA).
+
+### Conséquence sur la roadmap V1-V6
+
+OIM V1 n'est donc plus limité au seul score ISA — il intègre déjà, ce
+jour, les observations POA réellement disponibles (système hérité
+`rf.poa_catalog`) en plus du score du pilier. La roadmap V2 (section 1)
+reste pertinente pour la **nouvelle** taxonomie POA/GAP
+(`rf.poa_phenomenon_domain/type` + `ma.poa_gap_observation`), qui
+apportera une couverture bien plus riche et structurée une fois peuplée —
+mais le principe de séparation doctrinale ISA/POA acté ici s'applique dès
+maintenant, aux deux systèmes POA (hérité et nouveau).
