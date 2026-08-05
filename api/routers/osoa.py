@@ -689,12 +689,22 @@ PILLAR_CODES = ("PECO", "PENV", "PGEO", "PHUM", "PMIL", "PMIN", "PMON", "PNUM", 
 
 
 class ContentStrategicLever(BaseModel):
-    # Levier strategique -- PAS un projet nomme. Un domaine d'intervention
-    # identifie a partir des 9 analyses (surtout 5_POURQUOI/RISQUE), avant
-    # qu'aucun projet concret n'existe. Refonte du 5 aout 2026 (Theo) :
-    # POA -> GAP -> 5 Pourquoi -> Cause racine -> LEVIER -> Projet.
+    # Levier strategique -- PAS un projet nomme. Correctif du 5 aout 2026
+    # (echec reel) : mg.strategic_levers est un CATALOGUE PARTAGE existant
+    # (lever_code, Sprint OIM Lot 1/2, ADR004_strategic_chain_draft.md du
+    # 14 juillet) -- l'IA doit REUTILISER un code existant si pertinent,
+    # jamais l'ecrire directement (vocabulaire partage entre visions,
+    # controle humain obligatoire avant tout ajout au catalogue).
+    # lever_code TOUJOURS requis -- soit un code existant reutilise, soit
+    # une proposition de nouveau code (majuscules_underscore, coherent
+    # avec les codes existants comme DIGITALIZATION).
+    lever_code: str
+    reuses_existing_code: bool
     label_fr: str
+    label_en: str
     description_fr: str
+    description_en: Optional[str] = None
+    relevance_weight: float = Field(..., ge=0, le=1)
 
 
 class LeverEffect(BaseModel):
@@ -711,7 +721,7 @@ class ContentInterdependance(BaseModel):
     # nomme) sur d'autres piliers. Distinct du niveau Plan d'action
     # (ContentInterventionInterdependance ci-dessous, sur un vrai projet).
     primary_pillar_code: Literal["PECO", "PENV", "PGEO", "PHUM", "PMIL", "PMIN", "PMON", "PNUM", "PRES", "PTRA"]
-    strategic_lever_id: int
+    strategic_lever_code: str
     strategic_lever_label: str
     expected_effects: List[LeverEffect] = Field(default_factory=list)
     scientific_rationale: str
@@ -1154,9 +1164,12 @@ SUMMARY_SYSTEM_PROMPT = (
     "Formuler la derniere phrase comme une invitation claire (ex. 'Cette "
     "analyse invite a la commande d'une etude de faisabilite et/ou d'un "
     "schema directeur et d'un plan d'actions pour...' plutot que 'La "
-    "strategie consiste a...'). Longueur : 150-200 mots par langue maximum. "
-    "Reponds UNIQUEMENT en JSON valide, sans aucun texte avant ou apres, au "
-    "format exact : "
+    "strategie consiste a...'). Le contenu fourni inclut un champ "
+    "levier_strategique (label_fr, description_fr) -- ancre explicitement "
+    "l'opportunite et l'invitation finale sur ce levier precis, jamais un "
+    "discours generique deconnecte de lui. Longueur : 150-200 mots par "
+    "langue maximum. Reponds UNIQUEMENT en JSON valide, sans aucun texte "
+    "avant ou apres, au format exact : "
     '{"summary_fr": "...", "summary_en": "..."}'
 )
 
@@ -1221,20 +1234,54 @@ def generate_deliverable_summary(
     db: Session = Depends(get_db),
 ):
     deliverable = db.execute(
-        text("SELECT id, deliverable_type, content FROM osoa.strategic_deliverables WHERE id = :id"),
+        text("SELECT id, vision_id, deliverable_type, content FROM osoa.strategic_deliverables WHERE id = :id"),
         {"id": deliverable_id},
     ).mappings().first()
     if not deliverable:
         raise HTTPException(status_code=404, detail={"fr": "Livrable introuvable.", "en": "Deliverable not found."})
-
     if deliverable["deliverable_type"] != "ETUDE_OPPORTUNITE":
         raise HTTPException(status_code=422, detail={
             "fr": "Le résumé exécutif public n'est disponible que pour ETUDE_OPPORTUNITE (= la Vision) -- SCHEMA_DIRECTEUR et PLAN_ACTION restent payants (Go-To-Market).",
             "en": "The public executive summary is only available for ETUDE_OPPORTUNITE (= the Vision) -- SCHEMA_DIRECTEUR and PLAN_ACTION remain paid (Go-To-Market).",
         })
 
+    # Le levier strategique promu devient le point d'entree unique -- garde-fou
+    # ajoute le 5 aout 2026 (Theo) : un seul pivot pour eviter les trous
+    # techniques et incoherences entre les differents generateurs IA.
+    pourquoi_analysis = db.execute(
+        text("""
+            SELECT id FROM osoa.strategic_analyses
+            WHERE vision_id = :vision_id AND method = '5_POURQUOI'
+            ORDER BY created_at DESC LIMIT 1
+        """),
+        {"vision_id": deliverable["vision_id"]},
+    ).mappings().first()
+    lever = None
+    if pourquoi_analysis:
+        lever = db.execute(
+            text("""
+                SELECT sl.lever_code, sl.label_fr, sl.description_fr
+                FROM mg.root_cause_levers rcl
+                JOIN mg.strategic_levers sl ON sl.lever_code = rcl.lever_code
+                WHERE rcl.analysis_id = :analysis_id
+                ORDER BY rcl.relevance_weight DESC LIMIT 1
+            """),
+            {"analysis_id": pourquoi_analysis["id"]},
+        ).mappings().first()
+    if not lever:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucun levier stratégique promu pour cette vision -- générez et promouvez un levier avant de générer le résumé.",
+            "en": "No promoted strategic lever for this vision -- generate and promote a lever before generating the summary.",
+        })
+
     provider = _os_summary.environ.get("AI_SUMMARY_PROVIDER", "anthropic").lower()
-    content_json = json.dumps(deliverable["content"], ensure_ascii=False)
+    content_with_lever = dict(deliverable["content"])
+    content_with_lever["levier_strategique"] = {
+        "lever_code": lever["lever_code"],
+        "label_fr": lever["label_fr"],
+        "description_fr": lever["description_fr"],
+    }
+    content_json = json.dumps(content_with_lever, ensure_ascii=False)
 
     try:
         if provider == "anthropic":

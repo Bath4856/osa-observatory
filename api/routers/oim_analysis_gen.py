@@ -113,6 +113,11 @@ concret (ex. "SNCTM") -- c'est un domaine d'intervention (ex.
 "Renforcement de la tracabilite miniere") qui repond a la cause racine
 identifiee, avant qu'aucun projet precis n'existe.
 
+Catalogue existant de leviers (REUTILISE un de ces codes si pertinent,
+plutot que d'en proposer un nouveau -- vocabulaire partage entre visions,
+jamais duplique) :
+{existing_catalog}
+
 Contenu des 9 analyses deja validees :
 {analyses_content}
 
@@ -122,6 +127,11 @@ Schema JSON attendu :
 Regles imperatives :
 - Le levier doit repondre directement a la cause_racine du 5 Pourquoi
   fourni ci-dessus -- jamais un levier deconnecte de cette analyse.
+- Verifie d'abord le catalogue existant -- reuses_existing_code=true et
+  lever_code = un code EXACT du catalogue si un levier convient deja.
+- Si aucun levier existant ne convient, propose un nouveau lever_code
+  (MAJUSCULES_UNDERSCORE, ex. TRACEABILITY_ENHANCEMENT), avec
+  reuses_existing_code=false.
 - Vocabulaire mesure, jamais promotionnel.
 - Reponds UNIQUEMENT en JSON valide conforme au schema, sans aucun texte
   avant ou apres.
@@ -135,7 +145,7 @@ jamais garantis.
 
 Contexte fige (a utiliser tel quel, jamais invente) :
 primary_pillar_code = "{primary_pillar_code}"
-strategic_lever_id = {strategic_lever_id}
+strategic_lever_code = "{strategic_lever_code}"
 strategic_lever_label = "{strategic_lever_label}"
 strategic_lever_description = "{strategic_lever_description}"
 
@@ -545,12 +555,18 @@ def promote_analysis_draft(
     return dict(row)
 
 
-# ── Etape 2a : levier strategique (niveau Vision, avant tout projet) ─────────
+# ── Etape 2a : levier strategique (catalogue partage mg.strategic_levers) ────
+# Correctif du 5 aout 2026 (echec reel) : mg.strategic_levers est le
+# CATALOGUE PARTAGE existant (Sprint OIM Lot 1/2) -- l'IA ne genere
+# jamais de contenu libre par vision dans cette table, seulement une
+# PROPOSITION (mg.strategic_lever_proposals), qui a la promotion cree le
+# lever_code au catalogue s'il est nouveau, puis lie l'analyse 5_POURQUOI
+# via mg.root_cause_levers.
 
 @router.post(
     "/visions/{vision_id}/generate-strategic-lever-draft",
-    summary="Générer un levier stratégique (IA) à partir des 9 analyses déjà promues",
-    description="Réservé aux visions dont les 9 méthodes primaires sont déjà PROMOTED. Le levier n'est pas un projet nommé -- un domaine d'intervention dérivé de la cause racine.",
+    summary="Générer une proposition de levier stratégique (IA) à partir des 9 analyses déjà promues",
+    description="Réutilise le catalogue partagé (mg.strategic_levers) si pertinent, propose un nouveau code sinon. Réservé aux visions dont les 9 méthodes primaires sont déjà PROMOTED.",
 )
 def generate_strategic_lever_draft(
     vision_id: int,
@@ -583,13 +599,19 @@ def generate_strategic_lever_draft(
             "en": f"Missing primary methods (must be promoted): {', '.join(missing)}.",
         })
 
+    pourquoi_analysis = next(r for r in promoted if r["method"] == "5_POURQUOI")
+
     analyses_content = {r["method"]: r["content"] for r in promoted}
     analyses_json = json.dumps(analyses_content, ensure_ascii=False, default=str)
-    source_analysis_ids = [r["id"] for r in promoted]
+
+    catalog_rows = db.execute(
+        text("SELECT lever_code, label_fr, description_fr FROM mg.strategic_levers WHERE is_active = true"),
+    ).mappings().all()
+    catalog_json = json.dumps([dict(r) for r in catalog_rows], ensure_ascii=False)
 
     schema = ContentStrategicLever.model_json_schema()
     schema_json = json.dumps(schema, ensure_ascii=False)
-    system_prompt = LEVER_SYSTEM_PROMPT.format(analyses_content=analyses_json, schema=schema_json)
+    system_prompt = LEVER_SYSTEM_PROMPT.format(existing_catalog=catalog_json, analyses_content=analyses_json, schema=schema_json)
 
     try:
         parsed = _call_ai(system_prompt, analyses_json)
@@ -604,15 +626,25 @@ def generate_strategic_lever_draft(
 
     row = db.execute(
         text("""
-            INSERT INTO mg.strategic_levers (vision_id, label_fr, description_fr, source_analysis_ids, created_by)
-            VALUES (:vision_id, :label_fr, :description_fr, :source_analysis_ids, :created_by)
-            RETURNING id, vision_id, label_fr, description_fr, source_analysis_ids, status, created_at::text
+            INSERT INTO mg.strategic_lever_proposals
+                (vision_id, source_analysis_id, proposed_lever_code, reuses_existing_code,
+                 label_fr, label_en, description_fr, description_en, relevance_weight, created_by)
+            VALUES
+                (:vision_id, :source_analysis_id, :proposed_lever_code, :reuses_existing_code,
+                 :label_fr, :label_en, :description_fr, :description_en, :relevance_weight, :created_by)
+            RETURNING id, vision_id, source_analysis_id, proposed_lever_code, reuses_existing_code,
+                      label_fr, label_en, description_fr, description_en, relevance_weight, status, created_at::text
         """),
         {
             "vision_id": vision_id,
+            "source_analysis_id": pourquoi_analysis["id"],
+            "proposed_lever_code": validated.lever_code,
+            "reuses_existing_code": validated.reuses_existing_code,
             "label_fr": validated.label_fr,
+            "label_en": validated.label_en,
             "description_fr": validated.description_fr,
-            "source_analysis_ids": source_analysis_ids,
+            "description_en": validated.description_en,
+            "relevance_weight": validated.relevance_weight,
             "created_by": affiliate_id,
         },
     ).mappings().first()
@@ -621,12 +653,13 @@ def generate_strategic_lever_draft(
     return dict(row)
 
 
-@router.get("/visions/{vision_id}/strategic-levers", summary="Lister les leviers stratégiques d'une vision")
+@router.get("/visions/{vision_id}/strategic-levers", summary="Lister les propositions de levier d'une vision")
 def list_strategic_levers(vision_id: int, db: Session = Depends(get_db)):
     rows = db.execute(
         text("""
-            SELECT id, vision_id, label_fr, description_fr, source_analysis_ids, status, created_at::text
-            FROM mg.strategic_levers WHERE vision_id = :vision_id ORDER BY created_at
+            SELECT id, vision_id, source_analysis_id, proposed_lever_code, reuses_existing_code,
+                   label_fr, label_en, description_fr, description_en, relevance_weight, status, created_at::text
+            FROM mg.strategic_lever_proposals WHERE vision_id = :vision_id ORDER BY created_at
         """),
         {"vision_id": vision_id},
     ).mappings().all()
@@ -635,38 +668,46 @@ def list_strategic_levers(vision_id: int, db: Session = Depends(get_db)):
 
 class StrategicLeverValidate(BaseModel):
     label_fr: Optional[str] = None
+    label_en: Optional[str] = None
     description_fr: Optional[str] = None
+    description_en: Optional[str] = None
+    proposed_lever_code: Optional[str] = None
+    relevance_weight: Optional[float] = None
 
 
-@router.post("/strategic-levers/{lever_id}/validate", summary="Valider (et éventuellement corriger) un levier stratégique")
+@router.post("/strategic-lever-proposals/{proposal_id}/validate", summary="Valider (et éventuellement corriger) une proposition de levier")
 def validate_strategic_lever(
-    lever_id: int,
+    proposal_id: int,
     data: StrategicLeverValidate,
     payload: dict = Depends(get_current_affiliate),
     db: Session = Depends(get_db),
 ):
-    lever = db.execute(
-        text("SELECT id FROM mg.strategic_levers WHERE id = :id"),
-        {"id": lever_id},
+    proposal = db.execute(
+        text("SELECT id, status FROM mg.strategic_lever_proposals WHERE id = :id"),
+        {"id": proposal_id},
     ).mappings().first()
-    if not lever:
-        raise HTTPException(status_code=404, detail={"fr": "Levier introuvable.", "en": "Lever not found."})
+    if not proposal:
+        raise HTTPException(status_code=404, detail={"fr": "Proposition introuvable.", "en": "Proposal not found."})
+    if proposal["status"] == "PROMOTED":
+        raise HTTPException(status_code=409, detail={
+            "fr": "Cette proposition a déjà été promue.",
+            "en": "This proposal has already been promoted.",
+        })
 
-    updates = {"status": "HUMAN_VALIDATED"}
+    updates = {"id": proposal_id}
     set_clauses = ["status = 'HUMAN_VALIDATED'", "updated_at = NOW()"]
-    if data.label_fr is not None:
-        set_clauses.append("label_fr = :label_fr")
-        updates["label_fr"] = data.label_fr
-    if data.description_fr is not None:
-        set_clauses.append("description_fr = :description_fr")
-        updates["description_fr"] = data.description_fr
-    updates["id"] = lever_id
+    for field in ("label_fr", "label_en", "description_fr", "description_en", "proposed_lever_code", "relevance_weight"):
+        value = getattr(data, field)
+        if value is not None:
+            set_clauses.append(f"{field} = :{field}")
+            updates[field] = value
 
     row = db.execute(
         text(f"""
-            UPDATE mg.strategic_levers SET {', '.join(set_clauses)}
+            UPDATE mg.strategic_lever_proposals SET {', '.join(set_clauses)}
             WHERE id = :id
-            RETURNING id, label_fr, description_fr, status
+            RETURNING id, proposed_lever_code, reuses_existing_code, label_fr, label_en,
+                      description_fr, description_en, relevance_weight, status
         """),
         updates,
     ).mappings().first()
@@ -674,12 +715,98 @@ def validate_strategic_lever(
     return dict(row)
 
 
-# ── Etape 2b : interdependance niveau VISION, basee sur le levier valide ─────
+@router.post(
+    "/strategic-lever-proposals/{proposal_id}/promote",
+    summary="Promouvoir une proposition de levier validée -- crée le lever_code au catalogue si nouveau, lie l'analyse via mg.root_cause_levers",
+)
+def promote_strategic_lever_proposal(
+    proposal_id: int,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    proposal = db.execute(
+        text("""
+            SELECT id, source_analysis_id, proposed_lever_code, reuses_existing_code,
+                   label_fr, label_en, description_fr, description_en, relevance_weight, status
+            FROM mg.strategic_lever_proposals WHERE id = :id
+        """),
+        {"id": proposal_id},
+    ).mappings().first()
+    if not proposal:
+        raise HTTPException(status_code=404, detail={"fr": "Proposition introuvable.", "en": "Proposal not found."})
+    if proposal["status"] != "HUMAN_VALIDATED":
+        raise HTTPException(status_code=422, detail={
+            "fr": "Seule une proposition HUMAN_VALIDATED peut être promue.",
+            "en": "Only a HUMAN_VALIDATED proposal can be promoted.",
+        })
+
+    lever_code = proposal["proposed_lever_code"]
+    existing = db.execute(
+        text("SELECT lever_code FROM mg.strategic_levers WHERE lever_code = :code"),
+        {"code": lever_code},
+    ).mappings().first()
+
+    if proposal["reuses_existing_code"]:
+        if not existing:
+            raise HTTPException(status_code=422, detail={
+                "fr": f"lever_code '{lever_code}' marqué comme réutilisé mais introuvable dans le catalogue.",
+                "en": f"lever_code '{lever_code}' marked as reused but not found in catalog.",
+            })
+    else:
+        if not existing:
+            db.execute(
+                text("""
+                    INSERT INTO mg.strategic_levers (lever_code, label_fr, label_en, description_fr, description_en)
+                    VALUES (:lever_code, :label_fr, :label_en, :description_fr, :description_en)
+                """),
+                {
+                    "lever_code": lever_code,
+                    "label_fr": proposal["label_fr"],
+                    "label_en": proposal["label_en"],
+                    "description_fr": proposal["description_fr"],
+                    "description_en": proposal["description_en"],
+                },
+            )
+
+    try:
+        db.execute(
+            text("""
+                INSERT INTO mg.root_cause_levers (analysis_id, lever_code, relevance_weight)
+                VALUES (:analysis_id, :lever_code, :relevance_weight)
+                ON CONFLICT (analysis_id, lever_code) DO UPDATE SET relevance_weight = EXCLUDED.relevance_weight
+            """),
+            {
+                "analysis_id": proposal["source_analysis_id"],
+                "lever_code": lever_code,
+                "relevance_weight": proposal["relevance_weight"],
+            },
+        )
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=409, detail={
+            "fr": f"Erreur à la liaison cause racine <-> levier : {e}",
+            "en": f"Error linking root cause to lever: {e}",
+        })
+
+    row = db.execute(
+        text("""
+            UPDATE mg.strategic_lever_proposals SET status = 'PROMOTED', updated_at = NOW()
+            WHERE id = :id
+            RETURNING id, proposed_lever_code, status
+        """),
+        {"id": proposal_id},
+    ).mappings().first()
+    db.commit()
+
+    return dict(row)
+
+
+# ── Etape 2b : interdependance niveau VISION, basee sur le levier promu ──────
 
 @router.post(
     "/visions/{vision_id}/generate-interdependance-draft",
-    summary="Générer le brouillon INTERDEPENDANCE niveau Vision (IA), à partir du levier stratégique validé",
-    description="Réservé aux visions dont un levier stratégique est déjà HUMAN_VALIDATED. Évalue les effets possibles du levier sur d'autres piliers -- jamais une relation directe entre deux piliers.",
+    summary="Générer le brouillon INTERDEPENDANCE niveau Vision (IA), à partir du levier stratégique promu",
+    description="Réservé aux visions dont un levier stratégique est déjà PROMOTED (lié via mg.root_cause_levers). Évalue les effets possibles du levier sur d'autres piliers -- jamais une relation directe entre deux piliers.",
 )
 def generate_interdependance_draft(
     vision_id: int,
@@ -695,18 +822,34 @@ def generate_interdependance_draft(
     if not vision:
         raise HTTPException(status_code=404, detail={"fr": "Vision introuvable.", "en": "Vision not found."})
 
-    lever = db.execute(
+    pourquoi_analysis = db.execute(
         text("""
-            SELECT id, label_fr, description_fr FROM mg.strategic_levers
-            WHERE vision_id = :vision_id AND status = 'HUMAN_VALIDATED'
+            SELECT id FROM osoa.strategic_analyses
+            WHERE vision_id = :vision_id AND method = '5_POURQUOI'
             ORDER BY created_at DESC LIMIT 1
         """),
         {"vision_id": vision_id},
     ).mappings().first()
+    if not pourquoi_analysis:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucune analyse 5_POURQUOI promue pour cette vision.",
+            "en": "No promoted 5_POURQUOI analysis for this vision.",
+        })
+
+    lever = db.execute(
+        text("""
+            SELECT sl.lever_code, sl.label_fr, sl.description_fr
+            FROM mg.root_cause_levers rcl
+            JOIN mg.strategic_levers sl ON sl.lever_code = rcl.lever_code
+            WHERE rcl.analysis_id = :analysis_id
+            ORDER BY rcl.relevance_weight DESC LIMIT 1
+        """),
+        {"analysis_id": pourquoi_analysis["id"]},
+    ).mappings().first()
     if not lever:
         raise HTTPException(status_code=422, detail={
-            "fr": "Aucun levier stratégique validé (HUMAN_VALIDATED) pour cette vision -- générez et validez un levier d'abord.",
-            "en": "No validated (HUMAN_VALIDATED) strategic lever for this vision -- generate and validate a lever first.",
+            "fr": "Aucun levier stratégique promu (mg.root_cause_levers) pour cette vision -- générez et promouvez un levier d'abord.",
+            "en": "No promoted strategic lever (mg.root_cause_levers) for this vision -- generate and promote a lever first.",
         })
 
     promoted = db.execute(
@@ -725,7 +868,7 @@ def generate_interdependance_draft(
     vocabulary = _extract_controlled_vocabulary(schema)
     system_prompt = VISION_INTERDEPENDANCE_SYSTEM_PROMPT.format(
         primary_pillar_code=vision["pillar_code"],
-        strategic_lever_id=lever["id"],
+        strategic_lever_code=lever["lever_code"],
         strategic_lever_label=lever["label_fr"],
         strategic_lever_description=lever["description_fr"],
         analyses_content=analyses_json,
