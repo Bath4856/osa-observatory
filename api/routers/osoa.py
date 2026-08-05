@@ -721,7 +721,7 @@ class ContentInterdependance(BaseModel):
     # nomme) sur d'autres piliers. Distinct du niveau Plan d'action
     # (ContentInterventionInterdependance ci-dessous, sur un vrai projet).
     primary_pillar_code: Literal["PECO", "PENV", "PGEO", "PHUM", "PMIL", "PMIN", "PMON", "PNUM", "PRES", "PTRA"]
-    strategic_lever_id: int
+    strategic_lever_code: str
     strategic_lever_label: str
     expected_effects: List[LeverEffect] = Field(default_factory=list)
     scientific_rationale: str
