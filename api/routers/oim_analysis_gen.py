@@ -100,6 +100,11 @@ ETAPE 4 -- Regles imperatives :
   valeurs autorisees, jamais une autre formulation ni une traduction.
 - Utilise EXCLUSIVEMENT les donnees fournies en ETAPE 1 -- si une donnee
   manque, reste generique plutot que d'inventer un chiffre precis.
+- Si poa_observations est present dans l'ETAPE 1, CE SONT DE VRAIS
+  PHENOMENES OBSERVES independants du score ISA (ex. fuite de valeur
+  miniere, signal de contrebande) -- prends-les serieusement en compte,
+  surtout pour les forces/faiblesses/risques/causes racines, ne les
+  ignore jamais s'ils sont presents.
 {method_specific_rules}
 ETAPE 5 -- Reponds UNIQUEMENT en JSON valide conforme au schema, sans
 aucun texte avant ou apres.
@@ -114,9 +119,14 @@ MULTICRITERE_SPECIFIC_RULE = """- Pour le champ "score" de chaque critere, utili
 
 INTERDEPENDANCE_SYSTEM_PROMPT = """Tu evalues l'existence eventuelle d'une interdependance entre ce pilier et
 un autre pilier du MEME pays -- tu ne "trouves" pas une relation, tu
-"evalues" si une relation est demontrable. L'absence de relation est un
-resultat scientifique parfaitement valide, a exprimer explicitement --
-n'invente JAMAIS une relation pour satisfaire le schema.
+"evalues" si une relation CAUSALE est demontrable a partir des preuves
+disponibles. L'absence de relation ou de preuve suffisante est un
+resultat scientifique parfaitement valide -- n'invente JAMAIS une
+relation pour satisfaire le schema.
+
+ETAPE 0 -- Contexte fige (a utiliser tel quel, jamais invente) :
+country_iso3 = "{country_iso3}"
+pillar_code (ce pilier) = "{pillar_code}"
 
 ETAPE 1 -- Candidats identifies par OSA (donnees ISA reelles et
 deterministes -- OSA identifie les candidats possibles, toi tu redige,
@@ -133,16 +143,32 @@ ETAPE 3 -- Vocabulaire controle autorise (OBLIGATOIRE) :
 ETAPE 4 -- Schema JSON exact a respecter :
 {schema}
 
-ETAPE 5 -- Regles imperatives :
-- Si la liste de l'ETAPE 1 est vide, ou si aucun candidat n'est
-  suffisamment etaye par l'ETAPE 2, conclus analysis_status =
-  AUCUNE_RELATION_IDENTIFIEE (jamais DONNEES_INSUFFISANTES dans ce cas --
-  l'absence de candidat EST une conclusion, pas un manque de donnees).
-- Utilise DONNEES_INSUFFISANTES uniquement si un candidat existe mais que
-  son etayage dans l'ETAPE 2 est trop faible pour conclure dans un sens
-  ou dans l'autre.
-- Si analysis_status = RELATION_IDENTIFIEE, source_pillar_code ou
-  target_pillar_code DOIT correspondre a un candidat reel de l'ETAPE 1,
+ETAPE 5 -- Regles imperatives, DISTINCTION CORRELATION / CAUSALITE
+(critique -- decision de Theo du 4 aout 2026, suite a un test reel ou le
+moteur a conclu a tort une relation a partir d'une simple co-occurrence
+de faiblesse) :
+- Une CORRELATION D'ETAT (deux piliers presentant simultanement un
+  risque eleve ou une tendance similaire) N'EST PAS une preuve de
+  relation causale. Elle demontre seulement que deux piliers sont
+  fragiles en meme temps -- jamais que l'un influence l'autre. Les
+  candidats de l'ETAPE 1 sont des candidats a INVESTIGUER, jamais des
+  relations demontrees.
+- basis_type=AI_PREDICTIVE_ESTIMATE signale PAR CONSTRUCTION une preuve
+  faible (aucune correlation statistique reelle calculee, aucun POA/GAP
+  commun disponible, aucune decision du Comite Scientifique). Dans ce
+  cas, analysis_status DOIT presque toujours etre DONNEES_INSUFFISANTES,
+  JAMAIS RELATION_IDENTIFIEE -- sauf si le contenu des 9 analyses
+  (ETAPE 2) revele un vrai MECANISME causal explicite et argumente
+  (ex. "la rupture de tracabilite du pilier X oblige le recours au
+  systeme numerique du pilier Y"), jamais une simple co-occurrence de
+  faiblesse ou de risque.
+- Aujourd'hui, les referentiels POA et GAP ne sont pas encore peuples
+  (cf. doctrine OSA, roadmap de maturation des briques scientifiques).
+  DONNEES_INSUFFISANTES est donc le resultat ATTENDU et scientifiquement
+  le plus honnete dans la grande majorite des cas -- ce n'est jamais un
+  echec de l'analyse, c'est une conclusion scientifique valide en soi.
+- Si analysis_status = RELATION_IDENTIFIEE malgre tout, source_pillar_code
+  ou target_pillar_code DOIT correspondre a un candidat reel de l'ETAPE 1,
   jamais un pilier absent de cette liste.
 - Reponds UNIQUEMENT en JSON valide conforme au schema, sans aucun texte
   avant ou apres.
@@ -272,6 +298,62 @@ def _call_ai(system_prompt: str, user_content: str) -> dict:
         })
 
 
+def _get_poa_observations(db: Session, country_iso3: str, pillar_code: str, year: int) -> list:
+    """Recupere les vraies observations POA (Phenomenes Observables
+    Autonomes) pour ce pilier -- donnees REELLES et independantes du
+    score ISA, qui influencent directement le pilier meme si elles
+    n'entrent pas dans son calcul (ex. fuite de valeur miniere, signal
+    de contrebande). Correction du 4 aout 2026 (Theo) : cette source
+    avait ete omise a tort du snapshot, en confondant rf.poa_catalog
+    (donnees reelles observees, existe depuis Sprint 31) avec la
+    nouvelle taxonomie ma.poa_gap_observation (encore vide, distincte).
+    Deux sources possibles selon l'indicateur -- meme logique que
+    GET /api/v2/sovereignty/poa-catalog."""
+    poa_indicators = db.execute(
+        text("""
+            SELECT p.indicator_code, p.delta_desc_fr, p.metric_label_fr
+            FROM rf.poa_catalog p
+            JOIN rf.indicators i ON i.code = p.indicator_code
+            WHERE i.pillar_code = :pillar_code
+        """),
+        {"pillar_code": pillar_code},
+    ).mappings().all()
+
+    observations = []
+    for ind in poa_indicators:
+        code = ind["indicator_code"]
+        row = db.execute(
+            text("""
+                SELECT processed_value AS value
+                FROM ma.indicator_values
+                WHERE indicator_code = :code AND country_iso3 = :country_iso3 AND year = :year AND layer_id = 3
+                ORDER BY id DESC LIMIT 1
+            """),
+            {"code": code, "country_iso3": country_iso3, "year": year},
+        ).mappings().first()
+        source = "ma.indicator_values"
+        if not row or row["value"] is None:
+            row = db.execute(
+                text("""
+                    SELECT value_raw AS value
+                    FROM collect.raw_data
+                    WHERE indicator_code = :code AND country_iso3 = :country_iso3 AND year = :year
+                    ORDER BY id_raw DESC LIMIT 1
+                """),
+                {"code": code, "country_iso3": country_iso3, "year": year},
+            ).mappings().first()
+            source = "collect.raw_data"
+        if row and row["value"] is not None:
+            observations.append({
+                "indicator_code": code,
+                "description": ind["delta_desc_fr"],
+                "metric_label": ind["metric_label_fr"],
+                "value": float(row["value"]),
+                "source": source,
+            })
+    return observations
+
+
 def _get_pillar_data_snapshot(db: Session, country_iso3: str, pillar_code: str, year: int) -> dict:
     row = db.execute(
         text("""
@@ -287,7 +369,12 @@ def _get_pillar_data_snapshot(db: Session, country_iso3: str, pillar_code: str, 
         """),
         {"country_iso3": country_iso3, "pillar_code": pillar_code, "year": year},
     ).mappings().first()
-    return dict(row) if row else {}
+    snapshot = dict(row) if row else {}
+    if snapshot:
+        poa_observations = _get_poa_observations(db, country_iso3, pillar_code, year)
+        if poa_observations:
+            snapshot["poa_observations"] = poa_observations
+    return snapshot
 
 
 # ── Etape 1 : generation des 9 analyses primaires ────────────────────────────
@@ -557,6 +644,8 @@ def generate_interdependance_draft(
     schema_json = json.dumps(schema, ensure_ascii=False)
     vocabulary = _extract_controlled_vocabulary(schema)
     system_prompt = INTERDEPENDANCE_SYSTEM_PROMPT.format(
+        country_iso3=vision["country_iso3"],
+        pillar_code=vision["pillar_code"],
         candidates=candidates_json,
         analyses_content=analyses_json,
         vocabulary=vocabulary,
