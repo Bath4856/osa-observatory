@@ -2,34 +2,31 @@
 OSA Observatory -- OIM, generation automatique des analyses de vision
 api/routers/oim_analysis_gen.py
 
-Chantier prioritaire du 4 aout 2026 : automatiser la generation des 9
-analyses primaires (5W1H, SWOT, ZACHMAN, RISQUE, ECONOMIQUE, GOUVERNANCE,
-MULTICRITERE, FAISABILITE, 5_POURQUOI) par pays+pilier, a partir des
-vraies donnees ISA/POA (ma.mv_isa_observed_scores_by_pillar +
-ma.mv_p7i_risk_source) -- condition prealable a tout lancement en masse
-(540 visions/an). Cf. ADR-011 (roadmap V1-V6, registre de maturite des
-briques scientifiques) -- ce fichier implemente OIM V1.
+Chantier du 4-5 aout 2026, en 2 sessions :
+(A) Automatisation des 9 analyses primaires par pays+pilier (OIM V1,
+    valide sur NAM/PTRA/2024 et CMR/PMIN/2024) + snapshot enrichi des
+    vraies observations POA (rf.poa_catalog).
+(B) REFONTE DE L'INTERDEPENDANCE EN 2 NIVEAUX (5 aout, matin) -- Theo a
+    demontre que l'interdependance N'EST PAS une relation scientifique
+    entre deux piliers (corr(A,B) -- releve de la recherche, pas d'OIM).
+    OIM repond a une question operationnelle : "si on agit sur ce levier
+    / ce projet, quels autres piliers en beneficient ?"
+    Chaine complete : POA -> GAP -> 5 Pourquoi -> Cause racine ->
+    LEVIER STRATEGIQUE -> Interdependance des leviers (niveau VISION,
+    avant tout projet) -> PROJET -> Interdependance des interventions
+    (niveau PLAN D'ACTION, sur un projet reel).
+    L'ancien detecteur de candidats par correlation de risque partage
+    (base sur ma.mv_p7i_risk_source) est retire -- obsolete sous cette
+    doctrine.
 
-INTERDEPENDANCE (10eme methode) traitee separement, en 2 temps (Theo,
-4 aout 2026, suite a l'echec reel du premier test) :
-1. DETECTEUR DE CANDIDATS (deterministe, jamais le LLM) -- compare ce
-   pilier aux 9 autres piliers du MEME pays+annee sur des donnees ISA
-   REELLES (forecast_trend_class, strategic_risk_score partages) --
-   heuristique de premiere generation, a affiner en V6 (cf. ADR-011,
-   POA/GAP encore trop immatures pour une vraie correlation).
-2. Le LLM REDIGE une synthese a partir de ces candidats REELS + du
-   contenu des 9 analyses deja PROMOTED -- jamais a partir de rien.
-Le schema ContentInterdependance est a 4 etats (analysis_status) :
-l'absence de relation demontree est un resultat scientifique valide,
-jamais force par le schema (cf. commit du 4 aout 2026 sur osoa.py).
+Reutilise METHOD_MODELS (schema JSON automatique via model_json_schema())
+et VALID_METHODS de osoa.py pour les 9 methodes primaires + le levier.
+Le niveau Plan d'action (ContentInterventionInterdependance) n'appartient
+PAS aux 10 methodes -- objet de niveau projet, hors METHOD_MODELS.
 
-Reutilise METHOD_MODELS (schema JSON automatique via model_json_schema(),
-pas de prompt ecrit a la main par methode) et VALID_METHODS de osoa.py.
-
-PROMPT DES 9 PRIMAIRES EN 5 ETAPES (structure proposee par Theo le 4 aout
-2026) : donnees -> vocabulaire autorise (extrait automatiquement du
-schema via scan des enum/$defs, jamais ecrit a la main) -> schema JSON ->
-regles imperatives -> reponse JSON seule.
+PROMPT DES 9 PRIMAIRES EN 5 ETAPES (structure de Theo, 4 aout 2026) :
+donnees -> vocabulaire autorise (extrait automatiquement du schema) ->
+schema JSON -> regles imperatives -> reponse JSON seule.
 """
 import json
 import os
@@ -41,7 +38,9 @@ from pydantic import BaseModel
 
 from api.db import get_db
 from api.routers.auth_affiliates import get_current_affiliate
-from api.routers.osoa import METHOD_MODELS
+from api.routers.osoa import (
+    METHOD_MODELS, ContentStrategicLever, ContentInterventionInterdependance,
+)
 
 try:
     import anthropic as _anthropic_sdk_gen
@@ -63,21 +62,11 @@ PRIMARY_METHODS = [
     "GOUVERNANCE", "MULTICRITERE", "FAISABILITE", "5_POURQUOI",
 ]
 
-# MULTICRITERE -- ne jamais laisser le LLM inventer une transformation
-# indicateur -> score. Seuls les champs deja bornes [0,1] par construction
-# (des scores/taux reels, jamais une pente ou un delta) sont eligibles
-# comme "score" d'un critere. Chantier futur note par Theo : une vraie
-# couche de transformation normee OSA (indicateur -> transformation ->
-# score) reste a construire -- ceci est un garde-fou minimal en attendant.
 BOUNDED_SCORE_FIELDS = (
     "isa_observed_score", "sovereignty_observed_score",
     "vulnerability_observed_score", "resilience_observed_score",
     "strategic_risk_score", "strategic_upside_score", "data_completeness",
 )
-
-# Seuil documente (pas invente par le LLM) pour le detecteur de candidats
-# d'interdependance -- a affiner en V6 quand POA/GAP seront matures.
-INTERDEPENDANCE_RISK_THRESHOLD = 0.4
 
 PRIMARY_ANALYSIS_SYSTEM_PROMPT = """Tu rediges une analyse strategique de type {method} pour un pilier de
 souverainete africaine.
@@ -117,59 +106,84 @@ MULTICRITERE_SPECIFIC_RULE = """- Pour le champ "score" de chaque critere, utili
   des pentes/deltas, pas des scores.
 """
 
-INTERDEPENDANCE_SYSTEM_PROMPT = """Tu evalues l'existence eventuelle d'une interdependance entre ce pilier et
-un autre pilier du MEME pays -- tu ne "trouves" pas une relation, tu
-"evalues" si une relation CAUSALE est demontrable a partir des preuves
-disponibles. L'absence de relation ou de preuve suffisante est un
-resultat scientifique parfaitement valide -- n'invente JAMAIS une
-relation pour satisfaire le schema.
+LEVER_SYSTEM_PROMPT = """Tu identifies un LEVIER STRATEGIQUE pour ce pilier, a partir des 9
+analyses primaires deja validees ci-dessous -- surtout la cause racine du
+5 Pourquoi et les risques identifies. Un levier n'est PAS un projet nomme
+concret (ex. "SNCTM") -- c'est un domaine d'intervention (ex.
+"Renforcement de la tracabilite miniere") qui repond a la cause racine
+identifiee, avant qu'aucun projet precis n'existe.
 
-ETAPE 0 -- Contexte fige (a utiliser tel quel, jamais invente) :
-country_iso3 = "{country_iso3}"
-pillar_code (ce pilier) = "{pillar_code}"
-
-ETAPE 1 -- Candidats identifies par OSA (donnees ISA reelles et
-deterministes -- OSA identifie les candidats possibles, toi tu redige,
-tu n'inventes jamais un candidat qui n'est pas dans cette liste) :
-{candidates}
-
-ETAPE 2 -- Contenu des 9 analyses primaires deja validees pour ce pilier
-(utilise-les pour etayer ou nuancer les candidats de l'ETAPE 1) :
+Contenu des 9 analyses deja validees :
 {analyses_content}
 
-ETAPE 3 -- Vocabulaire controle autorise (OBLIGATOIRE) :
-{vocabulary}
-
-ETAPE 4 -- Schema JSON exact a respecter :
+Schema JSON attendu :
 {schema}
 
-ETAPE 5 -- Regles imperatives, DISTINCTION CORRELATION / CAUSALITE
-(critique -- decision de Theo du 4 aout 2026, suite a un test reel ou le
-moteur a conclu a tort une relation a partir d'une simple co-occurrence
-de faiblesse) :
-- Une CORRELATION D'ETAT (deux piliers presentant simultanement un
-  risque eleve ou une tendance similaire) N'EST PAS une preuve de
-  relation causale. Elle demontre seulement que deux piliers sont
-  fragiles en meme temps -- jamais que l'un influence l'autre. Les
-  candidats de l'ETAPE 1 sont des candidats a INVESTIGUER, jamais des
-  relations demontrees.
-- basis_type=AI_PREDICTIVE_ESTIMATE signale PAR CONSTRUCTION une preuve
-  faible (aucune correlation statistique reelle calculee, aucun POA/GAP
-  commun disponible, aucune decision du Comite Scientifique). Dans ce
-  cas, analysis_status DOIT presque toujours etre DONNEES_INSUFFISANTES,
-  JAMAIS RELATION_IDENTIFIEE -- sauf si le contenu des 9 analyses
-  (ETAPE 2) revele un vrai MECANISME causal explicite et argumente
-  (ex. "la rupture de tracabilite du pilier X oblige le recours au
-  systeme numerique du pilier Y"), jamais une simple co-occurrence de
-  faiblesse ou de risque.
-- Aujourd'hui, les referentiels POA et GAP ne sont pas encore peuples
-  (cf. doctrine OSA, roadmap de maturation des briques scientifiques).
-  DONNEES_INSUFFISANTES est donc le resultat ATTENDU et scientifiquement
-  le plus honnete dans la grande majorite des cas -- ce n'est jamais un
-  echec de l'analyse, c'est une conclusion scientifique valide en soi.
-- Si analysis_status = RELATION_IDENTIFIEE malgre tout, source_pillar_code
-  ou target_pillar_code DOIT correspondre a un candidat reel de l'ETAPE 1,
-  jamais un pilier absent de cette liste.
+Regles imperatives :
+- Le levier doit repondre directement a la cause_racine du 5 Pourquoi
+  fourni ci-dessus -- jamais un levier deconnecte de cette analyse.
+- Vocabulaire mesure, jamais promotionnel.
+- Reponds UNIQUEMENT en JSON valide conforme au schema, sans aucun texte
+  avant ou apres.
+"""
+
+VISION_INTERDEPENDANCE_SYSTEM_PROMPT = """Tu evalues les effets attendus d'un LEVIER STRATEGIQUE sur d'autres
+piliers du MEME pays -- jamais une relation causale directe entre deux
+piliers (ca releve de la recherche scientifique, pas d'OIM). Le levier
+n'est pas encore un projet nomme -- tu evalues des effets POSSIBLES,
+jamais garantis.
+
+Contexte fige (a utiliser tel quel, jamais invente) :
+primary_pillar_code = "{primary_pillar_code}"
+strategic_lever_id = {strategic_lever_id}
+strategic_lever_label = "{strategic_lever_label}"
+strategic_lever_description = "{strategic_lever_description}"
+
+Contenu des 9 analyses deja validees (pour etayer les effets attendus,
+jamais les inventer) :
+{analyses_content}
+
+Vocabulaire controle autorise (OBLIGATOIRE) :
+{vocabulary}
+
+Schema JSON attendu :
+{schema}
+
+Regles imperatives :
+- expected_effects PEUT etre une liste VIDE -- c'est un resultat
+  legitime (ce levier ne beneficie qu'a son pilier principal), jamais
+  une erreur a corriger en inventant un effet.
+- N'invente JAMAIS un effet non etaye par le contenu des 9 analyses.
+- target_pillar_code d'un effet ne peut jamais etre primary_pillar_code
+  lui-meme.
+- Reponds UNIQUEMENT en JSON valide conforme au schema, sans aucun texte
+  avant ou apres.
+"""
+
+PROJECT_INTERDEPENDANCE_SYSTEM_PROMPT = """Tu evalues les effets attendus d'un PROJET REEL et nomme sur d'autres
+piliers du MEME pays -- ce projet existe deja concretement (architecture,
+objectifs), tu ne l'inventes pas.
+
+Contexte fige (a utiliser tel quel, jamais invente) :
+primary_pillar_code = "{primary_pillar_code}"
+project_code = "{project_code}"
+project_name = "{project_name}"
+project_description = "{project_description}"
+strategic_objective = "{strategic_objective}"
+
+Vocabulaire controle autorise (OBLIGATOIRE) :
+{vocabulary}
+
+Schema JSON attendu :
+{schema}
+
+Regles imperatives :
+- expected_effects PEUT etre une liste VIDE -- resultat legitime.
+- Base chaque effet sur un besoin technique ou organisationnel REEL
+  qu'implique ce projet (ex. tracabilite numerique -> identite
+  numerique -> PNUM), jamais une supposition vague.
+- target_pillar_code d'un effet ne peut jamais etre primary_pillar_code
+  lui-meme.
 - Reponds UNIQUEMENT en JSON valide conforme au schema, sans aucun texte
   avant ou apres.
 """
@@ -198,57 +212,54 @@ def _extract_controlled_vocabulary(schema: dict) -> str:
     return "\n".join(lines) if lines else "(aucun vocabulaire controle specifique pour cette methode)"
 
 
-def _find_interdependance_candidates(db: Session, country_iso3: str, pillar_code: str, year: int) -> list:
-    """Detecteur heuristique de candidats d'interdependance -- DETERMINISTE,
-    jamais le LLM (doctrine actee le 4 aout 2026 : OSA identifie les
-    candidats a partir de donnees reelles, le LLM redige seulement).
-    Compare ce pilier aux 9 AUTRES piliers du MEME pays+annee, sur des
-    donnees ISA REELLES deja existantes (contrairement a POA/GAP, encore
-    vides -- cf. ADR-011, brique Interdependance classee EXPERIMENTATION).
-    Un pilier est candidat s'il partage la meme classe de tendance
-    (forecast_trend_class) OU s'il a lui aussi un risque strategique eleve
-    (>= INTERDEPENDANCE_RISK_THRESHOLD, seuil documente, pas invente par
-    le LLM). Heuristique de premiere generation -- a affiner en V6."""
-    this_pillar = db.execute(
+def _get_poa_observations(db: Session, country_iso3: str, pillar_code: str, year: int) -> list:
+    """Recupere les vraies observations POA (Phenomenes Observables
+    Autonomes) pour ce pilier -- donnees REELLES et independantes du
+    score ISA (systeme herite rf.poa_catalog, Sprint 31 -- distinct de
+    la nouvelle taxonomie rf.poa_phenomenon_domain/type)."""
+    poa_indicators = db.execute(
         text("""
-            SELECT forecast_trend_class, strategic_risk_score
-            FROM ma.mv_p7i_risk_source
-            WHERE country_iso3 = :country_iso3 AND pillar_code = :pillar_code AND year = :year
+            SELECT p.indicator_code, p.delta_desc_fr, p.metric_label_fr
+            FROM rf.poa_catalog p
+            JOIN rf.indicators i ON i.code = p.indicator_code
+            WHERE i.pillar_code = :pillar_code
         """),
-        {"country_iso3": country_iso3, "pillar_code": pillar_code, "year": year},
-    ).mappings().first()
-    if not this_pillar:
-        return []
-
-    others = db.execute(
-        text("""
-            SELECT r.pillar_code, r.forecast_trend_class, r.strategic_risk_score, s.isa_observed_score
-            FROM ma.mv_p7i_risk_source r
-            JOIN ma.mv_isa_observed_scores_by_pillar s
-                ON s.country_iso3 = r.country_iso3 AND s.pillar_code = r.pillar_code AND s.year = r.year
-            WHERE r.country_iso3 = :country_iso3 AND r.year = :year AND r.pillar_code != :pillar_code
-        """),
-        {"country_iso3": country_iso3, "year": year, "pillar_code": pillar_code},
+        {"pillar_code": pillar_code},
     ).mappings().all()
 
-    candidates = []
-    for other in others:
-        reasons = []
-        if this_pillar["forecast_trend_class"] and other["forecast_trend_class"] == this_pillar["forecast_trend_class"]:
-            reasons.append(f"même classe de tendance ({other['forecast_trend_class']})")
-        this_risk = this_pillar["strategic_risk_score"]
-        other_risk = other["strategic_risk_score"]
-        if this_risk is not None and other_risk is not None and this_risk >= INTERDEPENDANCE_RISK_THRESHOLD and other_risk >= INTERDEPENDANCE_RISK_THRESHOLD:
-            reasons.append(f"risque stratégique élevé partagé (seuil {INTERDEPENDANCE_RISK_THRESHOLD})")
-        if reasons:
-            candidates.append({
-                "pillar_code": other["pillar_code"],
-                "isa_observed_score": float(other["isa_observed_score"]) if other["isa_observed_score"] is not None else None,
-                "forecast_trend_class": other["forecast_trend_class"],
-                "strategic_risk_score": float(other["strategic_risk_score"]) if other["strategic_risk_score"] is not None else None,
-                "reasons": reasons,
+    observations = []
+    for ind in poa_indicators:
+        code = ind["indicator_code"]
+        row = db.execute(
+            text("""
+                SELECT processed_value AS value
+                FROM ma.indicator_values
+                WHERE indicator_code = :code AND country_iso3 = :country_iso3 AND year = :year AND layer_id = 3
+                ORDER BY id DESC LIMIT 1
+            """),
+            {"code": code, "country_iso3": country_iso3, "year": year},
+        ).mappings().first()
+        source = "ma.indicator_values"
+        if not row or row["value"] is None:
+            row = db.execute(
+                text("""
+                    SELECT value_raw AS value
+                    FROM collect.raw_data
+                    WHERE indicator_code = :code AND country_iso3 = :country_iso3 AND year = :year
+                    ORDER BY id_raw DESC LIMIT 1
+                """),
+                {"code": code, "country_iso3": country_iso3, "year": year},
+            ).mappings().first()
+            source = "collect.raw_data"
+        if row and row["value"] is not None:
+            observations.append({
+                "indicator_code": code,
+                "description": ind["delta_desc_fr"],
+                "metric_label": ind["metric_label_fr"],
+                "value": float(row["value"]),
+                "source": source,
             })
-    return candidates
+    return observations
 
 
 def _ai_client_and_provider():
@@ -298,62 +309,6 @@ def _call_ai(system_prompt: str, user_content: str) -> dict:
         })
 
 
-def _get_poa_observations(db: Session, country_iso3: str, pillar_code: str, year: int) -> list:
-    """Recupere les vraies observations POA (Phenomenes Observables
-    Autonomes) pour ce pilier -- donnees REELLES et independantes du
-    score ISA, qui influencent directement le pilier meme si elles
-    n'entrent pas dans son calcul (ex. fuite de valeur miniere, signal
-    de contrebande). Correction du 4 aout 2026 (Theo) : cette source
-    avait ete omise a tort du snapshot, en confondant rf.poa_catalog
-    (donnees reelles observees, existe depuis Sprint 31) avec la
-    nouvelle taxonomie ma.poa_gap_observation (encore vide, distincte).
-    Deux sources possibles selon l'indicateur -- meme logique que
-    GET /api/v2/sovereignty/poa-catalog."""
-    poa_indicators = db.execute(
-        text("""
-            SELECT p.indicator_code, p.delta_desc_fr, p.metric_label_fr
-            FROM rf.poa_catalog p
-            JOIN rf.indicators i ON i.code = p.indicator_code
-            WHERE i.pillar_code = :pillar_code
-        """),
-        {"pillar_code": pillar_code},
-    ).mappings().all()
-
-    observations = []
-    for ind in poa_indicators:
-        code = ind["indicator_code"]
-        row = db.execute(
-            text("""
-                SELECT processed_value AS value
-                FROM ma.indicator_values
-                WHERE indicator_code = :code AND country_iso3 = :country_iso3 AND year = :year AND layer_id = 3
-                ORDER BY id DESC LIMIT 1
-            """),
-            {"code": code, "country_iso3": country_iso3, "year": year},
-        ).mappings().first()
-        source = "ma.indicator_values"
-        if not row or row["value"] is None:
-            row = db.execute(
-                text("""
-                    SELECT value_raw AS value
-                    FROM collect.raw_data
-                    WHERE indicator_code = :code AND country_iso3 = :country_iso3 AND year = :year
-                    ORDER BY id_raw DESC LIMIT 1
-                """),
-                {"code": code, "country_iso3": country_iso3, "year": year},
-            ).mappings().first()
-            source = "collect.raw_data"
-        if row and row["value"] is not None:
-            observations.append({
-                "indicator_code": code,
-                "description": ind["delta_desc_fr"],
-                "metric_label": ind["metric_label_fr"],
-                "value": float(row["value"]),
-                "source": source,
-            })
-    return observations
-
-
 def _get_pillar_data_snapshot(db: Session, country_iso3: str, pillar_code: str, year: int) -> dict:
     row = db.execute(
         text("""
@@ -381,7 +336,7 @@ def _get_pillar_data_snapshot(db: Session, country_iso3: str, pillar_code: str, 
 
 @router.post(
     "/visions/{vision_id}/generate-analysis-drafts",
-    summary="Générer les 9 analyses primaires (IA) à partir des vraies données ISA du pilier",
+    summary="Générer les 9 analyses primaires (IA) à partir des vraies données ISA+POA du pilier",
     description="Une donnée réelle par pays+pilier+année. Échoue explicitement si aucune donnée n'est disponible.",
 )
 def generate_analysis_drafts(
@@ -590,17 +545,141 @@ def promote_analysis_draft(
     return dict(row)
 
 
-# ── Etape 2 : synthese INTERDEPENDANCE, a partir des 9 promues + candidats reels ─
+# ── Etape 2a : levier strategique (niveau Vision, avant tout projet) ─────────
+
+@router.post(
+    "/visions/{vision_id}/generate-strategic-lever-draft",
+    summary="Générer un levier stratégique (IA) à partir des 9 analyses déjà promues",
+    description="Réservé aux visions dont les 9 méthodes primaires sont déjà PROMOTED. Le levier n'est pas un projet nommé -- un domaine d'intervention dérivé de la cause racine.",
+)
+def generate_strategic_lever_draft(
+    vision_id: int,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+
+    vision = db.execute(
+        text("SELECT id FROM mg.pillar_strategic_vision WHERE id = :id"),
+        {"id": vision_id},
+    ).mappings().first()
+    if not vision:
+        raise HTTPException(status_code=404, detail={"fr": "Vision introuvable.", "en": "Vision not found."})
+
+    promoted = db.execute(
+        text("""
+            SELECT id, method, content FROM osoa.strategic_analyses
+            WHERE vision_id = :vision_id AND method = ANY(:methods)
+            ORDER BY created_at DESC
+        """),
+        {"vision_id": vision_id, "methods": PRIMARY_METHODS},
+    ).mappings().all()
+
+    found_methods = {r["method"] for r in promoted}
+    missing = [m for m in PRIMARY_METHODS if m not in found_methods]
+    if missing:
+        raise HTTPException(status_code=422, detail={
+            "fr": f"Méthodes primaires manquantes (doivent être promues) : {', '.join(missing)}.",
+            "en": f"Missing primary methods (must be promoted): {', '.join(missing)}.",
+        })
+
+    analyses_content = {r["method"]: r["content"] for r in promoted}
+    analyses_json = json.dumps(analyses_content, ensure_ascii=False, default=str)
+    source_analysis_ids = [r["id"] for r in promoted]
+
+    schema = ContentStrategicLever.model_json_schema()
+    schema_json = json.dumps(schema, ensure_ascii=False)
+    system_prompt = LEVER_SYSTEM_PROMPT.format(analyses_content=analyses_json, schema=schema_json)
+
+    try:
+        parsed = _call_ai(system_prompt, analyses_json)
+        validated = ContentStrategicLever(**parsed)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail={
+            "fr": f"Échec de la génération IA (levier stratégique) : {e}",
+            "en": f"AI generation failed (strategic lever): {e}",
+        })
+
+    row = db.execute(
+        text("""
+            INSERT INTO mg.strategic_levers (vision_id, label_fr, description_fr, source_analysis_ids, created_by)
+            VALUES (:vision_id, :label_fr, :description_fr, :source_analysis_ids, :created_by)
+            RETURNING id, vision_id, label_fr, description_fr, source_analysis_ids, status, created_at::text
+        """),
+        {
+            "vision_id": vision_id,
+            "label_fr": validated.label_fr,
+            "description_fr": validated.description_fr,
+            "source_analysis_ids": source_analysis_ids,
+            "created_by": affiliate_id,
+        },
+    ).mappings().first()
+    db.commit()
+
+    return dict(row)
+
+
+@router.get("/visions/{vision_id}/strategic-levers", summary="Lister les leviers stratégiques d'une vision")
+def list_strategic_levers(vision_id: int, db: Session = Depends(get_db)):
+    rows = db.execute(
+        text("""
+            SELECT id, vision_id, label_fr, description_fr, source_analysis_ids, status, created_at::text
+            FROM mg.strategic_levers WHERE vision_id = :vision_id ORDER BY created_at
+        """),
+        {"vision_id": vision_id},
+    ).mappings().all()
+    return {"count": len(rows), "items": [dict(r) for r in rows]}
+
+
+class StrategicLeverValidate(BaseModel):
+    label_fr: Optional[str] = None
+    description_fr: Optional[str] = None
+
+
+@router.post("/strategic-levers/{lever_id}/validate", summary="Valider (et éventuellement corriger) un levier stratégique")
+def validate_strategic_lever(
+    lever_id: int,
+    data: StrategicLeverValidate,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    lever = db.execute(
+        text("SELECT id FROM mg.strategic_levers WHERE id = :id"),
+        {"id": lever_id},
+    ).mappings().first()
+    if not lever:
+        raise HTTPException(status_code=404, detail={"fr": "Levier introuvable.", "en": "Lever not found."})
+
+    updates = {"status": "HUMAN_VALIDATED"}
+    set_clauses = ["status = 'HUMAN_VALIDATED'", "updated_at = NOW()"]
+    if data.label_fr is not None:
+        set_clauses.append("label_fr = :label_fr")
+        updates["label_fr"] = data.label_fr
+    if data.description_fr is not None:
+        set_clauses.append("description_fr = :description_fr")
+        updates["description_fr"] = data.description_fr
+    updates["id"] = lever_id
+
+    row = db.execute(
+        text(f"""
+            UPDATE mg.strategic_levers SET {', '.join(set_clauses)}
+            WHERE id = :id
+            RETURNING id, label_fr, description_fr, status
+        """),
+        updates,
+    ).mappings().first()
+    db.commit()
+    return dict(row)
+
+
+# ── Etape 2b : interdependance niveau VISION, basee sur le levier valide ─────
 
 @router.post(
     "/visions/{vision_id}/generate-interdependance-draft",
-    summary="Générer le brouillon INTERDEPENDANCE (IA) en synthèse des 9 analyses déjà promues + candidats réels",
-    description=(
-        "Réservé aux visions dont les 9 méthodes primaires sont déjà PROMOTED. "
-        "Les candidats sont d'abord identifiés par un détecteur déterministe "
-        "(données ISA réelles, jamais le LLM) -- le LLM ne fait que rédiger "
-        "la synthèse à partir de ces candidats réels."
-    ),
+    summary="Générer le brouillon INTERDEPENDANCE niveau Vision (IA), à partir du levier stratégique validé",
+    description="Réservé aux visions dont un levier stratégique est déjà HUMAN_VALIDATED. Évalue les effets possibles du levier sur d'autres piliers -- jamais une relation directe entre deux piliers.",
 )
 def generate_interdependance_draft(
     vision_id: int,
@@ -616,26 +695,27 @@ def generate_interdependance_draft(
     if not vision:
         raise HTTPException(status_code=404, detail={"fr": "Vision introuvable.", "en": "Vision not found."})
 
+    lever = db.execute(
+        text("""
+            SELECT id, label_fr, description_fr FROM mg.strategic_levers
+            WHERE vision_id = :vision_id AND status = 'HUMAN_VALIDATED'
+            ORDER BY created_at DESC LIMIT 1
+        """),
+        {"vision_id": vision_id},
+    ).mappings().first()
+    if not lever:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucun levier stratégique validé (HUMAN_VALIDATED) pour cette vision -- générez et validez un levier d'abord.",
+            "en": "No validated (HUMAN_VALIDATED) strategic lever for this vision -- generate and validate a lever first.",
+        })
+
     promoted = db.execute(
         text("""
             SELECT method, content FROM osoa.strategic_analyses
             WHERE vision_id = :vision_id AND method = ANY(:methods)
-            ORDER BY created_at DESC
         """),
         {"vision_id": vision_id, "methods": PRIMARY_METHODS},
     ).mappings().all()
-
-    found_methods = {r["method"] for r in promoted}
-    missing = [m for m in PRIMARY_METHODS if m not in found_methods]
-    if missing:
-        raise HTTPException(status_code=422, detail={
-            "fr": f"Méthodes primaires manquantes (doivent être promues) : {', '.join(missing)}.",
-            "en": f"Missing primary methods (must be promoted): {', '.join(missing)}.",
-        })
-
-    candidates = _find_interdependance_candidates(db, vision["country_iso3"], vision["pillar_code"], vision["year"])
-    candidates_json = json.dumps(candidates, ensure_ascii=False, default=str)
-
     analyses_content = {r["method"]: r["content"] for r in promoted}
     analyses_json = json.dumps(analyses_content, ensure_ascii=False, default=str)
 
@@ -643,10 +723,11 @@ def generate_interdependance_draft(
     schema = model_cls.model_json_schema()
     schema_json = json.dumps(schema, ensure_ascii=False)
     vocabulary = _extract_controlled_vocabulary(schema)
-    system_prompt = INTERDEPENDANCE_SYSTEM_PROMPT.format(
-        country_iso3=vision["country_iso3"],
-        pillar_code=vision["pillar_code"],
-        candidates=candidates_json,
+    system_prompt = VISION_INTERDEPENDANCE_SYSTEM_PROMPT.format(
+        primary_pillar_code=vision["pillar_code"],
+        strategic_lever_id=lever["id"],
+        strategic_lever_label=lever["label_fr"],
+        strategic_lever_description=lever["description_fr"],
         analyses_content=analyses_json,
         vocabulary=vocabulary,
         schema=schema_json,
@@ -677,4 +758,133 @@ def generate_interdependance_draft(
     ).mappings().first()
     db.commit()
 
+    return dict(row)
+
+
+# ── Etape 3 : interdependance niveau PLAN D'ACTION, sur un projet reel ───────
+
+@router.post(
+    "/projects/{project_code}/generate-interdependance-draft",
+    summary="Générer le brouillon d'interdépendance des interventions (IA), sur un projet réel promu",
+    description="Réservé aux projets existants dans rf.sovereign_project_catalog. Évalue les effets attendus de CE projet réel sur d'autres piliers.",
+)
+def generate_project_interdependance_draft(
+    project_code: str,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+
+    project = db.execute(
+        text("""
+            SELECT project_code, pillar_code, project_name, project_description, strategic_objective
+            FROM rf.sovereign_project_catalog WHERE project_code = :project_code
+        """),
+        {"project_code": project_code},
+    ).mappings().first()
+    if not project:
+        raise HTTPException(status_code=404, detail={"fr": "Projet introuvable.", "en": "Project not found."})
+
+    schema = ContentInterventionInterdependance.model_json_schema()
+    schema_json = json.dumps(schema, ensure_ascii=False)
+    vocabulary = _extract_controlled_vocabulary(schema)
+    system_prompt = PROJECT_INTERDEPENDANCE_SYSTEM_PROMPT.format(
+        primary_pillar_code=project["pillar_code"],
+        project_code=project["project_code"],
+        project_name=project["project_name"],
+        project_description=project["project_description"],
+        strategic_objective=project["strategic_objective"],
+        vocabulary=vocabulary,
+        schema=schema_json,
+    )
+
+    project_context = json.dumps(dict(project), ensure_ascii=False, default=str)
+
+    try:
+        parsed = _call_ai(system_prompt, project_context)
+        validated = ContentInterventionInterdependance(**parsed)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail={
+            "fr": f"Échec de la génération IA (interdépendance des interventions) : {e}",
+            "en": f"AI generation failed (intervention interdependence): {e}",
+        })
+
+    row = db.execute(
+        text("""
+            INSERT INTO mg.project_interdependence_drafts (project_code, content, created_by)
+            VALUES (:project_code, CAST(:content AS jsonb), :created_by)
+            RETURNING id, project_code, content, status, created_at::text
+        """),
+        {
+            "project_code": project_code,
+            "content": validated.model_dump_json(),
+            "created_by": affiliate_id,
+        },
+    ).mappings().first()
+    db.commit()
+
+    return dict(row)
+
+
+@router.get("/projects/{project_code}/interdependence-drafts", summary="Lister les brouillons d'interdépendance d'un projet")
+def list_project_interdependence_drafts(project_code: str, db: Session = Depends(get_db)):
+    rows = db.execute(
+        text("""
+            SELECT id, project_code, content, status, created_at::text
+            FROM mg.project_interdependence_drafts WHERE project_code = :project_code ORDER BY created_at
+        """),
+        {"project_code": project_code},
+    ).mappings().all()
+    return {"count": len(rows), "items": [dict(r) for r in rows]}
+
+
+class ProjectInterdependenceValidate(BaseModel):
+    content: Optional[dict] = None
+
+
+@router.post("/project-interdependence-drafts/{draft_id}/validate", summary="Valider (et éventuellement corriger) un brouillon d'interdépendance de projet")
+def validate_project_interdependence_draft(
+    draft_id: int,
+    data: ProjectInterdependenceValidate,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    draft = db.execute(
+        text("SELECT id FROM mg.project_interdependence_drafts WHERE id = :id"),
+        {"id": draft_id},
+    ).mappings().first()
+    if not draft:
+        raise HTTPException(status_code=404, detail={"fr": "Brouillon introuvable.", "en": "Draft not found."})
+
+    if data.content is not None:
+        try:
+            validated = ContentInterventionInterdependance(**data.content)
+        except Exception as e:
+            raise HTTPException(status_code=422, detail={
+                "fr": f"Contenu corrigé invalide : {e}",
+                "en": f"Corrected content invalid: {e}",
+            })
+        row = db.execute(
+            text("""
+                UPDATE mg.project_interdependence_drafts
+                SET content = CAST(:content AS jsonb), status = 'HUMAN_VALIDATED', updated_at = NOW()
+                WHERE id = :id
+                RETURNING id, project_code, content, status
+            """),
+            {"content": validated.model_dump_json(), "id": draft_id},
+        ).mappings().first()
+    else:
+        row = db.execute(
+            text("""
+                UPDATE mg.project_interdependence_drafts
+                SET status = 'HUMAN_VALIDATED', updated_at = NOW()
+                WHERE id = :id
+                RETURNING id, project_code, content, status
+            """),
+            {"id": draft_id},
+        ).mappings().first()
+
+    db.commit()
     return dict(row)
