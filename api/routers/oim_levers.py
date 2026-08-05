@@ -68,7 +68,11 @@ def list_levers(active_only: bool = Query(default=True), db: Session = Depends(g
     return {"count": len(rows), "items": [dict(r) for r in rows]}
 
 
-# ── Liaison cause racine -> levier ────────────────────────────────────────────────
+# ── Liaison cause racine (analyse 5_POURQUOI validee) -> levier ─────────────────
+# Reconciliation du 5 aout 2026 : root_cause_id (-> mg.pillar_root_causes,
+# Chaine A jamais utilisee, supprimee) devient analysis_id (->
+# osoa.strategic_analyses.id, la 5_POURQUOI de la Chaine B, idealement
+# PROMOTED).
 
 class RootCauseLeverCreate(BaseModel):
     lever_code: str
@@ -76,21 +80,26 @@ class RootCauseLeverCreate(BaseModel):
 
 
 @router.post(
-    "/root-causes/{root_cause_id}/levers",
-    summary="Lier une cause racine à un levier stratégique",
+    "/analyses/{analysis_id}/levers",
+    summary="Lier une analyse 5_POURQUOI (cause racine) à un levier stratégique",
 )
 def link_root_cause_lever(
-    root_cause_id: int,
+    analysis_id: int,
     data: RootCauseLeverCreate,
     payload: dict = Depends(get_current_affiliate),
     db: Session = Depends(get_db),
 ):
-    rc = db.execute(
-        text("SELECT id FROM mg.pillar_root_causes WHERE id = :id"),
-        {"id": root_cause_id},
+    analysis = db.execute(
+        text("SELECT id, method FROM osoa.strategic_analyses WHERE id = :id"),
+        {"id": analysis_id},
     ).mappings().first()
-    if not rc:
-        raise HTTPException(status_code=404, detail={"fr": "Cause racine introuvable.", "en": "Root cause not found."})
+    if not analysis:
+        raise HTTPException(status_code=404, detail={"fr": "Analyse introuvable.", "en": "Analysis not found."})
+    if analysis["method"] != "5_POURQUOI":
+        raise HTTPException(status_code=422, detail={
+            "fr": f"L'analyse {analysis_id} est de méthode '{analysis['method']}', pas '5_POURQUOI' -- seule une analyse 5 Pourquoi porte une cause racine.",
+            "en": f"Analysis {analysis_id} has method '{analysis['method']}', not '5_POURQUOI' -- only a 5 Whys analysis carries a root cause.",
+        })
 
     lever = db.execute(
         text("SELECT lever_code FROM mg.strategic_levers WHERE lever_code = :code"),
@@ -105,11 +114,11 @@ def link_root_cause_lever(
     try:
         row = db.execute(
             text("""
-                INSERT INTO mg.root_cause_levers (root_cause_id, lever_code, relevance_weight)
-                VALUES (:root_cause_id, :lever_code, :relevance_weight)
-                RETURNING root_cause_id, lever_code, relevance_weight, created_at::text
+                INSERT INTO mg.root_cause_levers (analysis_id, lever_code, relevance_weight)
+                VALUES (:analysis_id, :lever_code, :relevance_weight)
+                RETURNING analysis_id, lever_code, relevance_weight, created_at::text
             """),
-            {"root_cause_id": root_cause_id, "lever_code": data.lever_code, "relevance_weight": data.relevance_weight},
+            {"analysis_id": analysis_id, "lever_code": data.lever_code, "relevance_weight": data.relevance_weight},
         ).mappings().first()
         db.commit()
     except Exception as e:
@@ -122,19 +131,19 @@ def link_root_cause_lever(
 
 
 @router.get(
-    "/root-causes/{root_cause_id}/levers",
-    summary="Lister les leviers liés à une cause racine",
+    "/analyses/{analysis_id}/levers",
+    summary="Lister les leviers liés à une analyse 5_POURQUOI",
 )
-def list_root_cause_levers(root_cause_id: int, db: Session = Depends(get_db)):
+def list_root_cause_levers(analysis_id: int, db: Session = Depends(get_db)):
     rows = db.execute(
         text("""
-            SELECT rcl.root_cause_id, rcl.lever_code, rcl.relevance_weight, rcl.created_at::text,
+            SELECT rcl.analysis_id, rcl.lever_code, rcl.relevance_weight, rcl.created_at::text,
                    sl.label_fr, sl.label_en
             FROM mg.root_cause_levers rcl
             JOIN mg.strategic_levers sl ON sl.lever_code = rcl.lever_code
-            WHERE rcl.root_cause_id = :root_cause_id
+            WHERE rcl.analysis_id = :analysis_id
             ORDER BY rcl.relevance_weight DESC
         """),
-        {"root_cause_id": root_cause_id},
+        {"analysis_id": analysis_id},
     ).mappings().all()
     return {"count": len(rows), "items": [dict(r) for r in rows]}
