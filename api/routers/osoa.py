@@ -695,19 +695,16 @@ class ContentStrategicLever(BaseModel):
     # 14 juillet) -- l'IA doit REUTILISER un code existant si pertinent,
     # jamais l'ecrire directement (vocabulaire partage entre visions,
     # controle humain obligatoire avant tout ajout au catalogue).
+    # lever_code TOUJOURS requis -- soit un code existant reutilise, soit
+    # une proposition de nouveau code (majuscules_underscore, coherent
+    # avec les codes existants comme DIGITALIZATION).
+    lever_code: str
     reuses_existing_code: bool
-    lever_code: Optional[str] = None
     label_fr: str
     label_en: str
     description_fr: str
     description_en: Optional[str] = None
     relevance_weight: float = Field(..., ge=0, le=1)
-
-    @model_validator(mode="after")
-    def _check_code_consistency(self):
-        if self.reuses_existing_code and not self.lever_code:
-            raise ValueError("lever_code est obligatoire quand reuses_existing_code=True")
-        return self
 
 
 class LeverEffect(BaseModel):
