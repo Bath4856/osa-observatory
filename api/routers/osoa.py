@@ -760,21 +760,37 @@ class ContentInterventionInterdependance(BaseModel):
         return self
 
 
+class ReviewIssue(BaseModel):
+    # Un probleme identifie par THEO -- structure imposee (Theo, 6 aout
+    # 2026) : jamais un commentaire libre. rule_violated nomme la regle
+    # precise (ex. "vocabulaire_controle", "affirmation_non_etayee"),
+    # evidence cite le passage concerne ET la donnee reelle en jeu --
+    # SANS jamais reinterpreter la donnee soi-meme (THEO verifie si une
+    # affirmation est etayee, il ne juge jamais si un chiffre est
+    # "significatif" ou pas selon son propre jugement).
+    rule_violated: str
+    evidence: str
+    proposed_correction: str
+
+
 class ContentAnalysisReview(BaseModel):
-    # Verdict du reviseur IA (6 aout 2026) -- role distinct du redacteur :
-    # juge un brouillon deja genere contre les vraies donnees et les
-    # regles doctrinales, ne re-redige JAMAIS lui-meme.
+    # Verdict du reviseur IA THEO (6 aout 2026) -- role distinct du
+    # redacteur SCRIBE : juge un brouillon deja genere contre les
+    # vraies donnees et les regles doctrinales, ne re-redige JAMAIS
+    # lui-meme, ne reinterprete JAMAIS les donnees.
     review_status: Literal["CONFORME", "A_REVOIR", "PROBLEME_DETECTE"]
-    review_comment_fr: str
+    issues: List[ReviewIssue] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _check_issues_consistency(self):
+        if self.review_status == "CONFORME" and self.issues:
+            raise ValueError("issues doit être vide quand review_status == CONFORME")
+        if self.review_status != "CONFORME" and not self.issues:
+            raise ValueError("issues ne peut pas être vide quand review_status != CONFORME")
+        return self
 
 
 
-class ContentAnalysisReview(BaseModel):
-    # Verdict du reviseur IA (6 aout 2026) -- role distinct du redacteur :
-    # juge un brouillon deja genere contre les vraies donnees et les
-    # regles doctrinales, ne re-redige JAMAIS lui-meme.
-    review_status: Literal["CONFORME", "A_REVOIR", "PROBLEME_DETECTE"]
-    review_comment_fr: str
 
 
 
