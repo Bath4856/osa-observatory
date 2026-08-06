@@ -794,6 +794,27 @@ class ContentAnalysisReview(BaseModel):
 
 
 
+class ContentAllPrimaryAnalyses(BaseModel):
+    # Modele combine (7 aout 2026, test d'optimisation) -- les 9 analyses
+    # primaires en UN SEUL objet, pour un unique appel IA au lieu de 9.
+    # Economie mesuree ~70% du prompt (snapshot + regles payes une seule
+    # fois au lieu de 9) -- QUALITE A VALIDER EMPIRIQUEMENT avant
+    # generalisation au pipeline batch. Les noms de champs different des
+    # cles de METHOD_MODELS (identifiants Python valides) -- voir
+    # COMBINED_FIELD_TO_METHOD dans oim_analysis_gen.py pour la
+    # correspondance.
+    analyse_5w1h: Content5W1H
+    analyse_swot: ContentSWOT
+    analyse_zachman: ContentZachman
+    analyse_risque: ContentRisque
+    analyse_economique: ContentEconomique
+    analyse_gouvernance: ContentGouvernance
+    analyse_multicritere: ContentMulticritere
+    analyse_faisabilite: ContentFaisabilite
+    analyse_5_pourquoi: Content5Pourquoi
+
+
+
 METHOD_MODELS = {
     "5W1H": Content5W1H,
     "SWOT": ContentSWOT,

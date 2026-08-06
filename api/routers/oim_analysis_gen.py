@@ -40,7 +40,7 @@ from api.db import get_db
 from api.routers.auth_affiliates import get_current_affiliate
 from api.routers.osoa import (
     METHOD_MODELS, ContentStrategicLever, ContentInterventionInterdependance,
-    ContentAnalysisReview,
+    ContentAnalysisReview, ContentAllPrimaryAnalyses,
 )
 
 try:
@@ -351,6 +351,148 @@ def _get_pillar_data_snapshot(db: Session, country_iso3: str, pillar_code: str, 
         if poa_observations:
             snapshot["poa_observations"] = poa_observations
     return snapshot
+
+# ── Test d'optimisation (7 aout 2026) : 9 analyses en UN SEUL appel IA ───────
+# Economie mesuree ~70% du prompt (snapshot + regles payes une seule fois
+# au lieu de 9). QUALITE A VALIDER EMPIRIQUEMENT avant generalisation au
+# pipeline batch -- endpoint experimental, coexiste avec
+# generate-analysis-drafts (9 appels separes), ne le remplace pas encore.
+
+COMBINED_FIELD_TO_METHOD = {
+    "analyse_5w1h": "5W1H",
+    "analyse_swot": "SWOT",
+    "analyse_zachman": "ZACHMAN",
+    "analyse_risque": "RISQUE",
+    "analyse_economique": "ECONOMIQUE",
+    "analyse_gouvernance": "GOUVERNANCE",
+    "analyse_multicritere": "MULTICRITERE",
+    "analyse_faisabilite": "FAISABILITE",
+    "analyse_5_pourquoi": "5_POURQUOI",
+}
+
+COMBINED_ANALYSIS_SYSTEM_PROMPT = """Tu rediges 9 analyses strategiques differentes (5W1H, SWOT, ZACHMAN, RISQUE,
+Analyse Economique Strategique, GOUVERNANCE, MULTICRITERE, FAISABILITE,
+5 Pourquoi) pour UN MEME pilier de souverainete africaine, a partir des
+MEMES donnees reelles fournies une seule fois ci-dessous.
+
+ETAPE 1 -- Donnees reelles du pilier (jamais inventees, communes aux 9
+analyses) :
+{data_snapshot}
+
+ETAPE 2 -- Vocabulaire controle autorise, PAR ANALYSE (OBLIGATOIRE,
+aucune exception) :
+{vocabulary}
+
+ETAPE 3 -- Schema JSON exact a respecter (UN OBJET UNIQUE avec les 9
+analyses comme cles) :
+{schema}
+
+ETAPE 4 -- Regles imperatives (s'appliquent aux 9 analyses) :
+- Vocabulaire mesure : jamais d'adjectif absolu ou promotionnel
+  (indeniable, majeur, enorme) -- preferer documente/observe/identifie.
+- Pour tout champ liste en ETAPE 2, utilise EXCLUSIVEMENT l'une des
+  valeurs autorisees pour l'analyse concernee, jamais une autre
+  formulation.
+- Utilise EXCLUSIVEMENT les donnees fournies en ETAPE 1 -- si une donnee
+  manque, reste generique plutot que d'inventer un chiffre precis.
+- Si poa_observations est present dans l'ETAPE 1, CE SONT DE VRAIS
+  PHENOMENES OBSERVES independants du score ISA -- prends-les
+  serieusement en compte dans les analyses concernees.
+- Pour MULTICRITERE, le champ "score" de chaque critere doit venir
+  EXCLUSIVEMENT de : {bounded_fields}. Jamais isa_trend_slope,
+  isa_volatility, ni les champs central/ambitious/stress_isa_delta.
+- CHAQUE analyse doit rester coherente avec les 8 autres (memes donnees,
+  meme contexte) mais DISTINCTE dans sa methode et son angle propre --
+  ne jamais dupliquer le texte d'une analyse dans une autre.
+
+ETAPE 5 -- Reponds UNIQUEMENT en JSON valide conforme au schema, avec
+EXACTEMENT ces 9 cles : analyse_5w1h, analyse_swot, analyse_zachman,
+analyse_risque, analyse_economique, analyse_gouvernance,
+analyse_multicritere, analyse_faisabilite, analyse_5_pourquoi. Sans
+aucun texte avant ou apres.
+"""
+
+
+def _build_combined_vocabulary() -> str:
+    lines = []
+    for method in PRIMARY_METHODS:
+        model_cls = METHOD_MODELS[method]
+        schema = model_cls.model_json_schema()
+        vocab = _extract_controlled_vocabulary(schema)
+        lines.append(f"--- {method} ---")
+        lines.append(vocab)
+    return "\n".join(lines)
+
+
+@router.post(
+    "/visions/{vision_id}/generate-all-analyses-combined",
+    summary="[EXPERIMENTAL] Générer les 9 analyses primaires en UN SEUL appel IA",
+    description="Alternative a generate-analysis-drafts (9 appels separes) -- economie ~70% du prompt mesuree, QUALITE A VALIDER EMPIRIQUEMENT avant generalisation. Coexiste avec l'endpoint existant, ne le remplace pas.",
+)
+def generate_all_analyses_combined(
+    vision_id: int,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+
+    vision = db.execute(
+        text("SELECT id, country_iso3, pillar_code, year FROM mg.pillar_strategic_vision WHERE id = :id"),
+        {"id": vision_id},
+    ).mappings().first()
+    if not vision:
+        raise HTTPException(status_code=404, detail={"fr": "Vision introuvable.", "en": "Vision not found."})
+
+    snapshot = _get_pillar_data_snapshot(db, vision["country_iso3"], vision["pillar_code"], vision["year"])
+    if not snapshot:
+        raise HTTPException(status_code=422, detail={
+            "fr": f"Aucune donnée ISA observée pour {vision['country_iso3']}/{vision['pillar_code']}/{vision['year']}.",
+            "en": f"No observed ISA data for {vision['country_iso3']}/{vision['pillar_code']}/{vision['year']}.",
+        })
+    snapshot_json = json.dumps(snapshot, ensure_ascii=False, default=str)
+
+    schema = ContentAllPrimaryAnalyses.model_json_schema()
+    schema_json = json.dumps(schema, ensure_ascii=False)
+    vocabulary = _build_combined_vocabulary()
+
+    system_prompt = COMBINED_ANALYSIS_SYSTEM_PROMPT.format(
+        data_snapshot=snapshot_json, vocabulary=vocabulary, schema=schema_json,
+        bounded_fields=", ".join(BOUNDED_SCORE_FIELDS),
+    )
+
+    try:
+        parsed = _call_ai(system_prompt, ANALYSIS_TRIGGER_MESSAGE)
+        validated = ContentAllPrimaryAnalyses(**parsed)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail={
+            "fr": f"Échec de la génération combinée : {e}",
+            "en": f"Combined generation failed: {e}",
+        })
+
+    created = []
+    for field_name, method in COMBINED_FIELD_TO_METHOD.items():
+        sub_content = getattr(validated, field_name)
+        row = db.execute(
+            text("""
+                INSERT INTO mg.pillar_analysis_drafts (vision_id, method, content, created_by)
+                VALUES (:vision_id, :method, CAST(:content AS jsonb), :created_by)
+                RETURNING id, vision_id, method, content, status, created_at::text
+            """),
+            {
+                "vision_id": vision_id,
+                "method": method,
+                "content": sub_content.model_dump_json(),
+                "created_by": affiliate_id,
+            },
+        ).mappings().first()
+        created.append(dict(row))
+
+    db.commit()
+    return {"count": len(created), "items": created}
+
+
 
 
 # ── Etape 1 : generation des 9 analyses primaires ────────────────────────────
