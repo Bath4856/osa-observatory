@@ -14,20 +14,24 @@ Anthropic a sa propre API Batch (Message Batches), format different --
 a construire separement si besoin futur.
 
 Pipeline en 4 etapes :
-1. Mise en file d'attente (queue-analyses / queue-summary / queue-actions)
+1. Mise en file d'attente (queue-analyses / queue-reviews / queue-summary
+   / queue-actions)
 2. Soumission groupee (batch-jobs/submit) -- construit un fichier JSONL,
    l'envoie a OpenAI comme un seul job
 3. Suivi de statut (batch-jobs/{id}/status)
 4. Recuperation des resultats (batch-jobs/{id}/import-results) --
-   applique chaque resultat a la bonne vision/action en base
+   applique chaque resultat a la bonne vision/action/revue en base
 
-AJOUT DU 5 AOUT 2026 : queue-analyses (9 methodes primaires par vision),
-condition prealable identifiee par Theo avant tout lancement a grande
-echelle -- sans automatisation des 9 analyses, "540 visions/an" restait
-une fiction (une seule vision a la fois, generee a la main). Reutilise
-integralement le mecanisme deja construit dans oim_analysis_gen.py
-(schema JSON auto-extrait, vocabulaire controle) -- aucun prompt
-duplique.
+AJOUT DU 6 AOUT 2026 (apres-midi) : THEO (agent reviseur) devient
+batchable, sur le meme patron que SCRIBE -- necessaire pour un vrai
+test grandeur nature a l'echelle des 540 visions/an (Theo : "sans
+cela le calendrier de la revue ne serait pas representatif de la
+procedure annuelle reelle"). queue-reviews (par vision) et
+queue-all-pending-reviews (toutes visions confondues, pour lancer le
+test a l'echelle en un seul appel) mettent en file une revue par
+brouillon AI_DRAFTED -- meme mecanisme de reconstruction du prompt
+(schema + vocabulaire controle + regles specifiques) que pour
+queue-analyses, aucune duplication.
 """
 import json
 import os
@@ -40,11 +44,12 @@ from pydantic import BaseModel
 
 from api.db import get_db
 from api.routers.auth_affiliates import get_current_affiliate
-from api.routers.osoa import SUMMARY_SYSTEM_PROMPT, METHOD_MODELS
+from api.routers.osoa import SUMMARY_SYSTEM_PROMPT, METHOD_MODELS, ContentAnalysisReview
 from api.routers.oim_vision import ACTIONS_SYSTEM_PROMPT
 from api.routers.oim_analysis_gen import (
     PRIMARY_METHODS, PRIMARY_ANALYSIS_SYSTEM_PROMPT, MULTICRITERE_SPECIFIC_RULE,
     BOUNDED_SCORE_FIELDS, _extract_controlled_vocabulary, _get_pillar_data_snapshot,
+    REVIEWER_SYSTEM_PROMPT,
 )
 
 try:
@@ -66,6 +71,12 @@ def _openai_client():
             "en": "OPENAI_API_KEY is not configured on this server -- required for the batch pipeline.",
         })
     return _openai_sdk_batch.OpenAI(api_key=api_key)
+
+
+def _build_review_method_rules(method: str) -> str:
+    if method == "MULTICRITERE":
+        return "\nRegle specifique MULTICRITERE qui etait imposee a SCRIBE :\n" + MULTICRITERE_SPECIFIC_RULE.format(bounded_fields=", ".join(BOUNDED_SCORE_FIELDS))
+    return ""
 
 
 # ── Etape 1 : mise en file d'attente ──────────────────────────────────────────
@@ -114,6 +125,115 @@ def queue_primary_analyses(
 
     db.commit()
     return {"count": len(created), "items": created}
+
+
+@router.post(
+    "/visions/{vision_id}/queue-reviews",
+    summary="Mettre en file d'attente la revue THEO de toutes les analyses AI_DRAFTED d'une vision (batch)",
+    description="Une entrée par brouillon AI_DRAFTED de la vision. Même reconstruction de prompt (schéma+vocabulaire+règles spécifiques) que review_analysis_draft (oim_analysis_gen.py), aucune duplication.",
+)
+def queue_analysis_reviews(
+    vision_id: int,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+
+    vision = db.execute(
+        text("SELECT id, country_iso3, pillar_code, year FROM mg.pillar_strategic_vision WHERE id = :id"),
+        {"id": vision_id},
+    ).mappings().first()
+    if not vision:
+        raise HTTPException(status_code=404, detail={"fr": "Vision introuvable.", "en": "Vision not found."})
+
+    drafts = db.execute(
+        text("SELECT id, method, content FROM mg.pillar_analysis_drafts WHERE vision_id = :vision_id AND status = 'AI_DRAFTED'"),
+        {"vision_id": vision_id},
+    ).mappings().all()
+    if not drafts:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucun brouillon AI_DRAFTED pour cette vision.",
+            "en": "No AI_DRAFTED draft for this vision.",
+        })
+
+    snapshot = _get_pillar_data_snapshot(db, vision["country_iso3"], vision["pillar_code"], vision["year"])
+
+    created = []
+    for d in drafts:
+        row = db.execute(
+            text("""
+                INSERT INTO mg.ai_generation_queue (generation_type, target_id, request_payload, created_by)
+                VALUES ('ANALYSIS_REVIEW', :target_id, CAST(:payload AS jsonb), :created_by)
+                RETURNING id, generation_type, target_id, status, created_at::text
+            """),
+            {
+                "target_id": d["id"],
+                "payload": json.dumps(
+                    {"method": d["method"], "snapshot": snapshot, "analysis_content": d["content"]},
+                    ensure_ascii=False, default=str,
+                ),
+                "created_by": affiliate_id,
+            },
+        ).mappings().first()
+        created.append(dict(row))
+
+    db.commit()
+    return {"count": len(created), "items": created}
+
+
+@router.post(
+    "/analysis-drafts/queue-all-pending-reviews",
+    summary="Mettre en file d'attente la revue THEO de TOUTES les analyses AI_DRAFTED du système (toutes visions confondues)",
+    description="Utile pour un test à grande échelle -- évite d'appeler queue-reviews vision par vision. Snapshot mis en cache par (pays, pilier, année) pour éviter de le recalculer 9 fois par vision.",
+)
+def queue_all_pending_reviews(
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+
+    drafts = db.execute(
+        text("""
+            SELECT pad.id, pad.method, pad.content, pad.vision_id,
+                   v.country_iso3, v.pillar_code, v.year
+            FROM mg.pillar_analysis_drafts pad
+            JOIN mg.pillar_strategic_vision v ON v.id = pad.vision_id
+            WHERE pad.status = 'AI_DRAFTED'
+        """),
+    ).mappings().all()
+    if not drafts:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucun brouillon AI_DRAFTED dans le système.",
+            "en": "No AI_DRAFTED draft in the system.",
+        })
+
+    snapshot_cache = {}
+    created_ids = []
+    for d in drafts:
+        cache_key = (d["country_iso3"], d["pillar_code"], d["year"])
+        if cache_key not in snapshot_cache:
+            snapshot_cache[cache_key] = _get_pillar_data_snapshot(db, d["country_iso3"], d["pillar_code"], d["year"])
+        snapshot = snapshot_cache[cache_key]
+
+        row = db.execute(
+            text("""
+                INSERT INTO mg.ai_generation_queue (generation_type, target_id, request_payload, created_by)
+                VALUES ('ANALYSIS_REVIEW', :target_id, CAST(:payload AS jsonb), :created_by)
+                RETURNING id
+            """),
+            {
+                "target_id": d["id"],
+                "payload": json.dumps(
+                    {"method": d["method"], "snapshot": snapshot, "analysis_content": d["content"]},
+                    ensure_ascii=False, default=str,
+                ),
+                "created_by": affiliate_id,
+            },
+        ).mappings().first()
+        created_ids.append(row["id"])
+
+    db.commit()
+    return {"count": len(created_ids), "queue_ids": created_ids}
 
 
 @router.post(
@@ -260,6 +380,22 @@ def submit_batch(
                 schema=schema_json, method_specific_rules=method_specific_rules,
             )
             user_content = snapshot_json
+        elif row["generation_type"] == "ANALYSIS_REVIEW":
+            method = row["request_payload"]["method"]
+            snapshot = row["request_payload"]["snapshot"]
+            analysis_content = row["request_payload"]["analysis_content"]
+            model_cls = METHOD_MODELS[method]
+            schema = model_cls.model_json_schema()
+            schema_json = json.dumps(schema, ensure_ascii=False)
+            vocabulary = _extract_controlled_vocabulary(schema)
+            method_specific_rules = _build_review_method_rules(method)
+            snapshot_json = json.dumps(snapshot, ensure_ascii=False, default=str)
+            content_json = json.dumps(analysis_content, ensure_ascii=False, default=str)
+            system_prompt = REVIEWER_SYSTEM_PROMPT.format(
+                data_snapshot=snapshot_json, method=method, analysis_content=content_json,
+                schema=schema_json, vocabulary=vocabulary, method_specific_rules=method_specific_rules,
+            )
+            user_content = content_json
         else:
             continue
 
@@ -379,7 +515,7 @@ def get_batch_status(batch_job_id: int, db: Session = Depends(get_db)):
 @router.post(
     "/batch-jobs/{batch_job_id}/import-results",
     summary="Récupérer les résultats d'un job terminé et les appliquer en base",
-    description="Réservé aux jobs COMPLETED. Applique chaque résultat à la bonne vision (analyse/résumé) ou plan (actions).",
+    description="Réservé aux jobs COMPLETED. Applique chaque résultat à la bonne vision (analyse/résumé), revue (mg.analysis_review), ou plan (actions).",
 )
 def import_batch_results(
     batch_job_id: int,
@@ -489,6 +625,16 @@ def import_batch_results(
                         "content": validated.model_dump_json(),
                         "created_by": int(payload["sub"]),
                     },
+                )
+            elif queue_row["generation_type"] == "ANALYSIS_REVIEW":
+                validated = ContentAnalysisReview(**parsed)
+                issues_json = json.dumps([i.model_dump() for i in validated.issues], ensure_ascii=False)
+                db.execute(
+                    text("""
+                        INSERT INTO mg.analysis_review (draft_id, review_status, issues)
+                        VALUES (:draft_id, :status, CAST(:issues AS jsonb))
+                    """),
+                    {"draft_id": queue_row["target_id"], "status": validated.review_status, "issues": issues_json},
                 )
 
             db.execute(
