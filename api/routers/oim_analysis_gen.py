@@ -63,6 +63,16 @@ PRIMARY_METHODS = [
     "GOUVERNANCE", "MULTICRITERE", "FAISABILITE", "5_POURQUOI",
 ]
 
+# Correctif du 7 aout 2026 (audit de tokens) : le snapshot/contenu a
+# evaluer est deja integre dans le prompt SYSTEME (ETAPE 1 pour SCRIBE,
+# bloc "Analyse a evaluer" pour THEO) -- le repeter dans le message
+# utilisateur etait une pure duplication, mesuree a ~24% du prompt total
+# sur certaines methodes. Un court message declencheur suffit, le
+# tour "user" reste structurellement requis par l'API mais ne duplique
+# plus rien.
+ANALYSIS_TRIGGER_MESSAGE = "Génère ton analyse maintenant, en respectant strictement les données, le schéma et le vocabulaire fournis ci-dessus."
+REVIEW_TRIGGER_MESSAGE = "Évalue cette analyse maintenant, selon les règles fournies ci-dessus."
+
 BOUNDED_SCORE_FIELDS = (
     "isa_observed_score", "sovereignty_observed_score",
     "vulnerability_observed_score", "resilience_observed_score",
@@ -393,7 +403,7 @@ def generate_analysis_drafts(
         )
 
         try:
-            parsed = _call_ai(system_prompt, snapshot_json)
+            parsed = _call_ai(system_prompt, ANALYSIS_TRIGGER_MESSAGE)
             validated = model_cls(**parsed)
         except HTTPException:
             raise
@@ -1052,8 +1062,16 @@ def validate_project_interdependence_draft(
 REVIEWER_SYSTEM_PROMPT = """Tu es THEO, un REVISEUR SCIENTIFIQUE independant -- tu ne rediges JAMAIS
 toi-meme, tu juges une analyse deja produite par SCRIBE (l'agent
 redacteur d'OIM), contre les vraies donnees et EXACTEMENT les memes
-contraintes que SCRIBE a recues -- jamais des regles approximatives,
-les memes que celles imposees au redacteur.
+contraintes que SCRIBE a recues.
+
+REGLE ABSOLUE (corrigee le 6 aout 2026, suite a une remarque de Theo) :
+tu ne dois JAMAIS reinterpreter les donnees toi-meme ni juger si un
+chiffre est "significatif", "eleve" ou "faible" selon ton propre
+jugement. Ton seul role est de verifier si une affirmation ecrite par
+SCRIBE est EXPLICITEMENT etayee par une donnee fournie -- jamais de
+proposer ta propre lecture alternative des donnees. Si SCRIBE n'a pas
+justifie explicitement un qualificatif, la regle violee est
+"affirmation_non_etayee" -- jamais ton desaccord sur l'interpretation.
 
 Donnees reelles du pilier (source de verite, jamais a contredire) :
 {data_snapshot}
@@ -1068,28 +1086,24 @@ Schema JSON qui etait IMPOSE a SCRIBE :
 Analyse produite par SCRIBE, a evaluer (methode {method}) :
 {analysis_content}
 
-Regles imperatives a verifier :
-- Chaque champ a vocabulaire controle (liste ci-dessus) respecte-t-il
-  EXACTEMENT l'une des valeurs autorisees ? Signale toute deviation.
-- Vocabulaire mesure : signale tout adjectif absolu ou promotionnel
-  (indeniable, majeur, enorme).
-- Chaque affirmation doit etre etayee par les donnees reelles fournies
-  ci-dessus -- signale toute affirmation qui semble inventee ou non
-  reliee aux donnees.
-- Coherence interne (l'analyse ne se contredit pas elle-meme).
-- Si poa_observations est present dans les donnees, verifie qu'il est
-  bien pris en compte si pertinent pour cette methode.
+Pour chaque probleme trouve, structure ta reponse en 3 parties
+imperatives : rule_violated (nom precis de la regle -- ex.
+"vocabulaire_controle", "affirmation_non_etayee", "coherence_interne"),
+evidence (cite le passage exact concerne ET la donnee reelle en jeu,
+SANS jamais y ajouter ta propre interpretation), proposed_correction
+(une correction concrete et actionnable, jamais vague).
 
 Verdicts possibles :
 - CONFORME : respecte toutes les regles et le vocabulaire controle,
-  peut etre valide tel quel par un humain sans correction.
-- A_REVOIR : probleme mineur, une relecture humaine rapide suffit.
-- PROBLEME_DETECTE : probleme serieux (invention non etayee, incoherence
-  majeure, vocabulaire absolu, deviation du vocabulaire controle) --
-  regeneration recommandee.
+  issues doit etre une liste VIDE.
+- A_REVOIR : probleme mineur, au moins un item dans issues.
+- PROBLEME_DETECTE : probleme serieux (invention non etayee,
+  incoherence majeure, deviation du vocabulaire controle), au moins
+  un item dans issues.
 
 Reponds UNIQUEMENT en JSON valide, sans aucun texte avant ou apres, au
-format exact : {{"review_status": "...", "review_comment_fr": "..."}}
+format exact :
+{{"review_status": "...", "issues": [{{"rule_violated": "...", "evidence": "...", "proposed_correction": "..."}}]}}
 """
 
 
@@ -1134,7 +1148,7 @@ def review_analysis_draft(
     )
 
     try:
-        parsed = _call_ai(system_prompt, content_json)
+        parsed = _call_ai(system_prompt, REVIEW_TRIGGER_MESSAGE)
         validated = ContentAnalysisReview(**parsed)
     except HTTPException:
         raise
@@ -1144,13 +1158,14 @@ def review_analysis_draft(
             "en": f"AI review failed: {e}",
         })
 
+    issues_json = json.dumps([i.model_dump() for i in validated.issues], ensure_ascii=False)
     row = db.execute(
         text("""
-            INSERT INTO mg.analysis_review (draft_id, review_status, review_comment_fr)
-            VALUES (:draft_id, :status, :comment)
-            RETURNING id, draft_id, review_status, review_comment_fr, created_at::text
+            INSERT INTO mg.analysis_review (draft_id, review_status, issues)
+            VALUES (:draft_id, :status, CAST(:issues AS jsonb))
+            RETURNING id, draft_id, review_status, issues, created_at::text
         """),
-        {"draft_id": draft_id, "status": validated.review_status, "comment": validated.review_comment_fr},
+        {"draft_id": draft_id, "status": validated.review_status, "issues": issues_json},
     ).mappings().first()
     db.commit()
 
@@ -1205,7 +1220,7 @@ def regenerate_analysis_draft(
 
     latest_review = db.execute(
         text("""
-            SELECT review_status, review_comment_fr FROM mg.analysis_review
+            SELECT review_status, issues FROM mg.analysis_review
             WHERE draft_id = :draft_id ORDER BY created_at DESC LIMIT 1
         """),
         {"draft_id": draft_id},
@@ -1241,17 +1256,22 @@ def regenerate_analysis_draft(
         method=method, data_snapshot=snapshot_json, vocabulary=vocabulary,
         schema=schema_json, method_specific_rules=method_specific_rules,
     )
+    issues_lines = [
+        "- Regle violee: " + issue["rule_violated"] + " | Preuve: " + issue["evidence"] + " | Correction proposee: " + issue["proposed_correction"]
+        for issue in latest_review["issues"]
+    ]
+    issues_text = "\n".join(issues_lines)
     feedback_note = (
-        "\n\nCORRECTION REQUISE -- THEO (le reviseur scientifique) a "
-        "evalue une version precedente et signale : "
-        f"\"{latest_review['review_comment_fr']}\". Corrige precisement "
-        "ce point dans cette nouvelle version, sans repeter les memes "
-        "defauts."
+        "\n\nCORRECTION REQUISE -- THEO (le reviseur scientifique) a identifie "
+        "les problemes suivants dans une version precedente :\n"
+        + issues_text +
+        "\nCorrige precisement ces points dans cette nouvelle version, sans "
+        "repeter les memes defauts."
     )
     system_prompt = base_prompt + feedback_note
 
     try:
-        parsed = _call_ai(system_prompt, snapshot_json)
+        parsed = _call_ai(system_prompt, ANALYSIS_TRIGGER_MESSAGE)
         validated = model_cls(**parsed)
     except HTTPException:
         raise
