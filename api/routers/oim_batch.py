@@ -128,6 +128,67 @@ def queue_primary_analyses(
 
 
 @router.post(
+    "/visions/queue-all-pending-analyses",
+    summary="Mettre en file d'attente les 9 analyses primaires pour TOUTES les visions sans brouillon existant (batch à l'échelle)",
+    description="Utile pour un test à grande échelle -- évite d'appeler queue-analyses vision par vision. Filtre optionnel par année.",
+)
+def queue_all_pending_analyses(
+    year: Optional[int] = Query(default=None),
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+
+    sql = """
+        SELECT v.id, v.country_iso3, v.pillar_code, v.year
+        FROM mg.pillar_strategic_vision v
+        WHERE NOT EXISTS (
+            SELECT 1 FROM mg.pillar_analysis_drafts pad WHERE pad.vision_id = v.id
+        )
+    """
+    params: dict = {}
+    if year is not None:
+        sql += " AND v.year = :year"
+        params["year"] = year
+    sql += " ORDER BY v.country_iso3, v.pillar_code"
+
+    visions = db.execute(text(sql), params).mappings().all()
+    if not visions:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucune vision sans analyse à mettre en file.",
+            "en": "No vision without analysis to queue.",
+        })
+
+    queued_count = 0
+    visions_skipped_no_data = []
+    for v in visions:
+        snapshot = _get_pillar_data_snapshot(db, v["country_iso3"], v["pillar_code"], v["year"])
+        if not snapshot:
+            visions_skipped_no_data.append(v["id"])
+            continue
+        for method in PRIMARY_METHODS:
+            db.execute(
+                text("""
+                    INSERT INTO mg.ai_generation_queue (generation_type, target_id, request_payload, created_by)
+                    VALUES ('PRIMARY_ANALYSIS', :target_id, CAST(:payload AS jsonb), :created_by)
+                """),
+                {
+                    "target_id": v["id"],
+                    "payload": json.dumps({"method": method, "snapshot": snapshot}, ensure_ascii=False, default=str),
+                    "created_by": affiliate_id,
+                },
+            )
+            queued_count += 1
+
+    db.commit()
+    return {
+        "queued_count": queued_count,
+        "visions_processed": len(visions) - len(visions_skipped_no_data),
+        "visions_skipped_no_data": visions_skipped_no_data,
+    }
+
+
+@router.post(
     "/visions/{vision_id}/queue-reviews",
     summary="Mettre en file d'attente la revue THEO de toutes les analyses AI_DRAFTED d'une vision (batch)",
     description="Une entrée par brouillon AI_DRAFTED de la vision. Même reconstruction de prompt (schéma+vocabulaire+règles spécifiques) que review_analysis_draft (oim_analysis_gen.py), aucune duplication.",
