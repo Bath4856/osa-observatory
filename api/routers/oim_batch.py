@@ -14,12 +14,20 @@ Anthropic a sa propre API Batch (Message Batches), format different --
 a construire separement si besoin futur.
 
 Pipeline en 4 etapes :
-1. Mise en file d'attente (queue-summary / queue-actions)
+1. Mise en file d'attente (queue-analyses / queue-summary / queue-actions)
 2. Soumission groupee (batch-jobs/submit) -- construit un fichier JSONL,
    l'envoie a OpenAI comme un seul job
 3. Suivi de statut (batch-jobs/{id}/status)
 4. Recuperation des resultats (batch-jobs/{id}/import-results) --
    applique chaque resultat a la bonne vision/action en base
+
+AJOUT DU 5 AOUT 2026 : queue-analyses (9 methodes primaires par vision),
+condition prealable identifiee par Theo avant tout lancement a grande
+echelle -- sans automatisation des 9 analyses, "540 visions/an" restait
+une fiction (une seule vision a la fois, generee a la main). Reutilise
+integralement le mecanisme deja construit dans oim_analysis_gen.py
+(schema JSON auto-extrait, vocabulaire controle) -- aucun prompt
+duplique.
 """
 import json
 import os
@@ -32,8 +40,12 @@ from pydantic import BaseModel
 
 from api.db import get_db
 from api.routers.auth_affiliates import get_current_affiliate
-from api.routers.osoa import SUMMARY_SYSTEM_PROMPT
+from api.routers.osoa import SUMMARY_SYSTEM_PROMPT, METHOD_MODELS
 from api.routers.oim_vision import ACTIONS_SYSTEM_PROMPT
+from api.routers.oim_analysis_gen import (
+    PRIMARY_METHODS, PRIMARY_ANALYSIS_SYSTEM_PROMPT, MULTICRITERE_SPECIFIC_RULE,
+    BOUNDED_SCORE_FIELDS, _extract_controlled_vocabulary, _get_pillar_data_snapshot,
+)
 
 try:
     import openai as _openai_sdk_batch
@@ -57,6 +69,52 @@ def _openai_client():
 
 
 # ── Etape 1 : mise en file d'attente ──────────────────────────────────────────
+
+@router.post(
+    "/visions/{vision_id}/queue-analyses",
+    summary="Mettre en file d'attente les 9 analyses primaires d'une vision (batch)",
+    description="Alternative batch à generate-analysis-drafts (oim_analysis_gen.py) -- une entrée par méthode (9 au total), snapshot ISA+POA réel calculé une seule fois et réutilisé.",
+)
+def queue_primary_analyses(
+    vision_id: int,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+
+    vision = db.execute(
+        text("SELECT id, country_iso3, pillar_code, year FROM mg.pillar_strategic_vision WHERE id = :id"),
+        {"id": vision_id},
+    ).mappings().first()
+    if not vision:
+        raise HTTPException(status_code=404, detail={"fr": "Vision introuvable.", "en": "Vision not found."})
+
+    snapshot = _get_pillar_data_snapshot(db, vision["country_iso3"], vision["pillar_code"], vision["year"])
+    if not snapshot:
+        raise HTTPException(status_code=422, detail={
+            "fr": f"Aucune donnée ISA observée pour {vision['country_iso3']}/{vision['pillar_code']}/{vision['year']} -- mise en file impossible sans donnée réelle.",
+            "en": f"No observed ISA data for {vision['country_iso3']}/{vision['pillar_code']}/{vision['year']} -- queuing impossible without real data.",
+        })
+
+    created = []
+    for method in PRIMARY_METHODS:
+        row = db.execute(
+            text("""
+                INSERT INTO mg.ai_generation_queue (generation_type, target_id, request_payload, created_by)
+                VALUES ('PRIMARY_ANALYSIS', :target_id, CAST(:payload AS jsonb), :created_by)
+                RETURNING id, generation_type, target_id, status, created_at::text
+            """),
+            {
+                "target_id": vision_id,
+                "payload": json.dumps({"method": method, "snapshot": snapshot}, ensure_ascii=False, default=str),
+                "created_by": affiliate_id,
+            },
+        ).mappings().first()
+        created.append(dict(row))
+
+    db.commit()
+    return {"count": len(created), "items": created}
+
 
 @router.post(
     "/deliverables/{deliverable_id}/queue-summary",
@@ -180,7 +238,31 @@ def submit_batch(
 
     lines = []
     for row in queued:
-        system_prompt = SUMMARY_SYSTEM_PROMPT if row["generation_type"] == "VISION_SUMMARY" else ACTIONS_SYSTEM_PROMPT
+        if row["generation_type"] == "VISION_SUMMARY":
+            system_prompt = SUMMARY_SYSTEM_PROMPT
+            user_content = json.dumps(row["request_payload"], ensure_ascii=False)
+        elif row["generation_type"] == "PLAN_ACTION_EXPLOSION":
+            system_prompt = ACTIONS_SYSTEM_PROMPT
+            user_content = json.dumps(row["request_payload"], ensure_ascii=False)
+        elif row["generation_type"] == "PRIMARY_ANALYSIS":
+            method = row["request_payload"]["method"]
+            snapshot = row["request_payload"]["snapshot"]
+            model_cls = METHOD_MODELS[method]
+            schema = model_cls.model_json_schema()
+            schema_json = json.dumps(schema, ensure_ascii=False)
+            vocabulary = _extract_controlled_vocabulary(schema)
+            method_specific_rules = ""
+            if method == "MULTICRITERE":
+                method_specific_rules = MULTICRITERE_SPECIFIC_RULE.format(bounded_fields=", ".join(BOUNDED_SCORE_FIELDS))
+            snapshot_json = json.dumps(snapshot, ensure_ascii=False)
+            system_prompt = PRIMARY_ANALYSIS_SYSTEM_PROMPT.format(
+                method=method, data_snapshot=snapshot_json, vocabulary=vocabulary,
+                schema=schema_json, method_specific_rules=method_specific_rules,
+            )
+            user_content = snapshot_json
+        else:
+            continue
+
         lines.append({
             "custom_id": f"queue-{row['id']}",
             "method": "POST",
@@ -190,7 +272,7 @@ def submit_batch(
                 "response_format": {"type": "json_object"},
                 "messages": [
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": json.dumps(row["request_payload"], ensure_ascii=False)},
+                    {"role": "user", "content": user_content},
                 ],
             },
         })
@@ -297,7 +379,7 @@ def get_batch_status(batch_job_id: int, db: Session = Depends(get_db)):
 @router.post(
     "/batch-jobs/{batch_job_id}/import-results",
     summary="Récupérer les résultats d'un job terminé et les appliquer en base",
-    description="Réservé aux jobs COMPLETED. Applique chaque résultat à la bonne vision (résumé) ou plan (actions).",
+    description="Réservé aux jobs COMPLETED. Applique chaque résultat à la bonne vision (analyse/résumé) ou plan (actions).",
 )
 def import_batch_results(
     batch_job_id: int,
@@ -350,7 +432,7 @@ def import_batch_results(
             continue
 
         queue_row = db.execute(
-            text("SELECT id, generation_type, target_id FROM mg.ai_generation_queue WHERE id = :id"),
+            text("SELECT id, generation_type, target_id, request_payload FROM mg.ai_generation_queue WHERE id = :id"),
             {"id": queue_id},
         ).mappings().first()
         if not queue_row:
@@ -377,7 +459,7 @@ def import_batch_results(
                     """),
                     {"fr": parsed["summary_fr"], "en": parsed["summary_en"], "id": queue_row["target_id"]},
                 )
-            else:  # PLAN_ACTION_EXPLOSION
+            elif queue_row["generation_type"] == "PLAN_ACTION_EXPLOSION":
                 for action in parsed["actions"]:
                     db.execute(
                         text("""
@@ -392,6 +474,22 @@ def import_batch_results(
                             "created_by": int(payload["sub"]),
                         },
                     )
+            elif queue_row["generation_type"] == "PRIMARY_ANALYSIS":
+                method = queue_row["request_payload"]["method"]
+                model_cls = METHOD_MODELS[method]
+                validated = model_cls(**parsed)
+                db.execute(
+                    text("""
+                        INSERT INTO mg.pillar_analysis_drafts (vision_id, method, content, created_by)
+                        VALUES (:vision_id, :method, CAST(:content AS jsonb), :created_by)
+                    """),
+                    {
+                        "vision_id": queue_row["target_id"],
+                        "method": method,
+                        "content": validated.model_dump_json(),
+                        "created_by": int(payload["sub"]),
+                    },
+                )
 
             db.execute(
                 text("UPDATE mg.ai_generation_queue SET status = 'COMPLETED', updated_at = NOW() WHERE id = :id"),
