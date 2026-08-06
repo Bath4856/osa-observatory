@@ -40,6 +40,7 @@ from api.db import get_db
 from api.routers.auth_affiliates import get_current_affiliate
 from api.routers.osoa import (
     METHOD_MODELS, ContentStrategicLever, ContentInterventionInterdependance,
+    ContentAnalysisReview,
 )
 
 try:
@@ -1037,3 +1038,275 @@ def validate_project_interdependence_draft(
 
     db.commit()
     return dict(row)
+
+
+# ── Les deux agents IA d'OIM, nommes le 6 aout 2026 (Theo) ──────────────────
+# SCRIBE (redacteur) : genere les 9 analyses primaires, le levier, les
+#   interdependances, les resumes, les actions -- transcrit fidelement les
+#   vraies donnees, n'invente jamais (PRIMARY_ANALYSIS_SYSTEM_PROMPT et les
+#   autres prompts de generation deja construits jouent ce role).
+# THEO (reviseur) : juge un brouillon deja produit par SCRIBE contre les
+#   vraies donnees et la doctrine -- ne rediges JAMAIS lui-meme, critique
+#   seulement, avec la meme rigueur que Theo appliquerait lui-meme.
+
+REVIEWER_SYSTEM_PROMPT = """Tu es THEO, un REVISEUR SCIENTIFIQUE independant -- tu ne rediges JAMAIS
+toi-meme, tu juges une analyse deja produite par SCRIBE (l'agent
+redacteur d'OIM), contre les vraies donnees et EXACTEMENT les memes
+contraintes que SCRIBE a recues -- jamais des regles approximatives,
+les memes que celles imposees au redacteur.
+
+Donnees reelles du pilier (source de verite, jamais a contredire) :
+{data_snapshot}
+
+Vocabulaire controle qui etait IMPOSE a SCRIBE (verifie que chaque champ
+concerne respecte EXACTEMENT l'une de ces valeurs, aucune autre) :
+{vocabulary}
+
+Schema JSON qui etait IMPOSE a SCRIBE :
+{schema}
+{method_specific_rules}
+Analyse produite par SCRIBE, a evaluer (methode {method}) :
+{analysis_content}
+
+Regles imperatives a verifier :
+- Chaque champ a vocabulaire controle (liste ci-dessus) respecte-t-il
+  EXACTEMENT l'une des valeurs autorisees ? Signale toute deviation.
+- Vocabulaire mesure : signale tout adjectif absolu ou promotionnel
+  (indeniable, majeur, enorme).
+- Chaque affirmation doit etre etayee par les donnees reelles fournies
+  ci-dessus -- signale toute affirmation qui semble inventee ou non
+  reliee aux donnees.
+- Coherence interne (l'analyse ne se contredit pas elle-meme).
+- Si poa_observations est present dans les donnees, verifie qu'il est
+  bien pris en compte si pertinent pour cette methode.
+
+Verdicts possibles :
+- CONFORME : respecte toutes les regles et le vocabulaire controle,
+  peut etre valide tel quel par un humain sans correction.
+- A_REVOIR : probleme mineur, une relecture humaine rapide suffit.
+- PROBLEME_DETECTE : probleme serieux (invention non etayee, incoherence
+  majeure, vocabulaire absolu, deviation du vocabulaire controle) --
+  regeneration recommandee.
+
+Reponds UNIQUEMENT en JSON valide, sans aucun texte avant ou apres, au
+format exact : {{"review_status": "...", "review_comment_fr": "..."}}
+"""
+
+
+# ── Reviseur : juge un brouillon sans jamais le re-rediger ───────────────────
+
+@router.post(
+    "/analysis-drafts/{draft_id}/review",
+    summary="Faire évaluer un brouillon par le réviseur IA (juge, ne rédige jamais)",
+)
+def review_analysis_draft(
+    draft_id: int,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    draft = db.execute(
+        text("SELECT id, vision_id, method, content FROM mg.pillar_analysis_drafts WHERE id = :id"),
+        {"id": draft_id},
+    ).mappings().first()
+    if not draft:
+        raise HTTPException(status_code=404, detail={"fr": "Brouillon introuvable.", "en": "Draft not found."})
+
+    vision = db.execute(
+        text("SELECT country_iso3, pillar_code, year FROM mg.pillar_strategic_vision WHERE id = :id"),
+        {"id": draft["vision_id"]},
+    ).mappings().first()
+    snapshot = _get_pillar_data_snapshot(db, vision["country_iso3"], vision["pillar_code"], vision["year"])
+    snapshot_json = json.dumps(snapshot, ensure_ascii=False, default=str)
+    content_json = json.dumps(draft["content"], ensure_ascii=False, default=str)
+
+    method = draft["method"]
+    model_cls = METHOD_MODELS[method]
+    schema = model_cls.model_json_schema()
+    schema_json = json.dumps(schema, ensure_ascii=False)
+    vocabulary = _extract_controlled_vocabulary(schema)
+    method_specific_rules = ""
+    if method == "MULTICRITERE":
+        method_specific_rules = "\nRegle specifique MULTICRITERE qui etait imposee a SCRIBE :\n" + MULTICRITERE_SPECIFIC_RULE.format(bounded_fields=", ".join(BOUNDED_SCORE_FIELDS))
+
+    system_prompt = REVIEWER_SYSTEM_PROMPT.format(
+        data_snapshot=snapshot_json, method=method, analysis_content=content_json,
+        schema=schema_json, vocabulary=vocabulary, method_specific_rules=method_specific_rules,
+    )
+
+    try:
+        parsed = _call_ai(system_prompt, content_json)
+        validated = ContentAnalysisReview(**parsed)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail={
+            "fr": f"Échec de la révision IA : {e}",
+            "en": f"AI review failed: {e}",
+        })
+
+    row = db.execute(
+        text("""
+            INSERT INTO mg.analysis_review (draft_id, review_status, review_comment_fr)
+            VALUES (:draft_id, :status, :comment)
+            RETURNING id, draft_id, review_status, review_comment_fr, created_at::text
+        """),
+        {"draft_id": draft_id, "status": validated.review_status, "comment": validated.review_comment_fr},
+    ).mappings().first()
+    db.commit()
+
+    return dict(row)
+
+
+@router.post(
+    "/visions/{vision_id}/review-all-drafts",
+    summary="Faire évaluer par le réviseur IA tous les brouillons AI_DRAFTED d'une vision",
+)
+def review_all_drafts(
+    vision_id: int,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    drafts = db.execute(
+        text("SELECT id FROM mg.pillar_analysis_drafts WHERE vision_id = :vision_id AND status = 'AI_DRAFTED'"),
+        {"vision_id": vision_id},
+    ).mappings().all()
+
+    results = []
+    for d in drafts:
+        try:
+            result = review_analysis_draft(d["id"], payload, db)
+            results.append(result)
+        except HTTPException as e:
+            results.append({"draft_id": d["id"], "error": e.detail})
+
+    return {"count": len(results), "items": results}
+
+
+# ── Regeneration corrective a partir de la critique du reviseur ──────────────
+
+@router.post(
+    "/analysis-drafts/{draft_id}/regenerate",
+    summary="Régénérer un brouillon en intégrant la dernière critique du réviseur",
+    description="Réservé aux brouillons ayant au moins une revue (review_status != CONFORME idéalement). La critique est injectée explicitement dans le prompt.",
+)
+def regenerate_analysis_draft(
+    draft_id: int,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+
+    draft = db.execute(
+        text("SELECT id, vision_id, method FROM mg.pillar_analysis_drafts WHERE id = :id"),
+        {"id": draft_id},
+    ).mappings().first()
+    if not draft:
+        raise HTTPException(status_code=404, detail={"fr": "Brouillon introuvable.", "en": "Draft not found."})
+
+    latest_review = db.execute(
+        text("""
+            SELECT review_status, review_comment_fr FROM mg.analysis_review
+            WHERE draft_id = :draft_id ORDER BY created_at DESC LIMIT 1
+        """),
+        {"draft_id": draft_id},
+    ).mappings().first()
+    if not latest_review:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucune revue disponible pour ce brouillon -- faites-le évaluer d'abord (POST .../review).",
+            "en": "No review available for this draft -- have it evaluated first (POST .../review).",
+        })
+
+    vision = db.execute(
+        text("SELECT country_iso3, pillar_code, year FROM mg.pillar_strategic_vision WHERE id = :id"),
+        {"id": draft["vision_id"]},
+    ).mappings().first()
+    snapshot = _get_pillar_data_snapshot(db, vision["country_iso3"], vision["pillar_code"], vision["year"])
+    if not snapshot:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucune donnée ISA observée -- régénération impossible sans donnée réelle.",
+            "en": "No observed ISA data -- regeneration impossible without real data.",
+        })
+    snapshot_json = json.dumps(snapshot, ensure_ascii=False, default=str)
+
+    method = draft["method"]
+    model_cls = METHOD_MODELS[method]
+    schema = model_cls.model_json_schema()
+    schema_json = json.dumps(schema, ensure_ascii=False)
+    vocabulary = _extract_controlled_vocabulary(schema)
+    method_specific_rules = ""
+    if method == "MULTICRITERE":
+        method_specific_rules = MULTICRITERE_SPECIFIC_RULE.format(bounded_fields=", ".join(BOUNDED_SCORE_FIELDS))
+
+    base_prompt = PRIMARY_ANALYSIS_SYSTEM_PROMPT.format(
+        method=method, data_snapshot=snapshot_json, vocabulary=vocabulary,
+        schema=schema_json, method_specific_rules=method_specific_rules,
+    )
+    feedback_note = (
+        "\n\nCORRECTION REQUISE -- THEO (le reviseur scientifique) a "
+        "evalue une version precedente et signale : "
+        f"\"{latest_review['review_comment_fr']}\". Corrige precisement "
+        "ce point dans cette nouvelle version, sans repeter les memes "
+        "defauts."
+    )
+    system_prompt = base_prompt + feedback_note
+
+    try:
+        parsed = _call_ai(system_prompt, snapshot_json)
+        validated = model_cls(**parsed)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail={
+            "fr": f"Échec de la régénération IA : {e}",
+            "en": f"AI regeneration failed: {e}",
+        })
+
+    row = db.execute(
+        text("""
+            UPDATE mg.pillar_analysis_drafts
+            SET content = CAST(:content AS jsonb), status = 'AI_DRAFTED', updated_at = NOW()
+            WHERE id = :id
+            RETURNING id, vision_id, method, content, status, created_at::text
+        """),
+        {"content": validated.model_dump_json(), "id": draft_id},
+    ).mappings().first()
+    db.commit()
+
+    return dict(row)
+
+
+# ── Validation groupee du CONFORME -- acte humain deliberer, jamais cache ────
+
+@router.post(
+    "/visions/{vision_id}/bulk-validate-conforme",
+    summary="Valider en masse tous les brouillons jugés CONFORME par le réviseur",
+    description="Acte humain explicite (appeler cet endpoint = décision consciente de faire confiance au réviseur pour les brouillons CONFORME) -- jamais un automatisme caché.",
+)
+def bulk_validate_conforme(
+    vision_id: int,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    rows = db.execute(
+        text("""
+            SELECT DISTINCT ON (ar.draft_id) ar.draft_id, ar.review_status, pad.status AS draft_status
+            FROM mg.analysis_review ar
+            JOIN mg.pillar_analysis_drafts pad ON pad.id = ar.draft_id
+            WHERE pad.vision_id = :vision_id AND pad.status = 'AI_DRAFTED'
+            ORDER BY ar.draft_id, ar.created_at DESC
+        """),
+        {"vision_id": vision_id},
+    ).mappings().all()
+
+    validated_ids = []
+    for row in rows:
+        if row["review_status"] != "CONFORME":
+            continue
+        db.execute(
+            text("UPDATE mg.pillar_analysis_drafts SET status = 'HUMAN_VALIDATED', updated_at = NOW() WHERE id = :id"),
+            {"id": row["draft_id"]},
+        )
+        validated_ids.append(row["draft_id"])
+
+    db.commit()
+    return {"validated_count": len(validated_ids), "validated_draft_ids": validated_ids}
