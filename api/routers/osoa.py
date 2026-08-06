@@ -760,6 +760,24 @@ class ContentInterventionInterdependance(BaseModel):
         return self
 
 
+class ContentAnalysisReview(BaseModel):
+    # Verdict du reviseur IA (6 aout 2026) -- role distinct du redacteur :
+    # juge un brouillon deja genere contre les vraies donnees et les
+    # regles doctrinales, ne re-redige JAMAIS lui-meme.
+    review_status: Literal["CONFORME", "A_REVOIR", "PROBLEME_DETECTE"]
+    review_comment_fr: str
+
+
+
+class ContentAnalysisReview(BaseModel):
+    # Verdict du reviseur IA (6 aout 2026) -- role distinct du redacteur :
+    # juge un brouillon deja genere contre les vraies donnees et les
+    # regles doctrinales, ne re-redige JAMAIS lui-meme.
+    review_status: Literal["CONFORME", "A_REVOIR", "PROBLEME_DETECTE"]
+    review_comment_fr: str
+
+
+
 METHOD_MODELS = {
     "5W1H": Content5W1H,
     "SWOT": ContentSWOT,
