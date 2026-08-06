@@ -1261,10 +1261,10 @@ def generate_deliverable_summary(
         lever = db.execute(
             text("""
                 SELECT sl.lever_code, sl.label_fr, sl.description_fr
-                FROM mg.root_cause_levers rcl
-                JOIN mg.strategic_levers sl ON sl.lever_code = rcl.lever_code
-                WHERE rcl.analysis_id = :analysis_id
-                ORDER BY rcl.relevance_weight DESC LIMIT 1
+                FROM mg.lever_evidence le
+                JOIN rf.strategic_levers sl ON sl.lever_code = le.lever_code
+                WHERE le.analysis_id = :analysis_id
+                ORDER BY le.relevance_weight DESC LIMIT 1
             """),
             {"analysis_id": pourquoi_analysis["id"]},
         ).mappings().first()
