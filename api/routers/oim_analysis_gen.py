@@ -605,7 +605,7 @@ def generate_strategic_lever_draft(
     analyses_json = json.dumps(analyses_content, ensure_ascii=False, default=str)
 
     catalog_rows = db.execute(
-        text("SELECT lever_code, label_fr, description_fr FROM mg.strategic_levers WHERE is_active = true"),
+        text("SELECT lever_code, label_fr, description_fr FROM rf.strategic_levers WHERE is_active = true"),
     ).mappings().all()
     catalog_json = json.dumps([dict(r) for r in catalog_rows], ensure_ascii=False)
 
@@ -742,7 +742,7 @@ def promote_strategic_lever_proposal(
 
     lever_code = proposal["proposed_lever_code"]
     existing = db.execute(
-        text("SELECT lever_code FROM mg.strategic_levers WHERE lever_code = :code"),
+        text("SELECT lever_code FROM rf.strategic_levers WHERE lever_code = :code"),
         {"code": lever_code},
     ).mappings().first()
 
@@ -756,7 +756,7 @@ def promote_strategic_lever_proposal(
         if not existing:
             db.execute(
                 text("""
-                    INSERT INTO mg.strategic_levers (lever_code, label_fr, label_en, description_fr, description_en)
+                    INSERT INTO rf.strategic_levers (lever_code, label_fr, label_en, description_fr, description_en)
                     VALUES (:lever_code, :label_fr, :label_en, :description_fr, :description_en)
                 """),
                 {
@@ -768,16 +768,22 @@ def promote_strategic_lever_proposal(
                 },
             )
 
+    analysis = db.execute(
+        text("SELECT method FROM osoa.strategic_analyses WHERE id = :id"),
+        {"id": proposal["source_analysis_id"]},
+    ).mappings().first()
+    evidence_type = analysis["method"] if analysis else "5_POURQUOI"
+
     try:
         db.execute(
             text("""
-                INSERT INTO mg.root_cause_levers (analysis_id, lever_code, relevance_weight)
-                VALUES (:analysis_id, :lever_code, :relevance_weight)
-                ON CONFLICT (analysis_id, lever_code) DO UPDATE SET relevance_weight = EXCLUDED.relevance_weight
+                INSERT INTO mg.lever_evidence (lever_code, analysis_id, evidence_type, relevance_weight)
+                VALUES (:lever_code, :analysis_id, :evidence_type, :relevance_weight)
             """),
             {
-                "analysis_id": proposal["source_analysis_id"],
                 "lever_code": lever_code,
+                "analysis_id": proposal["source_analysis_id"],
+                "evidence_type": evidence_type,
                 "relevance_weight": proposal["relevance_weight"],
             },
         )
@@ -839,17 +845,17 @@ def generate_interdependance_draft(
     lever = db.execute(
         text("""
             SELECT sl.lever_code, sl.label_fr, sl.description_fr
-            FROM mg.root_cause_levers rcl
-            JOIN mg.strategic_levers sl ON sl.lever_code = rcl.lever_code
-            WHERE rcl.analysis_id = :analysis_id
-            ORDER BY rcl.relevance_weight DESC LIMIT 1
+            FROM mg.lever_evidence le
+            JOIN rf.strategic_levers sl ON sl.lever_code = le.lever_code
+            WHERE le.analysis_id = :analysis_id
+            ORDER BY le.relevance_weight DESC LIMIT 1
         """),
         {"analysis_id": pourquoi_analysis["id"]},
     ).mappings().first()
     if not lever:
         raise HTTPException(status_code=422, detail={
-            "fr": "Aucun levier stratégique promu (mg.root_cause_levers) pour cette vision -- générez et promouvez un levier d'abord.",
-            "en": "No promoted strategic lever (mg.root_cause_levers) for this vision -- generate and promote a lever first.",
+            "fr": "Aucun levier stratégique promu (mg.lever_evidence) pour cette vision -- générez et promouvez un levier d'abord.",
+            "en": "No promoted strategic lever (mg.lever_evidence) for this vision -- generate and promote a lever first.",
         })
 
     promoted = db.execute(

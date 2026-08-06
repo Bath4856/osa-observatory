@@ -30,7 +30,7 @@ class LeverCreate(BaseModel):
     description_en: Optional[str] = None
 
 
-@router.post("/levers", summary="Créer un levier stratégique (catalogue)")
+@router.post("/levers", summary="Créer un levier stratégique (catalogue référentiel)")
 def create_lever(
     data: LeverCreate,
     payload: dict = Depends(get_current_affiliate),
@@ -39,12 +39,12 @@ def create_lever(
     try:
         row = db.execute(
             text("""
-                INSERT INTO mg.strategic_levers
+                INSERT INTO rf.strategic_levers
                     (lever_code, label_fr, label_en, description_fr, description_en)
                 VALUES
                     (:lever_code, :label_fr, :label_en, :description_fr, :description_en)
                 RETURNING lever_code, label_fr, label_en, description_fr, description_en,
-                          is_active, created_at::text
+                          domain_pillar_code, family, approval_status, is_active, created_at::text
             """),
             data.model_dump(),
         ).mappings().first()
@@ -58,9 +58,13 @@ def create_lever(
     return dict(row)
 
 
-@router.get("/levers", summary="Lister les leviers stratégiques")
+@router.get("/levers", summary="Lister les leviers stratégiques (catalogue référentiel)")
 def list_levers(active_only: bool = Query(default=True), db: Session = Depends(get_db)):
-    sql = "SELECT lever_code, label_fr, label_en, description_fr, description_en, is_active, created_at::text FROM mg.strategic_levers"
+    sql = """
+        SELECT lever_code, label_fr, label_en, description_fr, description_en,
+               domain_pillar_code, family, approval_status, is_active, created_at::text
+        FROM rf.strategic_levers
+    """
     if active_only:
         sql += " WHERE is_active = true"
     sql += " ORDER BY label_fr"
@@ -76,12 +80,14 @@ def list_levers(active_only: bool = Query(default=True), db: Session = Depends(g
 
 class RootCauseLeverCreate(BaseModel):
     lever_code: str
+    evidence_type: str
     relevance_weight: float = Field(..., ge=0, le=1)
+    comment: Optional[str] = None
 
 
 @router.post(
     "/analyses/{analysis_id}/levers",
-    summary="Lier une analyse 5_POURQUOI (cause racine) à un levier stratégique",
+    summary="Lier une analyse 5_POURQUOI (ou toute analyse) à un levier stratégique -- preuve de justification",
 )
 def link_root_cause_lever(
     analysis_id: int,
@@ -95,55 +101,55 @@ def link_root_cause_lever(
     ).mappings().first()
     if not analysis:
         raise HTTPException(status_code=404, detail={"fr": "Analyse introuvable.", "en": "Analysis not found."})
-    if analysis["method"] != "5_POURQUOI":
-        raise HTTPException(status_code=422, detail={
-            "fr": f"L'analyse {analysis_id} est de méthode '{analysis['method']}', pas '5_POURQUOI' -- seule une analyse 5 Pourquoi porte une cause racine.",
-            "en": f"Analysis {analysis_id} has method '{analysis['method']}', not '5_POURQUOI' -- only a 5 Whys analysis carries a root cause.",
-        })
 
     lever = db.execute(
-        text("SELECT lever_code FROM mg.strategic_levers WHERE lever_code = :code"),
+        text("SELECT lever_code FROM rf.strategic_levers WHERE lever_code = :code"),
         {"code": data.lever_code},
     ).mappings().first()
     if not lever:
         raise HTTPException(status_code=422, detail={
-            "fr": f"lever_code '{data.lever_code}' introuvable dans mg.strategic_levers.",
-            "en": f"lever_code '{data.lever_code}' not found in mg.strategic_levers.",
+            "fr": f"lever_code '{data.lever_code}' introuvable dans rf.strategic_levers.",
+            "en": f"lever_code '{data.lever_code}' not found in rf.strategic_levers.",
         })
 
     try:
         row = db.execute(
             text("""
-                INSERT INTO mg.root_cause_levers (analysis_id, lever_code, relevance_weight)
-                VALUES (:analysis_id, :lever_code, :relevance_weight)
-                RETURNING analysis_id, lever_code, relevance_weight, created_at::text
+                INSERT INTO mg.lever_evidence (lever_code, analysis_id, evidence_type, relevance_weight, comment)
+                VALUES (:lever_code, :analysis_id, :evidence_type, :relevance_weight, :comment)
+                RETURNING id, lever_code, analysis_id, evidence_type, relevance_weight, comment, created_at::text
             """),
-            {"analysis_id": analysis_id, "lever_code": data.lever_code, "relevance_weight": data.relevance_weight},
+            {
+                "lever_code": data.lever_code,
+                "analysis_id": analysis_id,
+                "evidence_type": data.evidence_type,
+                "relevance_weight": data.relevance_weight,
+                "comment": data.comment,
+            },
         ).mappings().first()
         db.commit()
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=409, detail={
-            "fr": f"Erreur à la liaison (déjà existante ?) : {e}",
-            "en": f"Linking error (already exists?): {e}",
+            "fr": f"Erreur à la liaison : {e}",
+            "en": f"Linking error: {e}",
         })
     return dict(row)
 
 
 @router.get(
-    "/analyses/{analysis_id}/levers",
-    summary="Lister les leviers liés à une analyse 5_POURQUOI",
+    "/levers/{lever_code}/evidence",
+    summary="Lister les analyses justifiant un levier stratégique",
 )
-def list_root_cause_levers(analysis_id: int, db: Session = Depends(get_db)):
+def list_lever_evidence(lever_code: str, db: Session = Depends(get_db)):
     rows = db.execute(
         text("""
-            SELECT rcl.analysis_id, rcl.lever_code, rcl.relevance_weight, rcl.created_at::text,
-                   sl.label_fr, sl.label_en
-            FROM mg.root_cause_levers rcl
-            JOIN mg.strategic_levers sl ON sl.lever_code = rcl.lever_code
-            WHERE rcl.analysis_id = :analysis_id
-            ORDER BY rcl.relevance_weight DESC
+            SELECT le.id, le.lever_code, le.analysis_id, le.evidence_type,
+                   le.relevance_weight, le.comment, le.created_at::text
+            FROM mg.lever_evidence le
+            WHERE le.lever_code = :lever_code
+            ORDER BY le.relevance_weight DESC
         """),
-        {"analysis_id": analysis_id},
+        {"lever_code": lever_code},
     ).mappings().all()
     return {"count": len(rows), "items": [dict(r) for r in rows]}

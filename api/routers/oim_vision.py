@@ -63,6 +63,74 @@ class VisionCreate(BaseModel):
 
 
 @router.post(
+    "/visions/bulk-create",
+    summary="Créer automatiquement toutes les visions manquantes pour une année officielle",
+    description=(
+        "Réservé aux années avec rf.publication_policy.status = 'OFFICIAL' -- jamais "
+        "une année preliminaire ou en cours de collecte. Idempotent : ne recree jamais "
+        "une vision deja existante. Une ligne par (pays, pilier) reellement observe dans "
+        "ma.mv_isa_observed_scores_by_pillar pour cette annee."
+    ),
+)
+def bulk_create_visions(
+    year: int,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    pub_status = db.execute(
+        text("SELECT status FROM rf.publication_policy WHERE year = :year"),
+        {"year": year},
+    ).mappings().first()
+    if not pub_status or pub_status["status"] != "OFFICIAL":
+        raise HTTPException(status_code=422, detail={
+            "fr": f"L'année {year} n'a pas le statut OFFICIAL dans rf.publication_policy -- génération réservée aux années publiées officiellement.",
+            "en": f"Year {year} does not have OFFICIAL status in rf.publication_policy -- generation restricted to officially published years.",
+        })
+
+    combos = db.execute(
+        text("""
+            SELECT DISTINCT country_iso3, pillar_code
+            FROM ma.mv_isa_observed_scores_by_pillar
+            WHERE year = :year
+            ORDER BY country_iso3, pillar_code
+        """),
+        {"year": year},
+    ).mappings().all()
+
+    created = []
+    skipped = []
+    for combo in combos:
+        existing = db.execute(
+            text("""
+                SELECT id FROM mg.pillar_strategic_vision
+                WHERE country_iso3 = :country_iso3 AND pillar_code = :pillar_code AND year = :year
+            """),
+            {"country_iso3": combo["country_iso3"], "pillar_code": combo["pillar_code"], "year": year},
+        ).mappings().first()
+        if existing:
+            skipped.append({"country_iso3": combo["country_iso3"], "pillar_code": combo["pillar_code"], "vision_id": existing["id"]})
+            continue
+        row = db.execute(
+            text("""
+                INSERT INTO mg.pillar_strategic_vision (country_iso3, pillar_code, year, status)
+                VALUES (:country_iso3, :pillar_code, :year, 'DRAFT')
+                RETURNING id
+            """),
+            {"country_iso3": combo["country_iso3"], "pillar_code": combo["pillar_code"], "year": year},
+        ).mappings().first()
+        created.append({"country_iso3": combo["country_iso3"], "pillar_code": combo["pillar_code"], "vision_id": row["id"]})
+
+    db.commit()
+    return {
+        "year": year,
+        "created_count": len(created),
+        "skipped_count": len(skipped),
+        "created": created,
+        "skipped": skipped,
+    }
+
+
+@router.post(
     "/visions",
     summary="Créer une vision stratégique OIM (pays+pilier+année)",
     description="Une seule vision par (pays, pilier, année) -- contrainte d'unicité en base.",
@@ -492,10 +560,10 @@ def generate_plan_action_projects(
         lever = db.execute(
             text("""
                 SELECT sl.lever_code, sl.label_fr, sl.description_fr
-                FROM mg.root_cause_levers rcl
-                JOIN mg.strategic_levers sl ON sl.lever_code = rcl.lever_code
-                WHERE rcl.analysis_id = :analysis_id
-                ORDER BY rcl.relevance_weight DESC LIMIT 1
+                FROM mg.lever_evidence le
+                JOIN rf.strategic_levers sl ON sl.lever_code = le.lever_code
+                WHERE le.analysis_id = :analysis_id
+                ORDER BY le.relevance_weight DESC LIMIT 1
             """),
             {"analysis_id": pourquoi_analysis["id"]},
         ).mappings().first()
