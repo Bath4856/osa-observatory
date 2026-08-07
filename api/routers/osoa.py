@@ -1363,25 +1363,17 @@ def generate_deliverable_summary(
             "en": "No promoted strategic lever for this vision -- generate and promote a lever before generating the summary.",
         })
 
-    provider = _os_summary.environ.get("AI_SUMMARY_PROVIDER", "anthropic").lower()
-    content_with_lever = dict(deliverable["content"])
-    content_with_lever["levier_strategique"] = {
+    evidence = _build_opportunity_evidence(db, deliverable["vision_id"])
+    evidence["levier_strategique"] = {
         "lever_code": lever["lever_code"],
         "label_fr": lever["label_fr"],
         "description_fr": lever["description_fr"],
     }
-    content_json = json.dumps(content_with_lever, ensure_ascii=False)
+    content_json = json.dumps(evidence, ensure_ascii=False, default=str)
+    provider = _os_summary.environ.get("AI_SUMMARY_PROVIDER", "anthropic").lower()
 
     try:
-        if provider == "anthropic":
-            parsed = _generate_summary_anthropic(content_json)
-        elif provider == "openai":
-            parsed = _generate_summary_openai(content_json)
-        else:
-            raise HTTPException(status_code=500, detail={
-                "fr": f"AI_SUMMARY_PROVIDER='{provider}' invalide -- doit être 'anthropic' ou 'openai'.",
-                "en": f"AI_SUMMARY_PROVIDER='{provider}' invalid -- must be 'anthropic' or 'openai'.",
-            })
+        parsed = _call_summary_ai(SUMMARY_SYSTEM_PROMPT, content_json)
         summary_fr = parsed["summary_fr"]
         summary_en = parsed["summary_en"]
     except HTTPException:
@@ -1445,6 +1437,52 @@ def validate_deliverable_summary(
 
     return dict(row)
 
+def _build_opportunity_evidence(db: Session, vision_id: int) -> dict:
+    """Assemble le VRAI paquet de preuves OpportunityEvidence pour le
+    resume executif (7 aout 2026, conception actee avec Theo) --
+    5W1H+SWOT+5_POURQUOI+RISQUE+ECONOMIQUE+MULTICRITERE (analyses
+    promues reelles, interrogees directement -- pas seulement le
+    sous-ensemble de DELIVERABLE_REQUIRED_METHODS["ETUDE_OPPORTUNITE"])
+    + ZACHMAN FILTRE aux 2 premieres perspectives (EXECUTIVE,
+    BUSINESS_MGMT) -- jamais les 6, reservees au Schema directeur.
+    Ne genere rien -- lit uniquement des analyses deja promues."""
+    methods_needed = ["5W1H", "SWOT", "5_POURQUOI", "RISQUE", "ECONOMIQUE", "MULTICRITERE", "ZACHMAN"]
+    rows = db.execute(
+        text("""
+            SELECT method, content FROM osoa.strategic_analyses
+            WHERE vision_id = :vision_id AND method = ANY(:methods)
+        """),
+        {"vision_id": vision_id, "methods": methods_needed},
+    ).mappings().all()
+    by_method = {r["method"]: r["content"] for r in rows}
+
+    missing = [m for m in methods_needed if m not in by_method]
+    if missing:
+        raise HTTPException(status_code=422, detail={
+            "fr": f"Analyses manquantes pour le paquet de preuves OpportunityEvidence : {', '.join(missing)}.",
+            "en": f"Missing analyses for the OpportunityEvidence package: {', '.join(missing)}.",
+        })
+
+    zachman_complet = by_method["ZACHMAN"]
+    zachman_reduit = {
+        "grille": [
+            row for row in zachman_complet.get("grille", [])
+            if row.get("perspective") in ("EXECUTIVE", "BUSINESS_MGMT")
+        ]
+    }
+
+    return {
+        "analysis_5w1h": by_method["5W1H"],
+        "swot": by_method["SWOT"],
+        "root_causes": by_method["5_POURQUOI"],
+        "risk_analysis": by_method["RISQUE"],
+        "economic_analysis": by_method["ECONOMIQUE"],
+        "multicriteria": by_method["MULTICRITERE"],
+        "zachman": zachman_reduit,
+    }
+
+
+
 
 # ── Boucle SCRIBE/THEO pour le resume executif (Niveau 0), 7 aout 2026 ───────
 # Demande explicite de Theo : "nous finissons le Niveau 0" avant la refonte
@@ -1507,7 +1545,7 @@ def review_deliverable_summary(
     db: Session = Depends(get_db),
 ):
     deliverable = db.execute(
-        text("SELECT id, deliverable_type, content, public_summary_fr, public_summary_en FROM osoa.strategic_deliverables WHERE id = :id"),
+        text("SELECT id, vision_id, deliverable_type, content, public_summary_fr, public_summary_en FROM osoa.strategic_deliverables WHERE id = :id"),
         {"id": deliverable_id},
     ).mappings().first()
     if not deliverable:
@@ -1523,7 +1561,8 @@ def review_deliverable_summary(
             "en": "No summary to evaluate -- generate it first (POST .../generate-summary).",
         })
 
-    evidence_json = json.dumps(deliverable["content"], ensure_ascii=False, default=str)
+    evidence = _build_opportunity_evidence(db, deliverable["vision_id"])
+    evidence_json = json.dumps(evidence, ensure_ascii=False, default=str)
     system_prompt = SUMMARY_REVIEWER_SYSTEM_PROMPT.format(
         evidence_json=evidence_json,
         summary_fr=deliverable["public_summary_fr"],
@@ -1611,13 +1650,13 @@ def regenerate_deliverable_summary(
             "en": "No promoted strategic lever for this vision.",
         })
 
-    content_with_lever = dict(deliverable["content"])
-    content_with_lever["levier_strategique"] = {
+    evidence = _build_opportunity_evidence(db, deliverable["vision_id"])
+    evidence["levier_strategique"] = {
         "lever_code": lever["lever_code"],
         "label_fr": lever["label_fr"],
         "description_fr": lever["description_fr"],
     }
-    content_json = json.dumps(content_with_lever, ensure_ascii=False)
+    content_json = json.dumps(evidence, ensure_ascii=False, default=str)
 
     issues_lines = [
         "- Regle violee: " + issue["rule_violated"] + " | Preuve: " + issue["evidence"] + " | Correction proposee: " + issue["proposed_correction"]
