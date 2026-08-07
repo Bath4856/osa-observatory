@@ -33,6 +33,10 @@ from api.routers.osoa import (
     VALID_METHODS,
     DELIVERABLE_REQUIRED_METHODS,
     DELIVERABLE_BUILDERS,
+    ContentSchemaDirecteur,
+)
+from api.routers.oim_analysis_gen import (
+    _get_pillar_data_snapshot, _extract_controlled_vocabulary, _call_ai,
 )
 
 router = APIRouter(
@@ -379,6 +383,11 @@ def create_vision_deliverable(
 ):
     affiliate_id = int(payload["sub"])
 
+    if data.deliverable_type == "SCHEMA_DIRECTEUR":
+        raise HTTPException(status_code=422, detail={
+            "fr": "SCHEMA_DIRECTEUR n'est plus créé ici -- utilisez POST /visions/{vision_id}/generate-schema-directeur (refonte du 7 août 2026 : génération IA propre, ancrée sur le levier, distincte de l'étude d'opportunité).",
+            "en": "SCHEMA_DIRECTEUR is no longer created here -- use POST /visions/{vision_id}/generate-schema-directeur (7 August 2026 redesign: dedicated AI generation, anchored on the lever, distinct from the opportunity study).",
+        })
     if data.deliverable_type not in DELIVERABLE_REQUIRED_METHODS:
         raise HTTPException(status_code=422, detail={
             "fr": f"deliverable_type doit être l'une de : {', '.join(DELIVERABLE_REQUIRED_METHODS)}.",
@@ -785,6 +794,140 @@ def promote_plan_action_project(
             RETURNING id, status, promoted_project_code
         """),
         {"project_code": project_row["project_code"], "id": action_id},
+    ).mappings().first()
+    db.commit()
+
+    return dict(row)
+
+
+# ── Refonte du 7 aout 2026 (Theo) : Schema directeur, generation IA propre ───
+# Plus un recyclage de fragments de l'etude d'opportunite -- un vrai travail
+# analytique mene APRES validation de l'opportunite et APRES qu'un levier
+# soit choisi. ZACHMAN complet (6 perspectives, legitime ICI contrairement
+# au niveau opportunite) + GOUVERNANCE + MULTICRITERE, tous ancres sur le
+# levier promu -- jamais recopies de l'etude d'opportunite.
+
+SCHEMA_DIRECTEUR_SYSTEM_PROMPT = """Tu rediges un SCHEMA DIRECTEUR -- l'architecture cible et sa gouvernance pour
+mettre en oeuvre le LEVIER STRATEGIQUE deja valide ci-dessous. L'opportunite
+est deja etablie et validee -- tu ne la redemontres pas. Tu concois
+desormais COMMENT cette direction serait mise en oeuvre, a travers les 6
+perspectives Zachman completes, sa gouvernance, et les criteres de
+priorisation propres a CETTE direction.
+
+Levier strategique valide (le socle de ce schema directeur) :
+lever_code = "{lever_code}"
+label = "{lever_label}"
+description = "{lever_description}"
+
+Donnees reelles du pilier (contexte, jamais a contredire) :
+{data_snapshot}
+
+Vocabulaire controle autorise (OBLIGATOIRE) :
+{vocabulary}
+
+Schema JSON exact a respecter :
+{schema}
+
+Regles imperatives :
+- Vocabulaire mesure, jamais promotionnel.
+- La grille Zachman DOIT couvrir les 6 perspectives -- EXECUTIVE et
+  BUSINESS_MGMT restent coherentes avec le levier ; ARCHITECT/ENGINEER/
+  TECHNICIAN/ENTERPRISE precisent COMMENT le construire techniquement et
+  organisationnellement, ancres sur le levier, jamais generiques.
+- La gouvernance doit repondre a "qui gouvernerait la mise en oeuvre de CE
+  levier precis", jamais une gouvernance generique.
+- Le multicritere doit noter des criteres de priorisation PROPRES a cette
+  direction -- jamais recopier les scores de l'etude d'opportunite.
+- Reponds UNIQUEMENT en JSON valide conforme au schema, sans aucun texte
+  avant ou apres.
+"""
+
+
+@router.post(
+    "/visions/{vision_id}/generate-schema-directeur",
+    summary="Générer le Schéma directeur (IA) -- architecture cible ancrée sur le levier promu",
+    description="Réservé aux visions dont un levier stratégique est déjà PROMOTED. Génération IA propre (ZACHMAN complet 6 perspectives + GOUVERNANCE + MULTICRITERE), distincte de l'étude d'opportunité.",
+)
+def generate_schema_directeur(
+    vision_id: int,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+
+    vision = db.execute(
+        text("SELECT id, country_iso3, pillar_code, year FROM mg.pillar_strategic_vision WHERE id = :id"),
+        {"id": vision_id},
+    ).mappings().first()
+    if not vision:
+        raise HTTPException(status_code=404, detail={"fr": "Vision introuvable.", "en": "Vision not found."})
+
+    pourquoi_analysis = db.execute(
+        text("""
+            SELECT id FROM osoa.strategic_analyses
+            WHERE vision_id = :vision_id AND method = '5_POURQUOI'
+            ORDER BY created_at DESC LIMIT 1
+        """),
+        {"vision_id": vision_id},
+    ).mappings().first()
+    lever = None
+    if pourquoi_analysis:
+        lever = db.execute(
+            text("""
+                SELECT sl.lever_code, sl.label_fr, sl.description_fr
+                FROM mg.lever_evidence le
+                JOIN rf.strategic_levers sl ON sl.lever_code = le.lever_code
+                WHERE le.analysis_id = :analysis_id
+                ORDER BY le.relevance_weight DESC LIMIT 1
+            """),
+            {"analysis_id": pourquoi_analysis["id"]},
+        ).mappings().first()
+    if not lever:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucun levier stratégique promu pour cette vision -- générez et promouvez un levier avant de générer le schéma directeur.",
+            "en": "No promoted strategic lever for this vision -- generate and promote a lever before generating the master plan.",
+        })
+
+    snapshot = _get_pillar_data_snapshot(db, vision["country_iso3"], vision["pillar_code"], vision["year"])
+    if not snapshot:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucune donnée ISA observée -- génération impossible sans donnée réelle.",
+            "en": "No observed ISA data -- generation impossible without real data.",
+        })
+    snapshot_json = json.dumps(snapshot, ensure_ascii=False, default=str)
+
+    schema = ContentSchemaDirecteur.model_json_schema()
+    schema_json = json.dumps(schema, ensure_ascii=False)
+    vocabulary = _extract_controlled_vocabulary(schema)
+
+    system_prompt = SCHEMA_DIRECTEUR_SYSTEM_PROMPT.format(
+        lever_code=lever["lever_code"], lever_label=lever["label_fr"], lever_description=lever["description_fr"],
+        data_snapshot=snapshot_json, vocabulary=vocabulary, schema=schema_json,
+    )
+
+    try:
+        parsed = _call_ai(system_prompt, "Génère le schéma directeur maintenant, en respectant strictement les données, le schéma et le vocabulaire fournis ci-dessus.")
+        validated = ContentSchemaDirecteur(**parsed)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail={
+            "fr": f"Échec de la génération du schéma directeur : {e}",
+            "en": f"Master plan generation failed: {e}",
+        })
+
+    row = db.execute(
+        text("""
+            INSERT INTO osoa.strategic_deliverables (vision_id, deliverable_type, content, source_analysis_ids, generated_by)
+            VALUES (:vision_id, 'SCHEMA_DIRECTEUR', CAST(:content AS jsonb), :source_ids, :generated_by)
+            RETURNING id, vision_id, deliverable_type, content, source_analysis_ids, generated_by, generated_at::text
+        """),
+        {
+            "vision_id": vision_id,
+            "content": validated.model_dump_json(),
+            "source_ids": [pourquoi_analysis["id"]],
+            "generated_by": affiliate_id,
+        },
     ).mappings().first()
     db.commit()
 

@@ -815,6 +815,22 @@ class ContentAllPrimaryAnalyses(BaseModel):
 
 
 
+class ContentSchemaDirecteur(BaseModel):
+    # Refonte du 7 aout 2026 (Theo) : le Schema directeur n'est plus un
+    # recyclage de fragments de l'etude d'opportunite -- c'est un vrai
+    # travail analytique PROPRE, mene APRES validation de l'opportunite
+    # et APRES qu'un levier soit choisi. Reutilise ContentZachman tel
+    # quel (deja 6 perspectives completes -- legitime ICI, contrairement
+    # au niveau opportunite ou seules 2 perspectives sont retenues).
+    # Repond a "quelle architecture cible, gouvernee comment, priorisee
+    # comment" -- jamais "y a-t-il un probleme" (deja etabli) ni "quelles
+    # actions precises" (Plan d'action, en aval).
+    zachman: ContentZachman
+    gouvernance: ContentGouvernance
+    multicritere: ContentMulticritere
+
+
+
 METHOD_MODELS = {
     "5W1H": Content5W1H,
     "SWOT": ContentSWOT,
