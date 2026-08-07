@@ -794,6 +794,43 @@ class ContentAnalysisReview(BaseModel):
 
 
 
+class ContentAllPrimaryAnalyses(BaseModel):
+    # Modele combine (7 aout 2026, test d'optimisation) -- les 9 analyses
+    # primaires en UN SEUL objet, pour un unique appel IA au lieu de 9.
+    # Economie mesuree ~70% du prompt (snapshot + regles payes une seule
+    # fois au lieu de 9) -- QUALITE A VALIDER EMPIRIQUEMENT avant
+    # generalisation au pipeline batch. Les noms de champs different des
+    # cles de METHOD_MODELS (identifiants Python valides) -- voir
+    # COMBINED_FIELD_TO_METHOD dans oim_analysis_gen.py pour la
+    # correspondance.
+    analyse_5w1h: Content5W1H
+    analyse_swot: ContentSWOT
+    analyse_zachman: ContentZachman
+    analyse_risque: ContentRisque
+    analyse_economique: ContentEconomique
+    analyse_gouvernance: ContentGouvernance
+    analyse_multicritere: ContentMulticritere
+    analyse_faisabilite: ContentFaisabilite
+    analyse_5_pourquoi: Content5Pourquoi
+
+
+
+class ContentSchemaDirecteur(BaseModel):
+    # Refonte du 7 aout 2026 (Theo) : le Schema directeur n'est plus un
+    # recyclage de fragments de l'etude d'opportunite -- c'est un vrai
+    # travail analytique PROPRE, mene APRES validation de l'opportunite
+    # et APRES qu'un levier soit choisi. Reutilise ContentZachman tel
+    # quel (deja 6 perspectives completes -- legitime ICI, contrairement
+    # au niveau opportunite ou seules 2 perspectives sont retenues).
+    # Repond a "quelle architecture cible, gouvernee comment, priorisee
+    # comment" -- jamais "y a-t-il un probleme" (deja etabli) ni "quelles
+    # actions precises" (Plan d'action, en aval).
+    zachman: ContentZachman
+    gouvernance: ContentGouvernance
+    multicritere: ContentMulticritere
+
+
+
 METHOD_MODELS = {
     "5W1H": Content5W1H,
     "SWOT": ContentSWOT,

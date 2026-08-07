@@ -49,7 +49,7 @@ from api.routers.oim_vision import ACTIONS_SYSTEM_PROMPT
 from api.routers.oim_analysis_gen import (
     PRIMARY_METHODS, PRIMARY_ANALYSIS_SYSTEM_PROMPT, MULTICRITERE_SPECIFIC_RULE,
     BOUNDED_SCORE_FIELDS, _extract_controlled_vocabulary, _get_pillar_data_snapshot,
-    REVIEWER_SYSTEM_PROMPT,
+    REVIEWER_SYSTEM_PROMPT, ANALYSIS_TRIGGER_MESSAGE, REVIEW_TRIGGER_MESSAGE,
 )
 
 try:
@@ -440,7 +440,7 @@ def submit_batch(
                 method=method, data_snapshot=snapshot_json, vocabulary=vocabulary,
                 schema=schema_json, method_specific_rules=method_specific_rules,
             )
-            user_content = snapshot_json
+            user_content = ANALYSIS_TRIGGER_MESSAGE
         elif row["generation_type"] == "ANALYSIS_REVIEW":
             method = row["request_payload"]["method"]
             snapshot = row["request_payload"]["snapshot"]
@@ -456,7 +456,7 @@ def submit_batch(
                 data_snapshot=snapshot_json, method=method, analysis_content=content_json,
                 schema=schema_json, vocabulary=vocabulary, method_specific_rules=method_specific_rules,
             )
-            user_content = content_json
+            user_content = REVIEW_TRIGGER_MESSAGE
         else:
             continue
 
