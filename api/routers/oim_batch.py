@@ -910,6 +910,7 @@ def import_batch_results(
                 text("UPDATE mg.ai_generation_queue SET status = 'FAILED', error_message = :err, updated_at = NOW() WHERE id = :id"),
                 {"err": json.dumps(result.get("error") or result.get("response")), "id": queue_id},
             )
+            db.commit()
             failed += 1
             continue
 
@@ -1007,14 +1008,21 @@ def import_batch_results(
                 text("UPDATE mg.ai_generation_queue SET status = 'COMPLETED', updated_at = NOW() WHERE id = :id"),
                 {"id": queue_id},
             )
+            db.commit()
             imported += 1
         except Exception as e:
+            # La transaction peut avoir ete empoisonnee par l'echec ci-dessus
+            # (ex. caractere Unicode invalide dans le JSON genere) -- sans ce
+            # rollback, TOUTE requete suivante sur cette meme session echoue
+            # en cascade ("current transaction is aborted"), y compris ce
+            # marquage FAILED lui-meme. Bug reel decouvert le 8 aout 2026 sur
+            # le tout premier lot importe par le sequenceur automatique.
+            db.rollback()
             db.execute(
                 text("UPDATE mg.ai_generation_queue SET status = 'FAILED', error_message = :err, updated_at = NOW() WHERE id = :id"),
                 {"err": str(e), "id": queue_id},
             )
+            db.commit()
             failed += 1
-
-    db.commit()
 
     return {"batch_job_id": batch_job_id, "imported": imported, "failed": failed}
