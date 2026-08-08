@@ -707,6 +707,69 @@ def promote_analysis_draft(
 
     return dict(row)
 
+@router.post(
+    "/pillar-analyses/bulk-validate-and-promote-conforme",
+    summary="Valider ET promouvoir en masse, TOUTES VISIONS CONFONDUES, tous les brouillons jugés CONFORME par THEO",
+    description="Acte humain explicite (appeler cet endpoint = decision consciente de faire confiance a THEO pour le CONFORME) -- combine validation+promotion en une seule etape pour l'echelle, contrairement aux endpoints individuels qui restent separes.",
+)
+def bulk_validate_and_promote_conforme(
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+
+    rows = db.execute(
+        text("""
+            SELECT DISTINCT ON (ar.draft_id) ar.draft_id, ar.review_status,
+                   pad.vision_id, pad.method, pad.content, pad.status AS draft_status
+            FROM mg.analysis_review ar
+            JOIN mg.pillar_analysis_drafts pad ON pad.id = ar.draft_id
+            WHERE pad.status = 'AI_DRAFTED'
+            ORDER BY ar.draft_id, ar.created_at DESC
+        """),
+    ).mappings().all()
+
+    promoted_ids = []
+    skipped_invalid = []
+    for row in rows:
+        if row["review_status"] != "CONFORME":
+            continue
+        model_cls = METHOD_MODELS[row["method"]]
+        try:
+            model_cls(**row["content"])
+        except Exception:
+            skipped_invalid.append(row["draft_id"])
+            continue
+
+        analysis_row = db.execute(
+            text("""
+                INSERT INTO osoa.strategic_analyses (vision_id, method, content, created_by)
+                VALUES (:vision_id, :method, CAST(:content AS jsonb), :created_by)
+                RETURNING id
+            """),
+            {
+                "vision_id": row["vision_id"], "method": row["method"],
+                "content": json.dumps(row["content"]), "created_by": affiliate_id,
+            },
+        ).mappings().first()
+        db.execute(
+            text("""
+                UPDATE mg.pillar_analysis_drafts
+                SET status = 'PROMOTED', promoted_analysis_id = :aid, updated_at = NOW()
+                WHERE id = :id
+            """),
+            {"aid": analysis_row["id"], "id": row["draft_id"]},
+        )
+        promoted_ids.append(row["draft_id"])
+
+    db.commit()
+    return {
+        "promoted_count": len(promoted_ids),
+        "promoted_draft_ids": promoted_ids,
+        "skipped_invalid_content": skipped_invalid,
+    }
+
+
 
 # ── Etape 2a : levier strategique (catalogue partage mg.strategic_levers) ────
 # Correctif du 5 aout 2026 (echec reel) : mg.strategic_levers est le
