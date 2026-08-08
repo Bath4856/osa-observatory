@@ -50,7 +50,9 @@ from api.routers.oim_analysis_gen import (
     PRIMARY_METHODS, PRIMARY_ANALYSIS_SYSTEM_PROMPT, MULTICRITERE_SPECIFIC_RULE,
     BOUNDED_SCORE_FIELDS, _extract_controlled_vocabulary, _get_pillar_data_snapshot,
     REVIEWER_SYSTEM_PROMPT, ANALYSIS_TRIGGER_MESSAGE, REVIEW_TRIGGER_MESSAGE,
+    LEVER_SYSTEM_PROMPT,
 )
+from api.routers.osoa import ContentStrategicLever
 
 try:
     import openai as _openai_sdk_batch
@@ -186,6 +188,78 @@ def queue_all_pending_analyses(
         "visions_processed": len(visions) - len(visions_skipped_no_data),
         "visions_skipped_no_data": visions_skipped_no_data,
     }
+
+
+@router.post(
+    "/visions/queue-all-pending-levers",
+    summary="Mettre en file d'attente la génération du levier pour TOUTES les visions dont les 9 analyses sont promues sans levier existant (batch à l'échelle)",
+    description="Chantier 540 : necessaire pour que le levier ne reste plus une etape individuelle par vision.",
+)
+def queue_all_pending_levers(
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+
+    visions = db.execute(
+        text("""
+            SELECT v.id AS vision_id
+            FROM mg.pillar_strategic_vision v
+            WHERE NOT EXISTS (
+                SELECT 1 FROM mg.strategic_lever_proposals slp WHERE slp.vision_id = v.id
+            )
+            AND (
+                SELECT COUNT(DISTINCT method) FROM osoa.strategic_analyses sa
+                WHERE sa.vision_id = v.id AND sa.method = ANY(:methods)
+            ) = 9
+        """),
+        {"methods": PRIMARY_METHODS},
+    ).mappings().all()
+    if not visions:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucune vision eligible (9 analyses promues, pas encore de levier).",
+            "en": "No eligible vision (9 analyses promoted, no lever yet).",
+        })
+
+    catalog_rows = db.execute(
+        text("SELECT lever_code, label_fr, description_fr FROM rf.strategic_levers WHERE is_active = true"),
+    ).mappings().all()
+    catalog_json = json.dumps([dict(r) for r in catalog_rows], ensure_ascii=False)
+
+    queued_count = 0
+    for v in visions:
+        promoted = db.execute(
+            text("""
+                SELECT id, method, content FROM osoa.strategic_analyses
+                WHERE vision_id = :vision_id AND method = ANY(:methods)
+                ORDER BY created_at DESC
+            """),
+            {"vision_id": v["vision_id"], "methods": PRIMARY_METHODS},
+        ).mappings().all()
+        pourquoi_analysis = next((r for r in promoted if r["method"] == "5_POURQUOI"), None)
+        if not pourquoi_analysis:
+            continue
+        analyses_content = {r["method"]: r["content"] for r in promoted}
+
+        db.execute(
+            text("""
+                INSERT INTO mg.ai_generation_queue (generation_type, target_id, request_payload, created_by)
+                VALUES ('LEVER_GENERATION', :target_id, CAST(:payload AS jsonb), :created_by)
+            """),
+            {
+                "target_id": v["vision_id"],
+                "payload": json.dumps({
+                    "source_analysis_id": pourquoi_analysis["id"],
+                    "analyses_content": analyses_content,
+                    "catalog": catalog_rows and json.loads(catalog_json) or [],
+                }, ensure_ascii=False, default=str),
+                "created_by": affiliate_id,
+            },
+        )
+        queued_count += 1
+
+    db.commit()
+    return {"queued_count": queued_count}
 
 
 @router.post(
@@ -554,6 +628,17 @@ def submit_batch(
                 schema=schema_json, vocabulary=vocabulary, method_specific_rules=method_specific_rules,
             )
             user_content = REVIEW_TRIGGER_MESSAGE
+        elif row["generation_type"] == "LEVER_GENERATION":
+            analyses_content = row["request_payload"]["analyses_content"]
+            catalog = row["request_payload"]["catalog"]
+            analyses_json = json.dumps(analyses_content, ensure_ascii=False, default=str)
+            catalog_json = json.dumps(catalog, ensure_ascii=False)
+            schema = ContentStrategicLever.model_json_schema()
+            schema_json = json.dumps(schema, ensure_ascii=False)
+            system_prompt = LEVER_SYSTEM_PROMPT.format(
+                existing_catalog=catalog_json, analyses_content=analyses_json, schema=schema_json,
+            )
+            user_content = analyses_json
         else:
             continue
 
@@ -793,6 +878,31 @@ def import_batch_results(
                         VALUES (:draft_id, :status, CAST(:issues AS jsonb))
                     """),
                     {"draft_id": queue_row["target_id"], "status": validated.review_status, "issues": issues_json},
+                )
+            elif queue_row["generation_type"] == "LEVER_GENERATION":
+                validated = ContentStrategicLever(**parsed)
+                source_analysis_id = queue_row["request_payload"]["source_analysis_id"]
+                db.execute(
+                    text("""
+                        INSERT INTO mg.strategic_lever_proposals
+                            (vision_id, source_analysis_id, proposed_lever_code, reuses_existing_code,
+                             label_fr, label_en, description_fr, description_en, relevance_weight, created_by)
+                        VALUES
+                            (:vision_id, :source_analysis_id, :proposed_lever_code, :reuses_existing_code,
+                             :label_fr, :label_en, :description_fr, :description_en, :relevance_weight, :created_by)
+                    """),
+                    {
+                        "vision_id": queue_row["target_id"],
+                        "source_analysis_id": source_analysis_id,
+                        "proposed_lever_code": validated.lever_code,
+                        "reuses_existing_code": validated.reuses_existing_code,
+                        "label_fr": validated.label_fr,
+                        "label_en": validated.label_en,
+                        "description_fr": validated.description_fr,
+                        "description_en": validated.description_en,
+                        "relevance_weight": validated.relevance_weight,
+                        "created_by": int(payload["sub"]),
+                    },
                 )
 
             db.execute(
