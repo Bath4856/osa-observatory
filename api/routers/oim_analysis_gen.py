@@ -1022,6 +1022,69 @@ def promote_strategic_lever_proposal(
 
     return dict(row)
 
+@router.post(
+    "/pillar-analyses/bulk-promote-levers",
+    summary="Promouvoir en masse TOUS les leviers proposés (AI_DRAFTED), toutes visions confondues",
+    description="Acte humain explicite -- chantier 540, evite de promouvoir chaque levier individuellement. Cree le lever_code au catalogue s'il est nouveau, lie l'analyse via mg.lever_evidence.",
+)
+def bulk_promote_levers(
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    proposals = db.execute(
+        text("""
+            SELECT id, source_analysis_id, proposed_lever_code, reuses_existing_code,
+                   label_fr, label_en, description_fr, description_en, relevance_weight
+            FROM mg.strategic_lever_proposals WHERE status = 'AI_DRAFTED'
+        """),
+    ).mappings().all()
+    if not proposals:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucune proposition de levier AI_DRAFTED.",
+            "en": "No AI_DRAFTED lever proposal.",
+        })
+
+    promoted_ids = []
+    skipped = []
+    for p in proposals:
+        lever_code = p["proposed_lever_code"]
+        existing = db.execute(
+            text("SELECT lever_code FROM rf.strategic_levers WHERE lever_code = :code"),
+            {"code": lever_code},
+        ).mappings().first()
+
+        if p["reuses_existing_code"] and not existing:
+            skipped.append(p["id"])
+            continue
+        if not p["reuses_existing_code"] and not existing:
+            db.execute(
+                text("""
+                    INSERT INTO rf.strategic_levers (lever_code, label_fr, label_en, description_fr, description_en)
+                    VALUES (:lever_code, :label_fr, :label_en, :description_fr, :description_en)
+                """),
+                {
+                    "lever_code": lever_code, "label_fr": p["label_fr"], "label_en": p["label_en"],
+                    "description_fr": p["description_fr"], "description_en": p["description_en"],
+                },
+            )
+
+        db.execute(
+            text("""
+                INSERT INTO mg.lever_evidence (lever_code, analysis_id, evidence_type, relevance_weight)
+                VALUES (:lever_code, :analysis_id, '5_POURQUOI', :relevance_weight)
+            """),
+            {"lever_code": lever_code, "analysis_id": p["source_analysis_id"], "relevance_weight": p["relevance_weight"]},
+        )
+        db.execute(
+            text("UPDATE mg.strategic_lever_proposals SET status = 'PROMOTED', updated_at = NOW() WHERE id = :id"),
+            {"id": p["id"]},
+        )
+        promoted_ids.append(p["id"])
+
+    db.commit()
+    return {"promoted_count": len(promoted_ids), "promoted_ids": promoted_ids, "skipped_inconsistent": skipped}
+
+
 
 # ── Etape 2b : interdependance niveau VISION, basee sur le levier promu ──────
 
