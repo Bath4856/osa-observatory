@@ -36,6 +36,7 @@ queue-analyses, aucune duplication.
 import json
 import os
 import tempfile
+import tiktoken
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -44,7 +45,7 @@ from pydantic import BaseModel
 
 from api.db import get_db
 from api.routers.auth_affiliates import get_current_affiliate
-from api.routers.osoa import SUMMARY_SYSTEM_PROMPT, METHOD_MODELS, ContentAnalysisReview, _build_opportunity_evidence
+from api.routers.osoa import SUMMARY_SYSTEM_PROMPT, METHOD_MODELS, ContentAnalysisReview, _build_opportunity_evidence, SUMMARY_REVIEWER_SYSTEM_PROMPT
 from api.routers.oim_vision import ACTIONS_SYSTEM_PROMPT
 from api.routers.oim_analysis_gen import (
     PRIMARY_METHODS, PRIMARY_ANALYSIS_SYSTEM_PROMPT, MULTICRITERE_SPECIFIC_RULE,
@@ -188,6 +189,63 @@ def queue_all_pending_analyses(
         "visions_processed": len(visions) - len(visions_skipped_no_data),
         "visions_skipped_no_data": visions_skipped_no_data,
     }
+
+
+@router.post(
+    "/deliverables/queue-all-pending-summary-reviews",
+    summary="Mettre en file d'attente la revue THEO de tous les résumés exécutifs AI_DRAFTED (batch à l'échelle)",
+    description="Chantier 540 -- doctrine des 2 phases strictes : THEO ne relit qu'une fois SCRIBE a termine tous les resumes, jamais a chaque appel individuel.",
+)
+def queue_all_pending_summary_reviews(
+    dry_run: bool = Query(default=False, description="Si true, execute tout mais annule (rollback) -- previsualise sans rien changer."),
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+
+    deliverables = db.execute(
+        text("""
+            SELECT id, vision_id, public_summary_fr, public_summary_en
+            FROM osoa.strategic_deliverables
+            WHERE deliverable_type = 'ETUDE_OPPORTUNITE' AND summary_status = 'AI_DRAFTED'
+        """),
+    ).mappings().all()
+    if not deliverables:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucun résumé AI_DRAFTED en attente de revue.",
+            "en": "No AI_DRAFTED summary pending review.",
+        })
+
+    queued_count = 0
+    skipped = []
+    for d in deliverables:
+        try:
+            evidence = _build_opportunity_evidence(db, d["vision_id"])
+        except HTTPException:
+            skipped.append(d["id"])
+            continue
+        db.execute(
+            text("""
+                INSERT INTO mg.ai_generation_queue (generation_type, target_id, request_payload, created_by)
+                VALUES ('SUMMARY_REVIEW', :target_id, CAST(:payload AS jsonb), :created_by)
+            """),
+            {
+                "target_id": d["id"],
+                "payload": json.dumps({
+                    "evidence": evidence,
+                    "summary_fr": d["public_summary_fr"],
+                    "summary_en": d["public_summary_en"] or "",
+                }, ensure_ascii=False, default=str),
+                "created_by": affiliate_id,
+            },
+        )
+        queued_count += 1
+
+    if dry_run:
+        db.rollback()
+    else:
+        db.commit()
+    return {"dry_run": dry_run, "queued_count": queued_count, "deliverables_skipped_no_evidence": skipped}
 
 
 @router.post(
@@ -571,6 +629,7 @@ def list_queue(
 )
 def submit_batch(
     chunk_size: int = Query(default=60, ge=1, le=500),
+    dry_run: bool = Query(default=False, description="Si true, construit le lot et estime les tokens (tiktoken) mais N'APPELLE PAS OpenAI -- aucun cout, previsualise seulement."),
     payload: dict = Depends(get_current_affiliate),
     db: Session = Depends(get_db),
 ):
@@ -586,7 +645,7 @@ def submit_batch(
             "en": "No requests in queue (status=QUEUED).",
         })
 
-    client = _openai_client()
+    client = None if dry_run else _openai_client()
 
     lines = []
     for row in queued:
@@ -639,6 +698,15 @@ def submit_batch(
                 existing_catalog=catalog_json, analyses_content=analyses_json, schema=schema_json,
             )
             user_content = analyses_json
+        elif row["generation_type"] == "SUMMARY_REVIEW":
+            evidence = row["request_payload"]["evidence"]
+            summary_fr = row["request_payload"]["summary_fr"]
+            summary_en = row["request_payload"]["summary_en"]
+            evidence_json = json.dumps(evidence, ensure_ascii=False, default=str)
+            system_prompt = SUMMARY_REVIEWER_SYSTEM_PROMPT.format(
+                evidence_json=evidence_json, summary_fr=summary_fr, summary_en=summary_en,
+            )
+            user_content = "Évalue ce résumé maintenant, selon les règles fournies ci-dessus."
         else:
             continue
 
@@ -655,6 +723,25 @@ def submit_batch(
                 ],
             },
         })
+
+    if dry_run:
+        try:
+            encoding = tiktoken.encoding_for_model("gpt-4o")
+        except KeyError:
+            encoding = tiktoken.get_encoding("o200k_base")
+        total_tokens = 0
+        for line in lines:
+            for msg in line["body"]["messages"]:
+                total_tokens += len(encoding.encode(msg["content"]))
+        price_per_million = 1.25  # tarif Batch (-50% du tarif standard $2.50/M)
+        estimated_cost = (total_tokens / 1_000_000) * price_per_million
+        return {
+            "dry_run": True,
+            "item_count": len(queued),
+            "estimated_prompt_tokens": total_tokens,
+            "estimated_cost_usd_prompt_only": round(estimated_cost, 4),
+            "note_fr": "Estimation du prompt uniquement (tiktoken) -- la reponse (completion) n'est pas incluse, aucun appel OpenAI effectue, rien n'a ete soumis ni marque SUBMITTED.",
+        }
 
     tmp_path = None
     try:
@@ -697,6 +784,7 @@ def submit_batch(
     db.commit()
 
     return {
+        "dry_run": False,
         "batch_job_id": job_row["id"],
         "provider_batch_id": batch.id,
         "item_count": len(queued),
@@ -903,6 +991,16 @@ def import_batch_results(
                         "relevance_weight": validated.relevance_weight,
                         "created_by": int(payload["sub"]),
                     },
+                )
+            elif queue_row["generation_type"] == "SUMMARY_REVIEW":
+                validated = ContentAnalysisReview(**parsed)
+                issues_json = json.dumps([i.model_dump() for i in validated.issues], ensure_ascii=False)
+                db.execute(
+                    text("""
+                        INSERT INTO mg.summary_review (deliverable_id, review_status, issues)
+                        VALUES (:deliverable_id, :status, CAST(:issues AS jsonb))
+                    """),
+                    {"deliverable_id": queue_row["target_id"], "status": validated.review_status, "issues": issues_json},
                 )
 
             db.execute(

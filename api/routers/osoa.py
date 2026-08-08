@@ -1694,3 +1694,40 @@ def regenerate_deliverable_summary(
     db.commit()
 
     return dict(row)
+
+
+@router.post(
+    "/deliverables/bulk-validate-summaries-conforme",
+    summary="Valider en masse tous les résumés exécutifs jugés CONFORME par THEO",
+    description="Acte humain explicite -- chantier 540, cloture la boucle SCRIBE/THEO/validation a l'echelle.",
+)
+def bulk_validate_summaries_conforme(
+    dry_run: bool = Query(default=False, description="Si true, execute tout mais annule (rollback) -- previsualise sans rien changer."),
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    rows = db.execute(
+        text("""
+            SELECT DISTINCT ON (sr.deliverable_id) sr.deliverable_id, sr.review_status, sd.summary_status
+            FROM mg.summary_review sr
+            JOIN osoa.strategic_deliverables sd ON sd.id = sr.deliverable_id
+            WHERE sd.summary_status = 'AI_DRAFTED'
+            ORDER BY sr.deliverable_id, sr.created_at DESC
+        """),
+    ).mappings().all()
+
+    validated_ids = []
+    for row in rows:
+        if row["review_status"] != "CONFORME":
+            continue
+        db.execute(
+            text("UPDATE osoa.strategic_deliverables SET summary_status = 'HUMAN_VALIDATED' WHERE id = :id"),
+            {"id": row["deliverable_id"]},
+        )
+        validated_ids.append(row["deliverable_id"])
+
+    if dry_run:
+        db.rollback()
+    else:
+        db.commit()
+    return {"dry_run": dry_run, "validated_count": len(validated_ids), "validated_deliverable_ids": validated_ids}

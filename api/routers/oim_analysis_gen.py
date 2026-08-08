@@ -713,6 +713,7 @@ def promote_analysis_draft(
     description="Acte humain explicite (appeler cet endpoint = decision consciente de faire confiance a THEO pour le CONFORME) -- combine validation+promotion en une seule etape pour l'echelle, contrairement aux endpoints individuels qui restent separes.",
 )
 def bulk_validate_and_promote_conforme(
+    dry_run: bool = Query(default=False, description="Si true, execute tout mais annule (rollback) -- previsualise sans rien changer."),
     payload: dict = Depends(get_current_affiliate),
     db: Session = Depends(get_db),
 ):
@@ -762,8 +763,12 @@ def bulk_validate_and_promote_conforme(
         )
         promoted_ids.append(row["draft_id"])
 
-    db.commit()
+    if dry_run:
+        db.rollback()
+    else:
+        db.commit()
     return {
+        "dry_run": dry_run,
         "promoted_count": len(promoted_ids),
         "promoted_draft_ids": promoted_ids,
         "skipped_invalid_content": skipped_invalid,
@@ -1028,6 +1033,7 @@ def promote_strategic_lever_proposal(
     description="Acte humain explicite -- chantier 540, evite de promouvoir chaque levier individuellement. Cree le lever_code au catalogue s'il est nouveau, lie l'analyse via mg.lever_evidence.",
 )
 def bulk_promote_levers(
+    dry_run: bool = Query(default=False, description="Si true, execute tout mais annule (rollback) -- previsualise sans rien changer."),
     payload: dict = Depends(get_current_affiliate),
     db: Session = Depends(get_db),
 ):
@@ -1081,8 +1087,11 @@ def bulk_promote_levers(
         )
         promoted_ids.append(p["id"])
 
-    db.commit()
-    return {"promoted_count": len(promoted_ids), "promoted_ids": promoted_ids, "skipped_inconsistent": skipped}
+    if dry_run:
+        db.rollback()
+    else:
+        db.commit()
+    return {"dry_run": dry_run, "promoted_count": len(promoted_ids), "promoted_ids": promoted_ids, "skipped_inconsistent": skipped}
 
 
 
