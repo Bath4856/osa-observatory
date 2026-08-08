@@ -1245,7 +1245,8 @@ SUMMARY_SYSTEM_PROMPT = (
 )
 
 
-def _generate_summary_anthropic(content_json: str) -> dict:
+def _generate_summary_anthropic(content_json: str, system_prompt: str = None) -> dict:
+    system_prompt = system_prompt or SUMMARY_SYSTEM_PROMPT
     api_key = _os_summary.environ.get("ANTHROPIC_API_KEY")
     if not api_key or _anthropic_sdk is None:
         raise HTTPException(status_code=503, detail={
@@ -1256,14 +1257,15 @@ def _generate_summary_anthropic(content_json: str) -> dict:
     response = client.messages.create(
         model="claude-sonnet-5",
         max_tokens=1200,
-        system=SUMMARY_SYSTEM_PROMPT,
+        system=system_prompt,
         messages=[{"role": "user", "content": content_json}],
     )
     raw_text = "".join(block.text for block in response.content if block.type == "text")
     return json.loads(raw_text)
 
 
-def _generate_summary_openai(content_json: str) -> dict:
+def _generate_summary_openai(content_json: str, system_prompt: str = None) -> dict:
+    system_prompt = system_prompt or SUMMARY_SYSTEM_PROMPT
     api_key = _os_summary.environ.get("OPENAI_API_KEY")
     if not api_key or _openai_sdk is None:
         raise HTTPException(status_code=503, detail={
@@ -1275,11 +1277,27 @@ def _generate_summary_openai(content_json: str) -> dict:
         model="gpt-4o",
         response_format={"type": "json_object"},
         messages=[
-            {"role": "system", "content": SUMMARY_SYSTEM_PROMPT},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": content_json},
         ],
     )
     return json.loads(response.choices[0].message.content)
+
+
+def _call_summary_ai(system_prompt: str, user_content: str) -> dict:
+    """Helper partage pour review-summary/regenerate-summary -- meme
+    selection de fournisseur (AI_SUMMARY_PROVIDER) que generate-summary,
+    jamais dupliquee, juste parametree avec un prompt different."""
+    provider = _os_summary.environ.get("AI_SUMMARY_PROVIDER", "anthropic").lower()
+    if provider == "anthropic":
+        return _generate_summary_anthropic(user_content, system_prompt)
+    elif provider == "openai":
+        return _generate_summary_openai(user_content, system_prompt)
+    else:
+        raise HTTPException(status_code=500, detail={
+            "fr": f"AI_SUMMARY_PROVIDER='{provider}' invalide -- doit être 'anthropic' ou 'openai'.",
+            "en": f"AI_SUMMARY_PROVIDER='{provider}' invalid -- must be 'anthropic' or 'openai'.",
+        })
 
 
 class SummaryValidateUpdate(BaseModel):
@@ -1345,25 +1363,17 @@ def generate_deliverable_summary(
             "en": "No promoted strategic lever for this vision -- generate and promote a lever before generating the summary.",
         })
 
-    provider = _os_summary.environ.get("AI_SUMMARY_PROVIDER", "anthropic").lower()
-    content_with_lever = dict(deliverable["content"])
-    content_with_lever["levier_strategique"] = {
+    evidence = _build_opportunity_evidence(db, deliverable["vision_id"])
+    evidence["levier_strategique"] = {
         "lever_code": lever["lever_code"],
         "label_fr": lever["label_fr"],
         "description_fr": lever["description_fr"],
     }
-    content_json = json.dumps(content_with_lever, ensure_ascii=False)
+    content_json = json.dumps(evidence, ensure_ascii=False, default=str)
+    provider = _os_summary.environ.get("AI_SUMMARY_PROVIDER", "anthropic").lower()
 
     try:
-        if provider == "anthropic":
-            parsed = _generate_summary_anthropic(content_json)
-        elif provider == "openai":
-            parsed = _generate_summary_openai(content_json)
-        else:
-            raise HTTPException(status_code=500, detail={
-                "fr": f"AI_SUMMARY_PROVIDER='{provider}' invalide -- doit être 'anthropic' ou 'openai'.",
-                "en": f"AI_SUMMARY_PROVIDER='{provider}' invalid -- must be 'anthropic' or 'openai'.",
-            })
+        parsed = _call_summary_ai(SUMMARY_SYSTEM_PROMPT, content_json)
         summary_fr = parsed["summary_fr"]
         summary_en = parsed["summary_en"]
     except HTTPException:
@@ -1422,6 +1432,264 @@ def validate_deliverable_summary(
             RETURNING id, deliverable_type, public_summary_fr, public_summary_en, summary_status
         """),
         {"summary_fr": data.public_summary_fr, "summary_en": data.public_summary_en, "id": deliverable_id},
+    ).mappings().first()
+    db.commit()
+
+    return dict(row)
+
+def _build_opportunity_evidence(db: Session, vision_id: int) -> dict:
+    """Assemble le VRAI paquet de preuves OpportunityEvidence pour le
+    resume executif (7 aout 2026, conception actee avec Theo) --
+    5W1H+SWOT+5_POURQUOI+RISQUE+ECONOMIQUE+MULTICRITERE (analyses
+    promues reelles, interrogees directement -- pas seulement le
+    sous-ensemble de DELIVERABLE_REQUIRED_METHODS["ETUDE_OPPORTUNITE"])
+    + ZACHMAN FILTRE aux 2 premieres perspectives (EXECUTIVE,
+    BUSINESS_MGMT) -- jamais les 6, reservees au Schema directeur.
+    Ne genere rien -- lit uniquement des analyses deja promues."""
+    methods_needed = ["5W1H", "SWOT", "5_POURQUOI", "RISQUE", "ECONOMIQUE", "MULTICRITERE", "ZACHMAN"]
+    rows = db.execute(
+        text("""
+            SELECT method, content FROM osoa.strategic_analyses
+            WHERE vision_id = :vision_id AND method = ANY(:methods)
+        """),
+        {"vision_id": vision_id, "methods": methods_needed},
+    ).mappings().all()
+    by_method = {r["method"]: r["content"] for r in rows}
+
+    missing = [m for m in methods_needed if m not in by_method]
+    if missing:
+        raise HTTPException(status_code=422, detail={
+            "fr": f"Analyses manquantes pour le paquet de preuves OpportunityEvidence : {', '.join(missing)}.",
+            "en": f"Missing analyses for the OpportunityEvidence package: {', '.join(missing)}.",
+        })
+
+    zachman_complet = by_method["ZACHMAN"]
+    zachman_reduit = {
+        "grille": [
+            row for row in zachman_complet.get("grille", [])
+            if row.get("perspective") in ("EXECUTIVE", "BUSINESS_MGMT")
+        ]
+    }
+
+    return {
+        "analysis_5w1h": by_method["5W1H"],
+        "swot": by_method["SWOT"],
+        "root_causes": by_method["5_POURQUOI"],
+        "risk_analysis": by_method["RISQUE"],
+        "economic_analysis": by_method["ECONOMIQUE"],
+        "multicriteria": by_method["MULTICRITERE"],
+        "zachman": zachman_reduit,
+    }
+
+
+
+
+# ── Boucle SCRIBE/THEO pour le resume executif (Niveau 0), 7 aout 2026 ───────
+# Demande explicite de Theo : "nous finissons le Niveau 0" avant la refonte
+# complete OpportunityStudy (Niveau 1). Reutilise ContentAnalysisReview
+# (deja generique : review_status + issues structurees) et _call_summary_ai
+# (deja parametree ci-dessus) -- aucune duplication.
+
+SUMMARY_REVIEWER_SYSTEM_PROMPT = """Tu es THEO, un REVISEUR SCIENTIFIQUE independant -- tu ne rediges JAMAIS
+toi-meme, tu juges un resume executif deja redige par SCRIBE, contre le
+paquet de preuves fourni ci-dessous et les regles imperatives qui
+encadraient sa redaction.
+
+Paquet de preuves (le contenu reel du livrable ETUDE_OPPORTUNITE, source
+de verite -- jamais a contredire) :
+{evidence_json}
+
+Resume executif produit par SCRIBE, a evaluer (FR) :
+{summary_fr}
+
+Resume executif produit par SCRIBE, a evaluer (EN) :
+{summary_en}
+
+Regles imperatives qui encadraient SCRIBE (verifie leur respect exact) :
+- Le resume doit accomplir DEUX fonctions dans l'ordre : (1) ETABLIR
+  l'opportunite a partir des faits du paquet de preuves, academique,
+  jamais de langage promotionnel ; (2) TERMINER par une invitation
+  EXPLICITE a commander une intervention (etude de faisabilite et/ou
+  schema directeur et plan d'actions).
+- Vocabulaire mesure : jamais d'adjectifs absolus ou promotionnels
+  (indeniable, majeur, enorme) -- preferer documente/observe/identifie.
+- Chaque affirmation du resume doit etre etayee par le paquet de preuves
+  -- signale toute affirmation qui semble inventee ou non reliee.
+- Jamais presenter une strategie/un plan comme deja existant.
+- Jamais parler de "le projet" au singulier comme deja identifie --
+  seulement "certains projets" au pluriel et au conditionnel.
+- Longueur 150-200 mots par langue maximum -- signale si trop long ou
+  trop court.
+
+Pour chaque probleme trouve, structure ta reponse en 3 parties :
+rule_violated, evidence, proposed_correction -- meme discipline que pour
+les 9 analyses primaires.
+
+Verdicts possibles : CONFORME (issues vide) / A_REVOIR / PROBLEME_DETECTE
+(au moins un item dans issues).
+
+Reponds UNIQUEMENT en JSON valide, sans aucun texte avant ou apres, au
+format exact :
+{{"review_status": "...", "issues": [{{"rule_violated": "...", "evidence": "...", "proposed_correction": "..."}}]}}
+"""
+
+
+@router.post(
+    "/deliverables/{deliverable_id}/review-summary",
+    summary="Faire évaluer le résumé exécutif par THEO (juge, ne rédige jamais)",
+    description="Réservé aux livrables ETUDE_OPPORTUNITE ayant un résumé AI_DRAFTED. Vérifie la fidélité au paquet de preuves et le respect des règles imposées à SCRIBE.",
+)
+def review_deliverable_summary(
+    deliverable_id: int,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    deliverable = db.execute(
+        text("SELECT id, vision_id, deliverable_type, content, public_summary_fr, public_summary_en FROM osoa.strategic_deliverables WHERE id = :id"),
+        {"id": deliverable_id},
+    ).mappings().first()
+    if not deliverable:
+        raise HTTPException(status_code=404, detail={"fr": "Livrable introuvable.", "en": "Deliverable not found."})
+    if deliverable["deliverable_type"] != "ETUDE_OPPORTUNITE":
+        raise HTTPException(status_code=422, detail={
+            "fr": "La revue du résumé n'est disponible que pour ETUDE_OPPORTUNITE.",
+            "en": "Summary review is only available for ETUDE_OPPORTUNITE.",
+        })
+    if not deliverable["public_summary_fr"]:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucun résumé à évaluer -- générez-le d'abord (POST .../generate-summary).",
+            "en": "No summary to evaluate -- generate it first (POST .../generate-summary).",
+        })
+
+    evidence = _build_opportunity_evidence(db, deliverable["vision_id"])
+    evidence_json = json.dumps(evidence, ensure_ascii=False, default=str)
+    system_prompt = SUMMARY_REVIEWER_SYSTEM_PROMPT.format(
+        evidence_json=evidence_json,
+        summary_fr=deliverable["public_summary_fr"],
+        summary_en=deliverable["public_summary_en"] or "",
+    )
+
+    try:
+        parsed = _call_summary_ai(system_prompt, "Évalue ce résumé maintenant, selon les règles fournies ci-dessus.")
+        validated = ContentAnalysisReview(**parsed)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail={
+            "fr": f"Échec de la révision IA : {e}",
+            "en": f"AI review failed: {e}",
+        })
+
+    issues_json = json.dumps([i.model_dump() for i in validated.issues], ensure_ascii=False)
+    row = db.execute(
+        text("""
+            INSERT INTO mg.summary_review (deliverable_id, review_status, issues)
+            VALUES (:deliverable_id, :status, CAST(:issues AS jsonb))
+            RETURNING id, deliverable_id, review_status, issues, created_at::text
+        """),
+        {"deliverable_id": deliverable_id, "status": validated.review_status, "issues": issues_json},
+    ).mappings().first()
+    db.commit()
+
+    return dict(row)
+
+
+@router.post(
+    "/deliverables/{deliverable_id}/regenerate-summary",
+    summary="Régénérer le résumé exécutif en intégrant la dernière critique de THEO",
+    description="Réservé aux livrables ayant au moins une revue enregistrée (POST .../review-summary).",
+)
+def regenerate_deliverable_summary(
+    deliverable_id: int,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    deliverable = db.execute(
+        text("SELECT id, vision_id, deliverable_type, content FROM osoa.strategic_deliverables WHERE id = :id"),
+        {"id": deliverable_id},
+    ).mappings().first()
+    if not deliverable:
+        raise HTTPException(status_code=404, detail={"fr": "Livrable introuvable.", "en": "Deliverable not found."})
+
+    latest_review = db.execute(
+        text("""
+            SELECT review_status, issues FROM mg.summary_review
+            WHERE deliverable_id = :deliverable_id ORDER BY created_at DESC LIMIT 1
+        """),
+        {"deliverable_id": deliverable_id},
+    ).mappings().first()
+    if not latest_review:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucune revue disponible -- faites évaluer le résumé d'abord (POST .../review-summary).",
+            "en": "No review available -- have the summary evaluated first (POST .../review-summary).",
+        })
+
+    pourquoi_analysis = db.execute(
+        text("""
+            SELECT id FROM osoa.strategic_analyses
+            WHERE vision_id = :vision_id AND method = '5_POURQUOI'
+            ORDER BY created_at DESC LIMIT 1
+        """),
+        {"vision_id": deliverable["vision_id"]},
+    ).mappings().first()
+    lever = None
+    if pourquoi_analysis:
+        lever = db.execute(
+            text("""
+                SELECT sl.lever_code, sl.label_fr, sl.description_fr
+                FROM mg.lever_evidence le
+                JOIN rf.strategic_levers sl ON sl.lever_code = le.lever_code
+                WHERE le.analysis_id = :analysis_id
+                ORDER BY le.relevance_weight DESC LIMIT 1
+            """),
+            {"analysis_id": pourquoi_analysis["id"]},
+        ).mappings().first()
+    if not lever:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucun levier stratégique promu pour cette vision.",
+            "en": "No promoted strategic lever for this vision.",
+        })
+
+    evidence = _build_opportunity_evidence(db, deliverable["vision_id"])
+    evidence["levier_strategique"] = {
+        "lever_code": lever["lever_code"],
+        "label_fr": lever["label_fr"],
+        "description_fr": lever["description_fr"],
+    }
+    content_json = json.dumps(evidence, ensure_ascii=False, default=str)
+
+    issues_lines = [
+        "- Regle violee: " + issue["rule_violated"] + " | Preuve: " + issue["evidence"] + " | Correction proposee: " + issue["proposed_correction"]
+        for issue in latest_review["issues"]
+    ]
+    issues_text = "\n".join(issues_lines)
+    feedback_note = (
+        "\n\nCORRECTION REQUISE -- THEO (le reviseur scientifique) a identifie "
+        "les problemes suivants dans une version precedente :\n"
+        + issues_text +
+        "\nCorrige precisement ces points dans cette nouvelle version, sans "
+        "repeter les memes defauts."
+    )
+    system_prompt = SUMMARY_SYSTEM_PROMPT + feedback_note
+
+    try:
+        parsed = _call_summary_ai(system_prompt, content_json)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail={
+            "fr": f"Échec de la régénération IA : {e}",
+            "en": f"AI regeneration failed: {e}",
+        })
+
+    row = db.execute(
+        text("""
+            UPDATE osoa.strategic_deliverables
+            SET public_summary_fr = :summary_fr, public_summary_en = :summary_en, summary_status = 'AI_DRAFTED'
+            WHERE id = :id
+            RETURNING id, deliverable_type, public_summary_fr, public_summary_en, summary_status
+        """),
+        {"summary_fr": parsed["summary_fr"], "summary_en": parsed["summary_en"], "id": deliverable_id},
     ).mappings().first()
     db.commit()
 

@@ -44,7 +44,7 @@ from pydantic import BaseModel
 
 from api.db import get_db
 from api.routers.auth_affiliates import get_current_affiliate
-from api.routers.osoa import SUMMARY_SYSTEM_PROMPT, METHOD_MODELS, ContentAnalysisReview
+from api.routers.osoa import SUMMARY_SYSTEM_PROMPT, METHOD_MODELS, ContentAnalysisReview, _build_opportunity_evidence
 from api.routers.oim_vision import ACTIONS_SYSTEM_PROMPT
 from api.routers.oim_analysis_gen import (
     PRIMARY_METHODS, PRIMARY_ANALYSIS_SYSTEM_PROMPT, MULTICRITERE_SPECIFIC_RULE,
@@ -297,10 +297,35 @@ def queue_all_pending_reviews(
     return {"count": len(created_ids), "queue_ids": created_ids}
 
 
+def _fetch_lever_for_vision(db: Session, vision_id: int) -> dict:
+    """Meme garde-fou levier que partout ailleurs -- factorise ici pour
+    eviter de le dupliquer entre queue_summary et queue_all_pending_summaries."""
+    pourquoi_analysis = db.execute(
+        text("""
+            SELECT id FROM osoa.strategic_analyses
+            WHERE vision_id = :vision_id AND method = '5_POURQUOI'
+            ORDER BY created_at DESC LIMIT 1
+        """),
+        {"vision_id": vision_id},
+    ).mappings().first()
+    if not pourquoi_analysis:
+        return None
+    return db.execute(
+        text("""
+            SELECT sl.lever_code, sl.label_fr, sl.description_fr
+            FROM mg.lever_evidence le
+            JOIN rf.strategic_levers sl ON sl.lever_code = le.lever_code
+            WHERE le.analysis_id = :analysis_id
+            ORDER BY le.relevance_weight DESC LIMIT 1
+        """),
+        {"analysis_id": pourquoi_analysis["id"]},
+    ).mappings().first()
+
+
 @router.post(
     "/deliverables/{deliverable_id}/queue-summary",
     summary="Mettre en file d'attente la génération du résumé exécutif (batch)",
-    description="Alternative batch à generate-summary (osoa.py) -- réservé à ETUDE_OPPORTUNITE.",
+    description="Alternative batch à generate-summary (osoa.py) -- réservé à ETUDE_OPPORTUNITE. Utilise le vrai paquet de preuves OpportunityEvidence, exige un levier promu.",
 )
 def queue_summary(
     deliverable_id: int,
@@ -309,7 +334,7 @@ def queue_summary(
 ):
     affiliate_id = int(payload["sub"])
     deliverable = db.execute(
-        text("SELECT id, deliverable_type, content FROM osoa.strategic_deliverables WHERE id = :id"),
+        text("SELECT id, vision_id, deliverable_type FROM osoa.strategic_deliverables WHERE id = :id"),
         {"id": deliverable_id},
     ).mappings().first()
     if not deliverable:
@@ -320,6 +345,18 @@ def queue_summary(
             "en": "queue-summary reserved for ETUDE_OPPORTUNITE.",
         })
 
+    lever = _fetch_lever_for_vision(db, deliverable["vision_id"])
+    if not lever:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucun levier stratégique promu pour cette vision.",
+            "en": "No promoted strategic lever for this vision.",
+        })
+
+    evidence = _build_opportunity_evidence(db, deliverable["vision_id"])
+    evidence["levier_strategique"] = {
+        "lever_code": lever["lever_code"], "label_fr": lever["label_fr"], "description_fr": lever["description_fr"],
+    }
+
     row = db.execute(
         text("""
             INSERT INTO mg.ai_generation_queue (generation_type, target_id, request_payload, created_by)
@@ -328,12 +365,70 @@ def queue_summary(
         """),
         {
             "target_id": deliverable_id,
-            "payload": json.dumps(deliverable["content"], ensure_ascii=False),
+            "payload": json.dumps(evidence, ensure_ascii=False, default=str),
             "created_by": affiliate_id,
         },
     ).mappings().first()
     db.commit()
     return dict(row)
+
+
+@router.post(
+    "/deliverables/queue-all-pending-summaries",
+    summary="Mettre en file d'attente les résumés exécutifs pour TOUS les livrables ETUDE_OPPORTUNITE sans résumé (batch à l'échelle)",
+    description="Utile pour lancer la campagne complète (540 résumés) -- ignore silencieusement les visions sans levier promu (comptees a part dans la reponse).",
+)
+def queue_all_pending_summaries(
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+
+    deliverables = db.execute(
+        text("""
+            SELECT id, vision_id FROM osoa.strategic_deliverables
+            WHERE deliverable_type = 'ETUDE_OPPORTUNITE' AND public_summary_fr IS NULL
+        """),
+    ).mappings().all()
+    if not deliverables:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucun livrable ETUDE_OPPORTUNITE sans résumé.",
+            "en": "No ETUDE_OPPORTUNITE deliverable without a summary.",
+        })
+
+    queued_count = 0
+    skipped_no_lever = []
+    for d in deliverables:
+        lever = _fetch_lever_for_vision(db, d["vision_id"])
+        if not lever:
+            skipped_no_lever.append(d["id"])
+            continue
+        try:
+            evidence = _build_opportunity_evidence(db, d["vision_id"])
+        except HTTPException:
+            skipped_no_lever.append(d["id"])
+            continue
+        evidence["levier_strategique"] = {
+            "lever_code": lever["lever_code"], "label_fr": lever["label_fr"], "description_fr": lever["description_fr"],
+        }
+        db.execute(
+            text("""
+                INSERT INTO mg.ai_generation_queue (generation_type, target_id, request_payload, created_by)
+                VALUES ('VISION_SUMMARY', :target_id, CAST(:payload AS jsonb), :created_by)
+            """),
+            {
+                "target_id": d["id"],
+                "payload": json.dumps(evidence, ensure_ascii=False, default=str),
+                "created_by": affiliate_id,
+            },
+        )
+        queued_count += 1
+
+    db.commit()
+    return {
+        "queued_count": queued_count,
+        "deliverables_skipped_no_lever_or_evidence": skipped_no_lever,
+    }
 
 
 @router.post(
@@ -397,17 +492,19 @@ def list_queue(
 
 @router.post(
     "/batch-jobs/submit",
-    summary="Soumettre toute la file d'attente comme un seul job OpenAI Batch",
-    description="Construit un fichier JSONL avec toutes les demandes QUEUED, l'envoie en un seul job (50% moins cher, jusqu'à 24h).",
+    summary="Soumettre la file d'attente comme un job OpenAI Batch (avec découpage en lots optionnel)",
+    description="Construit un fichier JSONL avec les demandes QUEUED les plus anciennes, dans la limite de chunk_size (defaut 60, mesure reelle : ~1000 tokens/element, plafond OpenAI de 90k jetons enqueued sur tout le compte -- marge de securite incluse). Les elements restants demeurent QUEUED pour un lot suivant.",
 )
 def submit_batch(
+    chunk_size: int = Query(default=60, ge=1, le=500),
     payload: dict = Depends(get_current_affiliate),
     db: Session = Depends(get_db),
 ):
     affiliate_id = int(payload["sub"])
 
     queued = db.execute(
-        text("SELECT id, generation_type, request_payload FROM mg.ai_generation_queue WHERE status = 'QUEUED' ORDER BY id"),
+        text("SELECT id, generation_type, request_payload FROM mg.ai_generation_queue WHERE status = 'QUEUED' ORDER BY id LIMIT :chunk_size"),
+        {"chunk_size": chunk_size},
     ).mappings().all()
     if not queued:
         raise HTTPException(status_code=422, detail={
