@@ -848,6 +848,23 @@ def get_batch_status(batch_job_id: int, db: Session = Depends(get_db)):
     summary="Récupérer les résultats d'un job terminé et les appliquer en base",
     description="Réservé aux jobs COMPLETED. Applique chaque résultat à la bonne vision (analyse/résumé), revue (mg.analysis_review), ou plan (actions).",
 )
+def _strip_null_chars(obj):
+    """Retire recursivement tout caractere NUL (\u0000) des chaines d'un
+    objet JSON deja parse -- PostgreSQL refuse ce caractere dans jsonb
+    (UntranslatableCharacter), meme si le JSON lui-meme est syntaxiquement
+    valide. Decouvert par le sequenceur automatique (lot 8, 8 aout nuit) :
+    SCRIBE a genere \u0000 au milieu d'un nombre ("...tendances (\u0000593)").
+    Correctif deterministe cote code -- une consigne de prompt ne peut pas
+    garantir a 100% qu'un modele de langage evite cet artefact rare."""
+    if isinstance(obj, str):
+        return obj.replace("\x00", "")
+    if isinstance(obj, dict):
+        return {k: _strip_null_chars(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_strip_null_chars(v) for v in obj]
+    return obj
+
+
 def import_batch_results(
     batch_job_id: int,
     payload: dict = Depends(get_current_affiliate),
@@ -917,6 +934,7 @@ def import_batch_results(
         try:
             raw_content = result["response"]["body"]["choices"][0]["message"]["content"]
             parsed = json.loads(raw_content)
+            parsed = _strip_null_chars(parsed)
 
             if queue_row["generation_type"] == "VISION_SUMMARY":
                 db.execute(
