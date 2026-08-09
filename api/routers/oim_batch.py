@@ -843,11 +843,6 @@ def get_batch_status(batch_job_id: int, db: Session = Depends(get_db)):
 
 # ── Etape 4 : recuperation des resultats ──────────────────────────────────────
 
-@router.post(
-    "/batch-jobs/{batch_job_id}/import-results",
-    summary="Récupérer les résultats d'un job terminé et les appliquer en base",
-    description="Réservé aux jobs COMPLETED. Applique chaque résultat à la bonne vision (analyse/résumé), revue (mg.analysis_review), ou plan (actions).",
-)
 def _strip_null_chars(obj):
     """Retire recursivement tout caractere NUL (\u0000) des chaines d'un
     objet JSON deja parse -- PostgreSQL refuse ce caractere dans jsonb
@@ -865,6 +860,11 @@ def _strip_null_chars(obj):
     return obj
 
 
+@router.post(
+    "/batch-jobs/{batch_job_id}/import-results",
+    summary="Récupérer les résultats d'un job terminé et les appliquer en base",
+    description="Réservé aux jobs COMPLETED. Applique chaque résultat à la bonne vision (analyse/résumé), revue (mg.analysis_review), ou plan (actions).",
+)
 def import_batch_results(
     batch_job_id: int,
     payload: dict = Depends(get_current_affiliate),
