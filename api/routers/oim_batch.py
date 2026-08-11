@@ -602,6 +602,21 @@ def queue_actions(
     return dict(row)
 
 
+@router.get(
+    "/batch-jobs/orphaned-submitted",
+    summary="Lister les batch_job_id encore SUBMITTED (jamais recuperes) -- pour reconciliation",
+    description="Chantier 540, 11 aout 2026 : un lot deja termine cote OpenAI mais jamais importe (suite a un crash du sequenceur avant import-results) devient invisible pour la logique de reprise classique (qui ne regarde que QUEUED). Cet endpoint permet au sequenceur de les retrouver et les recuperer en priorite avant de soumettre un nouveau lot.",
+)
+def list_orphaned_submitted(
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    rows = db.execute(
+        text("SELECT DISTINCT batch_job_id FROM mg.ai_generation_queue WHERE status = 'SUBMITTED' AND batch_job_id IS NOT NULL ORDER BY batch_job_id"),
+    ).mappings().all()
+    return {"batch_job_ids": [r["batch_job_id"] for r in rows]}
+
+
 @router.get("/batch-queue", summary="Lister la file d'attente de génération")
 def list_queue(
     status: Optional[str] = Query(default=None),
@@ -860,6 +875,42 @@ def _strip_null_chars(obj):
     return obj
 
 
+def _requeue_or_dead_letter(db: Session, queue_id: int, err: str, max_retries: int = 3) -> str:
+    """Machine a etats idempotente (11 aout 2026, demande de Theo suite a
+    l'analyse du lot orphelin 9) : au lieu de marquer un echec directement
+    FAILED (etat terminal, jamais revu automatiquement), incremente
+    retry_count et repasse a QUEUED pour un nouvel essai automatique --
+    jusqu'a max_retries, au-dela l'element est isole en DEAD_LETTER (file
+    d'erreurs separee, ne bloque jamais le reste d'une vague, necessite
+    une inspection manuelle/THEO). Retourne 'requeued' ou 'dead_letter'."""
+    row = db.execute(
+        text("SELECT retry_count FROM mg.ai_generation_queue WHERE id = :id"),
+        {"id": queue_id},
+    ).mappings().first()
+    retry_count = row["retry_count"] if row else 0
+    if retry_count < max_retries:
+        db.execute(
+            text("""
+                UPDATE mg.ai_generation_queue
+                SET status = 'QUEUED', batch_job_id = NULL, retry_count = retry_count + 1,
+                    error_message = :err, updated_at = NOW()
+                WHERE id = :id
+            """),
+            {"err": err, "id": queue_id},
+        )
+        return "requeued"
+    else:
+        db.execute(
+            text("""
+                UPDATE mg.ai_generation_queue
+                SET status = 'DEAD_LETTER', error_message = :err, updated_at = NOW()
+                WHERE id = :id
+            """),
+            {"err": err, "id": queue_id},
+        )
+        return "dead_letter"
+
+
 @router.post(
     "/batch-jobs/{batch_job_id}/import-results",
     summary="Récupérer les résultats d'un job terminé et les appliquer en base",
@@ -923,10 +974,7 @@ def import_batch_results(
             continue
 
         if result.get("error") or result.get("response", {}).get("status_code") != 200:
-            db.execute(
-                text("UPDATE mg.ai_generation_queue SET status = 'FAILED', error_message = :err, updated_at = NOW() WHERE id = :id"),
-                {"err": json.dumps(result.get("error") or result.get("response")), "id": queue_id},
-            )
+            _requeue_or_dead_letter(db, queue_id, json.dumps(result.get("error") or result.get("response")))
             db.commit()
             failed += 1
             continue
@@ -1036,10 +1084,7 @@ def import_batch_results(
             # marquage FAILED lui-meme. Bug reel decouvert le 8 aout 2026 sur
             # le tout premier lot importe par le sequenceur automatique.
             db.rollback()
-            db.execute(
-                text("UPDATE mg.ai_generation_queue SET status = 'FAILED', error_message = :err, updated_at = NOW() WHERE id = :id"),
-                {"err": str(e), "id": queue_id},
-            )
+            _requeue_or_dead_letter(db, queue_id, str(e))
             db.commit()
             failed += 1
 
