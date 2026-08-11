@@ -27,7 +27,7 @@ from sqlalchemy import text
 from pydantic import BaseModel, Field
 
 from api.db import get_db
-from api.routers.auth_affiliates import get_current_affiliate
+from api.routers.auth_affiliates import get_current_affiliate, require_comite_sci
 from api.routers.osoa import (
     METHOD_MODELS,
     VALID_METHODS,
@@ -1005,3 +1005,160 @@ def generate_schema_directeur(
     db.commit()
 
     return dict(row)
+
+
+# ── Suivi budgetaire approximatif + validation ISA->OFFICIAL, 11 aout 2026 ───
+# OpenAI n'expose AUCUN endpoint pour le solde de credit reel (verifie
+# par recherche le 11 aout 2026) -- ce suivi reste une ESTIMATION,
+# ancree sur de vrais releves manuels (mg.ai_budget_checkpoints), jamais
+# une fausse precision. Cout par element : mesures reelles quand
+# disponibles (PRIMARY_ANALYSIS, campagne 2020 : $12.50/4860), estimations
+# documentees sinon.
+COST_PER_ITEM_ESTIMATE_USD = {
+    "PRIMARY_ANALYSIS": 0.0026,   # mesure reelle, campagne 2020 ($12.50/4860)
+    "ANALYSIS_REVIEW": 0.0025,    # estimation dry_run (7-11 aout) + heuristique completion
+    "LEVER_GENERATION": 0.0030,   # estimation, ordre de grandeur similaire a une analyse primaire
+    "VISION_SUMMARY": 0.0030,     # mesure reelle labo d'audit (7 aout)
+    "SUMMARY_REVIEW": 0.0025,     # similaire a ANALYSIS_REVIEW
+}
+FULL_YEAR_ITEM_COUNTS = {
+    "PRIMARY_ANALYSIS": 4860, "ANALYSIS_REVIEW": 4860, "LEVER_GENERATION": 540,
+    "VISION_SUMMARY": 540, "SUMMARY_REVIEW": 540,
+}
+
+
+class BudgetCheckpointCreate(BaseModel):
+    balance_usd: float = Field(..., description="Solde reel lu sur le tableau de bord OpenAI (platform.openai.com)")
+    note: Optional[str] = None
+
+
+@router.post(
+    "/budget-checkpoints",
+    summary="Enregistrer un releve manuel du vrai solde OpenAI",
+    description="Point d'ancrage pour l'estimation budgetaire -- OpenAI n'expose aucun endpoint pour ce solde, ce releve doit etre lu manuellement sur platform.openai.com puis enregistre ici.",
+)
+def create_budget_checkpoint(
+    data: BudgetCheckpointCreate,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+    row = db.execute(
+        text("""
+            INSERT INTO mg.ai_budget_checkpoints (balance_usd, note, created_by)
+            VALUES (:balance_usd, :note, :created_by)
+            RETURNING id, balance_usd, note, created_at::text
+        """),
+        {"balance_usd": data.balance_usd, "note": data.note, "created_by": affiliate_id},
+    ).mappings().first()
+    db.commit()
+    return dict(row)
+
+
+def _estimate_remaining_balance(db: Session) -> dict:
+    """Estime le solde restant = dernier releve manuel - depense estimee
+    des elements COMPLETED depuis ce releve. Retourne une FOURCHETTE
+    (basse/haute), jamais un chiffre unique -- l'incertitude est reelle,
+    la cacher serait trompeur."""
+    checkpoint = db.execute(
+        text("SELECT balance_usd, created_at FROM mg.ai_budget_checkpoints ORDER BY created_at DESC LIMIT 1"),
+    ).mappings().first()
+    if not checkpoint:
+        return {"available": False, "reason": "Aucun releve budgetaire enregistre -- utiliser POST /oim/budget-checkpoints d'abord."}
+
+    completed_since = db.execute(
+        text("""
+            SELECT generation_type, COUNT(*) AS n
+            FROM mg.ai_generation_queue
+            WHERE status = 'COMPLETED' AND updated_at > :since
+            GROUP BY generation_type
+        """),
+        {"since": checkpoint["created_at"]},
+    ).mappings().all()
+
+    spent_low = 0.0
+    for row in completed_since:
+        cost = COST_PER_ITEM_ESTIMATE_USD.get(row["generation_type"], 0.003)
+        spent_low += cost * row["n"]
+    spent_high = spent_low * 1.5  # marge de securite documentee pour l'incertitude
+
+    balance = float(checkpoint["balance_usd"])
+    return {
+        "available": True,
+        "last_checkpoint_usd": balance,
+        "last_checkpoint_at": checkpoint["created_at"].isoformat(),
+        "estimated_spent_since_usd_range": [round(spent_low, 2), round(spent_high, 2)],
+        "estimated_remaining_usd_range": [round(balance - spent_high, 2), round(balance - spent_low, 2)],
+    }
+
+
+class ValidateOfficialRequest(BaseModel):
+    pv_reference: Optional[str] = None
+    notes: Optional[str] = None
+
+
+@router.post(
+    "/publication-policy/{year}/validate-official",
+    summary="Valider une annee comme OFFICIAL (dernier verrou humain, Conseil Scientifique)",
+    description="Reserve au Conseil Scientifique -- transition CONSOLIDATED -> OFFICIAL. Point de declenchement de la verification budgetaire (alerte seulement, jamais de paiement automatique). Ne lance PAS encore OIM automatiquement (chantier separe).",
+)
+def validate_publication_official(
+    year: int,
+    data: ValidateOfficialRequest,
+    payload: dict = Depends(require_comite_sci),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+    policy = db.execute(
+        text("SELECT year, status FROM rf.publication_policy WHERE year = :year"),
+        {"year": year},
+    ).mappings().first()
+    if not policy:
+        raise HTTPException(status_code=404, detail={
+            "fr": f"Aucune politique de publication pour l'année {year}.",
+            "en": f"No publication policy for year {year}.",
+        })
+    if policy["status"] != "CONSOLIDATED":
+        raise HTTPException(status_code=422, detail={
+            "fr": f"L'année {year} doit être au statut CONSOLIDATED avant validation OFFICIAL (statut actuel : {policy['status']}).",
+            "en": f"Year {year} must be CONSOLIDATED before OFFICIAL validation (current status: {policy['status']}).",
+        })
+
+    affiliate = db.execute(
+        text("SELECT first_name, last_name FROM mg.affiliates WHERE id = :id"),
+        {"id": affiliate_id},
+    ).mappings().first()
+    validated_by = f"{affiliate['first_name']} {affiliate['last_name']}" if affiliate else str(affiliate_id)
+
+    row = db.execute(
+        text("""
+            UPDATE rf.publication_policy
+            SET status = 'OFFICIAL', validated_at = CURRENT_DATE, validated_by = :validated_by,
+                pv_reference = COALESCE(:pv_reference, pv_reference), notes = COALESCE(:notes, notes),
+                updated_at = NOW()
+            WHERE year = :year
+            RETURNING year, status, validated_at, validated_by
+        """),
+        {"year": year, "validated_by": validated_by, "pv_reference": data.pv_reference, "notes": data.notes},
+    ).mappings().first()
+    db.commit()
+
+    budget = _estimate_remaining_balance(db)
+    estimated_full_year_cost = sum(
+        COST_PER_ITEM_ESTIMATE_USD[t] * FULL_YEAR_ITEM_COUNTS[t] for t in FULL_YEAR_ITEM_COUNTS
+    )
+    budget_alert = None
+    if budget.get("available"):
+        remaining_low = budget["estimated_remaining_usd_range"][0]
+        if remaining_low < estimated_full_year_cost:
+            budget_alert = {
+                "fr": f"ALERTE : solde estimé ({budget['estimated_remaining_usd_range']}) probablement insuffisant pour lancer OIM sur l'année {year} (coût estimé pipeline complet : ~${estimated_full_year_cost:.2f}). Vérifier le tableau de bord OpenAI avant de lancer.",
+                "en": f"ALERT: estimated balance ({budget['estimated_remaining_usd_range']}) likely insufficient to launch OIM for year {year} (estimated full pipeline cost: ~${estimated_full_year_cost:.2f}). Check the OpenAI dashboard before launching.",
+            }
+
+    return {
+        "policy": dict(row),
+        "budget_estimate": budget,
+        "estimated_full_year_oim_cost_usd": round(estimated_full_year_cost, 2),
+        "budget_alert": budget_alert,
+    }

@@ -46,11 +46,22 @@ class LoginResponse(BaseModel):
 def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
+# Roles internes de confiance -- jamais soumis au plafond STANDARD
+# (500 req/jour) du limiteur de debit, concu a l'origine pour des
+# consommateurs publics/externes, pas pour l'automatisation technique
+# interne (ex. sequenceur batch). Decouvert le 11 aout 2026 : access_level
+# n'etait jamais renseigne dans le JWT, donc TOUS les comptes retombaient
+# silencieusement sur STANDARD, y compris les comptes techniques internes.
+EXPERT_ROLES = {"COMITE_TECH", "ADMIN", "COMITE_SCI"}
+
+
 def create_jwt(affiliate_id: int, email: str, role: str) -> str:
+    access_level = "EXPERT" if role in EXPERT_ROLES else "STANDARD"
     payload = {
         "sub":  str(affiliate_id),
         "email": email,
         "role":  role,
+        "access_level": access_level,
         "exp":   datetime.utcnow() + timedelta(hours=JWT_EXPIRE_H),
         "iat":   datetime.utcnow(),
     }
@@ -265,6 +276,26 @@ def change_password(
     db.commit()
 
     return {"message": {"fr": "Mot de passe modifié.", "en": "Password changed."}}
+
+
+# ── Dependance COMITE_SCI ──────────────────────────────────────────────────────
+# Meme discipline que require_admin ci-dessous : requete fraiche sur
+# mg.affiliate_roles, jamais le seul champ "role" du JWT.
+def require_comite_sci(
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db)
+) -> dict:
+    affiliate_id = int(payload["sub"])
+    is_comite_sci = db.execute(text("""
+        SELECT 1 FROM mg.affiliate_roles
+        WHERE affiliate_id = :id AND role_code = 'COMITE_SCI'
+    """), {"id": affiliate_id}).first()
+    if not is_comite_sci:
+        raise HTTPException(status_code=403, detail={
+            "fr": "Accès réservé au Conseil Scientifique.",
+            "en": "Access restricted to the Scientific Council."
+        })
+    return payload
 
 
 # ── Dependance ADMIN ──────────────────────────────────────────────────────────
