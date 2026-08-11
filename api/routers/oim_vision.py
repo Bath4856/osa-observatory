@@ -799,6 +799,79 @@ def promote_plan_action_project(
 
     return dict(row)
 
+@router.post(
+    "/visions/bulk-create-etude-opportunite",
+    summary="Créer en masse le livrable ÉTUDE_OPPORTUNITÉ pour toutes les visions avec un levier promu",
+    description="Chantier 540 -- assemblage deterministe (pas d'appel IA), meme logique que create_vision_deliverable mais en boucle. Ignore silencieusement les visions sans les 5 analyses requises (comptees a part).",
+)
+def bulk_create_etude_opportunite(
+    dry_run: bool = Query(default=False, description="Si true, execute tout mais annule (rollback) -- previsualise sans rien changer."),
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+
+    visions = db.execute(
+        text("""
+            SELECT DISTINCT v.id AS vision_id
+            FROM mg.pillar_strategic_vision v
+            JOIN mg.lever_evidence le ON true
+            JOIN osoa.strategic_analyses sa ON sa.vision_id = v.id AND sa.method = '5_POURQUOI' AND sa.id = le.analysis_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM osoa.strategic_deliverables sd
+                WHERE sd.vision_id = v.id AND sd.deliverable_type = 'ETUDE_OPPORTUNITE'
+            )
+        """),
+    ).mappings().all()
+    if not visions:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucune vision eligible (levier promu, pas encore de livrable ETUDE_OPPORTUNITE).",
+            "en": "No eligible vision (promoted lever, no ETUDE_OPPORTUNITE deliverable yet).",
+        })
+
+    required = DELIVERABLE_REQUIRED_METHODS["ETUDE_OPPORTUNITE"]
+    created_ids = []
+    skipped_missing_analyses = []
+    for v in visions:
+        analyses = {}
+        missing = []
+        for method in required:
+            row = _latest_vision_analysis_by_method(db, v["vision_id"], method)
+            if not row:
+                missing.append(method)
+            else:
+                analyses[method] = {"id": row["id"], "content": row["content"]}
+        if missing:
+            skipped_missing_analyses.append(v["vision_id"])
+            continue
+
+        content = DELIVERABLE_BUILDERS["ETUDE_OPPORTUNITE"](analyses)
+        source_ids = [a["id"] for a in analyses.values()]
+        row = db.execute(
+            text("""
+                INSERT INTO osoa.strategic_deliverables (vision_id, deliverable_type, content, source_analysis_ids, generated_by)
+                VALUES (:vision_id, 'ETUDE_OPPORTUNITE', CAST(:content AS jsonb), :source_ids, :generated_by)
+                RETURNING id
+            """),
+            {
+                "vision_id": v["vision_id"], "content": json.dumps(content),
+                "source_ids": source_ids, "generated_by": affiliate_id,
+            },
+        ).mappings().first()
+        created_ids.append(row["id"])
+
+    if dry_run:
+        db.rollback()
+    else:
+        db.commit()
+    return {
+        "dry_run": dry_run,
+        "created_count": len(created_ids),
+        "created_deliverable_ids": created_ids,
+        "visions_skipped_missing_analyses": skipped_missing_analyses,
+    }
+
+
 
 # ── Refonte du 7 aout 2026 (Theo) : Schema directeur, generation IA propre ───
 # Plus un recyclage de fragments de l'etude d'opportunite -- un vrai travail

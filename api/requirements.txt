@@ -27,3 +27,4 @@ bcrypt==4.1.3
 # Generation de resume IA (28 juillet 2026 -- livrable Vision, donnees ouvertes)
 anthropic==0.40.0
 openai==1.58.1
+tiktoken
