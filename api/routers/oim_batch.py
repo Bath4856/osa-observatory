@@ -506,6 +506,67 @@ def queue_summary(
 
 
 @router.post(
+    "/analysis-drafts/queue-all-pending-regenerations",
+    summary="Mettre en file d'attente la regeneration de tous les brouillons A_REVOIR/PROBLEME_DETECTE (batch a l'echelle)",
+    description="Reprend la logique de regenerate_analysis_draft (base_prompt + critique de THEO injectee) mais en masse via le pipeline batch. Met a jour le brouillon existant en place (pas de nouvelle ligne).",
+)
+def queue_all_pending_regenerations(
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+
+    drafts = db.execute(
+        text("""
+            SELECT DISTINCT ON (pad.id) pad.id AS draft_id, pad.vision_id, pad.method,
+                   ar.issues, v.country_iso3, v.pillar_code, v.year
+            FROM mg.pillar_analysis_drafts pad
+            JOIN mg.analysis_review ar ON ar.draft_id = pad.id
+            JOIN mg.pillar_strategic_vision v ON v.id = pad.vision_id
+            WHERE pad.status = 'AI_DRAFTED'
+            ORDER BY pad.id, ar.created_at DESC
+        """),
+    ).mappings().all()
+
+    queued_count = 0
+    skipped = []
+    for d in drafts:
+        if d["issues"] is None:
+            continue
+        latest_status_row = db.execute(
+            text("SELECT review_status FROM mg.analysis_review WHERE draft_id = :id ORDER BY created_at DESC LIMIT 1"),
+            {"id": d["draft_id"]},
+        ).mappings().first()
+        if not latest_status_row or latest_status_row["review_status"] == "CONFORME":
+            continue
+
+        snapshot = _get_pillar_data_snapshot(db, d["country_iso3"], d["pillar_code"], d["year"])
+        if not snapshot:
+            skipped.append(d["draft_id"])
+            continue
+
+        db.execute(
+            text("""
+                INSERT INTO mg.ai_generation_queue (generation_type, target_id, request_payload, created_by)
+                VALUES ('REGENERATION', :target_id, CAST(:payload AS jsonb), :created_by)
+            """),
+            {
+                "target_id": d["draft_id"],
+                "payload": json.dumps({
+                    "method": d["method"],
+                    "snapshot": snapshot,
+                    "issues": d["issues"],
+                }, ensure_ascii=False, default=str),
+                "created_by": affiliate_id,
+            },
+        )
+        queued_count += 1
+
+    db.commit()
+    return {"queued_count": queued_count, "drafts_skipped_no_evidence": skipped}
+
+
+@router.post(
     "/deliverables/queue-all-pending-summaries",
     summary="Mettre en file d'attente les résumés exécutifs pour TOUS les livrables ETUDE_OPPORTUNITE sans résumé (batch à l'échelle)",
     description="Utile pour lancer la campagne complète (540 résumés) -- ignore silencieusement les visions sans levier promu (comptees a part dans la reponse).",
@@ -722,6 +783,36 @@ def submit_batch(
                 evidence_json=evidence_json, summary_fr=summary_fr, summary_en=summary_en,
             )
             user_content = "Évalue ce résumé maintenant, selon les règles fournies ci-dessus."
+        elif row["generation_type"] == "REGENERATION":
+            method = row["request_payload"]["method"]
+            snapshot = row["request_payload"]["snapshot"]
+            issues = row["request_payload"]["issues"]
+            model_cls = METHOD_MODELS[method]
+            schema = model_cls.model_json_schema()
+            schema_json = json.dumps(schema, ensure_ascii=False)
+            vocabulary = _extract_controlled_vocabulary(schema)
+            method_specific_rules = ""
+            if method == "MULTICRITERE":
+                method_specific_rules = MULTICRITERE_SPECIFIC_RULE.format(bounded_fields=", ".join(BOUNDED_SCORE_FIELDS))
+            snapshot_json = json.dumps(snapshot, ensure_ascii=False, default=str)
+            base_prompt = PRIMARY_ANALYSIS_SYSTEM_PROMPT.format(
+                method=method, data_snapshot=snapshot_json, vocabulary=vocabulary,
+                schema=schema_json, method_specific_rules=method_specific_rules,
+            )
+            issues_lines = [
+                "- Regle violee: " + issue["rule_violated"] + " | Preuve: " + issue["evidence"] + " | Correction proposee: " + issue["proposed_correction"]
+                for issue in issues
+            ]
+            issues_text = "\n".join(issues_lines)
+            feedback_note = (
+                "\n\nCORRECTION REQUISE -- THEO (le reviseur scientifique) a identifie "
+                "les problemes suivants dans une version precedente :\n"
+                + issues_text +
+                "\nCorrige precisement ces points dans cette nouvelle version, sans "
+                "repeter les memes defauts."
+            )
+            system_prompt = base_prompt + feedback_note
+            user_content = ANALYSIS_TRIGGER_MESSAGE
         else:
             continue
 
@@ -1068,6 +1159,18 @@ def import_batch_results(
                         VALUES (:deliverable_id, :status, CAST(:issues AS jsonb))
                     """),
                     {"deliverable_id": queue_row["target_id"], "status": validated.review_status, "issues": issues_json},
+                )
+            elif queue_row["generation_type"] == "REGENERATION":
+                method = queue_row["request_payload"]["method"]
+                model_cls = METHOD_MODELS[method]
+                validated = model_cls(**parsed)
+                db.execute(
+                    text("""
+                        UPDATE mg.pillar_analysis_drafts
+                        SET content = CAST(:content AS jsonb), status = 'AI_DRAFTED', updated_at = NOW()
+                        WHERE id = :id
+                    """),
+                    {"content": validated.model_dump_json(), "id": queue_row["target_id"]},
                 )
 
             db.execute(
