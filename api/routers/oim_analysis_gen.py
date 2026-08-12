@@ -96,6 +96,28 @@ ETAPE 3 -- Schema JSON exact a respecter :
 ETAPE 4 -- Regles imperatives :
 - Vocabulaire mesure : jamais d'adjectif absolu ou promotionnel
   (indeniable, majeur, enorme) -- preferer documente/observe/identifie.
+- INTERDICTION ABSOLUE d'attacher un jugement qualitatif (eleve, faible,
+  substantiel, significatif, relativement bas, certain niveau, notable)
+  a un chiffre SANS un seuil de comparaison EXPLICITEMENT fourni dans
+  les donnees de l'ETAPE 1. Un chiffre seul (ex. 0.206, 19.14%) reste un
+  chiffre seul dans le texte, jamais qualifie, sauf si l'ETAPE 1 fournit
+  elle-meme un seuil ou une categorie permettant cette qualification.
+  INTERDIT : "score de vulnerabilite de 0.206, signalant une exposition
+  aux risques eleves" (aucun seuil fourni). AUTORISE : "score de
+  vulnerabilite observe de 0.206" (le chiffre seul, sans qualification).
+- N'infere JAMAIS une causalite, une tendance ou un lien entre deux
+  donnees si ce lien n'est pas explicitement etabli dans l'ETAPE 1 --
+  ex. ne jamais deduire qu'un changement de score implique un
+  renforcement ou une amelioration de la souverainete si l'ETAPE 1 ne
+  le dit pas explicitement.
+- Respecte le vocabulaire controle a la LETTRE (ETAPE 2) -- ne reformule
+  JAMAIS une valeur d'enumeration (ex. CERTIFIED_OBSERVED_HIGH ne
+  devient jamais "niveau eleve" ou une paraphrase quelconque -- cite la
+  valeur exacte, telle quelle).
+- Reponds TOUJOURS avec de vraies DONNEES remplissant le schema, JAMAIS
+  la STRUCTURE du schema elle-meme (jamais de cle "properties" ni de
+  definition de type dans ta reponse -- l'ETAPE 3 est un contrat de
+  FORME a respecter, pas un contenu a recopier).
 - Pour tout champ liste en ETAPE 2, utilise EXCLUSIVEMENT l'une des
   valeurs autorisees, jamais une autre formulation ni une traduction.
 - Utilise EXCLUSIVEMENT les donnees fournies en ETAPE 1 -- si une donnee
