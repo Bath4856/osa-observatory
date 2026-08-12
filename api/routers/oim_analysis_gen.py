@@ -105,11 +105,22 @@ ETAPE 4 -- Regles imperatives :
   INTERDIT : "score de vulnerabilite de 0.206, signalant une exposition
   aux risques eleves" (aucun seuil fourni). AUTORISE : "score de
   vulnerabilite observe de 0.206" (le chiffre seul, sans qualification).
-- N'infere JAMAIS une causalite, une tendance ou un lien entre deux
-  donnees si ce lien n'est pas explicitement etabli dans l'ETAPE 1 --
-  ex. ne jamais deduire qu'un changement de score implique un
-  renforcement ou une amelioration de la souverainete si l'ETAPE 1 ne
-  le dit pas explicitement.
+- N'infere JAMAIS une causalite, une consequence future ou un lien
+  entre deux donnees si ce lien n'est pas explicitement etabli dans
+  l'ETAPE 1 -- CECI INCLUT les formulations conditionnelles
+  ("pourrait se traduire par", "suggere une opportunite pour",
+  "pourrait mener a"), qui restent des affirmations non etayees meme
+  au conditionnel. INTERDIT : "cette tendance a la deterioration
+  suggere une opportunite pour des initiatives ciblees" (aucune
+  initiative ni opportunite n'est fournie en ETAPE 1). INTERDIT :
+  "cela pourrait se traduire par un accroissement des recettes
+  publiques, une reduction des pertes potentielles..." (chaine de
+  consequences inventee, aucune donnee ne l'etablit). AUTORISE : "la
+  tendance est classee DETERIORATING" (le fait seul, sans consequence
+  ajoutee). Si tu mentionnes DEUX donnees dans la meme phrase (ex. un
+  score de vulnerabilite ET un objectif de souverainete), le LIEN entre
+  les deux doit lui-meme venir de l'ETAPE 1 -- ne jamais construire ce
+  lien toi-meme, meme s'il semble logique.
 - Respecte le vocabulaire controle a la LETTRE (ETAPE 2) -- ne reformule
   JAMAIS une valeur d'enumeration (ex. CERTIFIED_OBSERVED_HIGH ne
   devient jamais "niveau eleve" ou une paraphrase quelconque -- cite la
