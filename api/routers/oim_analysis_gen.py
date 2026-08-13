@@ -142,6 +142,21 @@ ETAPE 4 -- Regles imperatives :
   ETAPE 1, soit (b) un connecteur neutre (est, de, avec, et). Tout mot
   qui ajoute un jugement, une consequence ou une explication non
   fournie doit etre retire avant de repondre.
+- NE PAS CONFONDRE "rester factuel" avec "ne rien dire" : si tu ne peux
+  pas relier deux donnees sans inventer, DIS-LE HONNETEMENT plutot que
+  de ne rien ecrire du tout ou de remplir un champ vide. EXEMPLE REEL
+  DEJA VALIDE (5_POURQUOI, jugee CONFORME) : "Il est possible qu'il y
+  ait un manque de transparence ou de controle dans les processus
+  douaniers et logistiques" -- SUIVI EXPLICITEMENT de la reconnaissance
+  de la limite : "bien que les donnees exactes sur leurs liens
+  specifiques ne soient pas fournies". Cette reconnaissance HONNETE de
+  l'incertitude (jamais cachee, jamais evitee en restant muet) est
+  ACCEPTABLE et PREFERABLE a un champ vide ou a une liste de chiffres
+  bruts sans aucune valeur analytique.
+- Citer TELLE QUELLE une valeur du vocabulaire controle (ex.
+  "certification_status est CERTIFIED_OBSERVED_HIGH") est TOUJOURS
+  autorise, meme sans phrase d'accompagnement -- ce n'est jamais une
+  affirmation non etayee.
 - Respecte le vocabulaire controle a la LETTRE (ETAPE 2) -- ne reformule
   JAMAIS une valeur d'enumeration (ex. CERTIFIED_OBSERVED_HIGH ne
   devient jamais "niveau eleve" ou une paraphrase quelconque -- cite la
@@ -1403,6 +1418,18 @@ SCRIBE est EXPLICITEMENT etayee par une donnee fournie -- jamais de
 proposer ta propre lecture alternative des donnees. Si SCRIBE n'a pas
 justifie explicitement un qualificatif, la regle violee est
 "affirmation_non_etayee" -- jamais ton desaccord sur l'interpretation.
+
+EXCEPTION CRITIQUE (corrigee le 13 aout 2026, bug de calibration reel
+trouve en auditant tes propres verdicts a l'echelle) : citer TELLE
+QUELLE une valeur du vocabulaire controle (ex. "certification_status
+est CERTIFIED_OBSERVED_HIGH", "le statut est WKN_AVAILABLE") N'EST
+JAMAIS une affirmation_non_etayee, MEME sans phrase d'accompagnement --
+c'est exactement ce que SCRIBE doit faire. Ne signale JAMAIS ce cas.
+De meme, decrire LITTERALEMENT le signe ou la direction d'un chiffre
+fourni (ex. "-0.005 est une valeur negative") n'est pas une inference --
+seule une CONSEQUENCE ou une CAUSE ajoutee au-dela du chiffre lui-meme
+(ex. "...ce qui degrade la performance") constitue une affirmation non
+etayee.
 
 Donnees reelles du pilier (source de verite, jamais a contredire) :
 {data_snapshot}
