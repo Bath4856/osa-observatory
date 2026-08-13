@@ -829,6 +829,53 @@ class ContentSchemaDirecteur(BaseModel):
     multicritere: ContentMulticritere
 
 
+# ── Controlled Vocabulary Normalizer (CVN), 13 aout 2026 ─────────────────────
+# Niveau 3 de l'architecture a 3 niveaux (Theo + analyse externe) :
+# le registre (Literal Pydantic) fait TOUJOURS autorite, ce moteur ne fait
+# que convertir des variantes lexicales (accord grammatical, casse,
+# anglicismes) vers la forme canonique, AVANT toute validation Pydantic.
+# THEO ne voit jamais la variante. Trouve le 13 aout : SCRIBE ecrit
+# naturellement "MOYENNE"/"ELEVEE" (accord feminin correct en francais)
+# au lieu de "MOYEN"/"ELEVE" (forme canonique masculine du registre).
+import yaml as _yaml
+import os as _os
+
+_CVN_REGISTRY_PATH = _os.path.join(_os.path.dirname(__file__), "..", "rules", "controlled_vocabulary.yaml")
+_cvn_alias_lookup = None
+
+
+def _load_cvn_registry() -> dict:
+    global _cvn_alias_lookup
+    if _cvn_alias_lookup is not None:
+        return _cvn_alias_lookup
+    _cvn_alias_lookup = {}
+    try:
+        with open(_CVN_REGISTRY_PATH, "r", encoding="utf-8") as f:
+            registry = _yaml.safe_load(f)
+        for vocab_name, vocab_def in registry.items():
+            for alias, canonical in vocab_def.get("aliases", {}).items():
+                _cvn_alias_lookup[alias] = canonical
+    except FileNotFoundError:
+        _cvn_alias_lookup = {}
+    return _cvn_alias_lookup
+
+
+def normalize_controlled_vocabulary(obj):
+    """Parcourt recursivement un objet JSON deja parse et remplace toute
+    chaine correspondant EXACTEMENT (respect de la casse) a un alias
+    connu par sa forme canonique. Ne touche jamais aux chaines qui ne
+    correspondent a aucun alias -- jamais de correspondance partielle."""
+    lookup = _load_cvn_registry()
+    if isinstance(obj, str):
+        return lookup.get(obj, obj)
+    if isinstance(obj, dict):
+        return {k: normalize_controlled_vocabulary(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [normalize_controlled_vocabulary(v) for v in obj]
+    return obj
+
+
+
 
 # ── OpportunityStudy (Niveau 1), conception actee le 7 aout, adoptee le
 #    13 aout suite a la proposition de Theo -- remplace la generation
@@ -1644,7 +1691,7 @@ def generate_opportunity_study_test(
     payload: dict = Depends(get_current_affiliate),
     db: Session = Depends(get_db),
 ):
-    from api.routers.oim_analysis_gen import OPPORTUNITY_STUDY_SYSTEM_PROMPT, _call_ai
+    from api.routers.oim_analysis_gen import OPPORTUNITY_STUDY_SYSTEM_PROMPT, OPPORTUNITY_STUDY_REVIEWER_SYSTEM_PROMPT, _call_ai, ContentAnalysisReview
 
     lever_row = db.execute(
         text("""
@@ -1676,6 +1723,7 @@ def generate_opportunity_study_test(
 
     try:
         parsed = _call_ai(system_prompt, "Redige l'etude d'opportunite maintenant, selon le plan fourni ci-dessus.")
+        parsed = normalize_controlled_vocabulary(parsed)
         validated = OpportunityStudy(**parsed)
     except HTTPException:
         raise
@@ -1685,7 +1733,23 @@ def generate_opportunity_study_test(
             "en": f"Generation or validation failed: {e}",
         })
 
-    return validated.model_dump()
+    study_json = validated.model_dump_json()
+    review_prompt = OPPORTUNITY_STUDY_REVIEWER_SYSTEM_PROMPT.format(
+        evidence_json=evidence_json, study_json=study_json,
+    )
+    try:
+        review_parsed = _call_ai(review_prompt, "Evalue cette etude d'opportunite maintenant, selon les regles fournies ci-dessus.")
+        review_validated = ContentAnalysisReview(**review_parsed)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail={
+            "fr": f"Etude generee mais echec de la revue THEO : {e}",
+            "en": f"Study generated but THEO review failed: {e}",
+        })
+
+    return {
+        "study": validated.model_dump(),
+        "theo_review": review_validated.model_dump(),
+    }
 
 
 
