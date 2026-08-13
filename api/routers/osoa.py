@@ -1682,6 +1682,167 @@ def _build_opportunity_evidence(db: Session, vision_id: int) -> dict:
 
 
 @router.post(
+    "/visions/{vision_id}/generate-opportunity-study",
+    summary="Generer une etude d'opportunite et la persister (AI_DRAFTED, en attente de revue puis de validation humaine)",
+    description="Contrairement au [TEST], persiste reellement le resultat dans osoa.strategic_deliverables + mg.summary_review. N'extrait JAMAIS public_summary_fr/en -- cela n'arrive qu'a la validation humaine explicite (POST .../validate-opportunity-study).",
+)
+def generate_opportunity_study(
+    vision_id: int,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    from api.routers.oim_analysis_gen import OPPORTUNITY_STUDY_SYSTEM_PROMPT, OPPORTUNITY_STUDY_REVIEWER_SYSTEM_PROMPT, _call_ai, ContentAnalysisReview
+
+    affiliate_id = int(payload["sub"])
+
+    lever_row = db.execute(
+        text("""
+            SELECT sl.lever_code, sl.label_fr, sl.description_fr
+            FROM mg.lever_evidence le
+            JOIN osoa.strategic_analyses sa ON sa.id = le.analysis_id
+            JOIN rf.strategic_levers sl ON sl.lever_code = le.lever_code
+            WHERE sa.vision_id = :vision_id
+            ORDER BY le.relevance_weight DESC LIMIT 1
+        """),
+        {"vision_id": vision_id},
+    ).mappings().first()
+    if not lever_row:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucun levier promu pour cette vision.",
+            "en": "No promoted lever for this vision.",
+        })
+    lever = dict(lever_row)
+
+    evidence = _build_opportunity_evidence(db, vision_id)
+    evidence_json = json.dumps(evidence, ensure_ascii=False, default=str)
+    schema = OpportunityStudy.model_json_schema()
+    schema_json = json.dumps(schema, ensure_ascii=False)
+
+    system_prompt = OPPORTUNITY_STUDY_SYSTEM_PROMPT.format(
+        lever_code=lever["lever_code"], lever_label=lever["label_fr"],
+        lever_description=lever["description_fr"], evidence_json=evidence_json, schema=schema_json,
+    )
+
+    try:
+        parsed = _call_ai(system_prompt, "Redige l'etude d'opportunite maintenant, selon le plan fourni ci-dessus.")
+        parsed = normalize_controlled_vocabulary(parsed)
+        validated = OpportunityStudy(**parsed)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail={
+            "fr": f"Echec de la generation ou de la validation : {e}",
+            "en": f"Generation or validation failed: {e}",
+        })
+
+    required_methods = ["5W1H", "SWOT", "5_POURQUOI", "RISQUE", "ECONOMIQUE", "MULTICRITERE", "ZACHMAN"]
+    analysis_ids_rows = db.execute(
+        text("SELECT id FROM osoa.strategic_analyses WHERE vision_id = :vision_id AND method = ANY(:methods)"),
+        {"vision_id": vision_id, "methods": required_methods},
+    ).mappings().all()
+    source_ids = [r["id"] for r in analysis_ids_rows]
+
+    deliverable_row = db.execute(
+        text("""
+            INSERT INTO osoa.strategic_deliverables
+                (vision_id, deliverable_type, content, source_analysis_ids, generated_by, summary_status)
+            VALUES (:vision_id, 'ETUDE_OPPORTUNITE', CAST(:content AS jsonb), :source_ids, :generated_by, 'AI_DRAFTED')
+            RETURNING id
+        """),
+        {
+            "vision_id": vision_id, "content": validated.model_dump_json(),
+            "source_ids": source_ids, "generated_by": affiliate_id,
+        },
+    ).mappings().first()
+    deliverable_id = deliverable_row["id"]
+
+    study_json = validated.model_dump_json()
+    review_prompt = OPPORTUNITY_STUDY_REVIEWER_SYSTEM_PROMPT.format(
+        evidence_json=evidence_json, study_json=study_json,
+    )
+    try:
+        review_parsed = _call_ai(review_prompt, "Evalue cette etude d'opportunite maintenant, selon les regles fournies ci-dessus.")
+        review_validated = ContentAnalysisReview(**review_parsed)
+    except Exception as e:
+        db.commit()
+        raise HTTPException(status_code=502, detail={
+            "fr": f"Etude persistee (id={deliverable_id}) mais echec de la revue THEO : {e}",
+            "en": f"Study persisted (id={deliverable_id}) but THEO review failed: {e}",
+        })
+
+    issues_json = json.dumps([i.model_dump() for i in review_validated.issues], ensure_ascii=False)
+    db.execute(
+        text("""
+            INSERT INTO mg.summary_review (deliverable_id, review_status, issues)
+            VALUES (:deliverable_id, :status, CAST(:issues AS jsonb))
+        """),
+        {"deliverable_id": deliverable_id, "status": review_validated.review_status, "issues": issues_json},
+    )
+    db.commit()
+
+    return {
+        "deliverable_id": deliverable_id,
+        "review_status": review_validated.review_status,
+        "issues": [i.model_dump() for i in review_validated.issues],
+    }
+
+
+@router.post(
+    "/deliverables/{deliverable_id}/validate-opportunity-study",
+    summary="Valider humainement une etude d'opportunite CONFORME -- SEUL acte qui declenche l'extraction du resume public",
+    description="Verifie que la derniere revue THEO est CONFORME, puis SEULEMENT ALORS extrait executive_summary vers public_summary_fr/en et passe summary_status a HUMAN_VALIDATED. Acte humain explicite, jamais automatique.",
+)
+def validate_opportunity_study(
+    deliverable_id: int,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    deliverable = db.execute(
+        text("SELECT id, content, deliverable_type, summary_status FROM osoa.strategic_deliverables WHERE id = :id"),
+        {"id": deliverable_id},
+    ).mappings().first()
+    if not deliverable:
+        raise HTTPException(status_code=404, detail={"fr": "Livrable introuvable.", "en": "Deliverable not found."})
+    if deliverable["deliverable_type"] != "ETUDE_OPPORTUNITE":
+        raise HTTPException(status_code=422, detail={
+            "fr": "Cet endpoint est reserve aux livrables ETUDE_OPPORTUNITE.",
+            "en": "This endpoint is reserved for ETUDE_OPPORTUNITE deliverables.",
+        })
+
+    latest_review = db.execute(
+        text("SELECT review_status FROM mg.summary_review WHERE deliverable_id = :id ORDER BY created_at DESC LIMIT 1"),
+        {"id": deliverable_id},
+    ).mappings().first()
+    if not latest_review or latest_review["review_status"] != "CONFORME":
+        raise HTTPException(status_code=422, detail={
+            "fr": f"La derniere revue THEO n'est pas CONFORME (statut actuel : {latest_review['review_status'] if latest_review else 'aucune revue'}).",
+            "en": f"Latest THEO review is not CONFORME (current status: {latest_review['review_status'] if latest_review else 'no review'}).",
+        })
+
+    study_content = deliverable["content"]
+    executive_summary = study_content.get("executive_summary", {})
+    summary_fr = executive_summary.get("summary_fr")
+    summary_en = executive_summary.get("summary_en")
+    if not summary_fr or not summary_en:
+        raise HTTPException(status_code=422, detail={
+            "fr": "executive_summary absent ou incomplet dans le contenu de l'etude.",
+            "en": "executive_summary missing or incomplete in the study content.",
+        })
+
+    db.execute(
+        text("""
+            UPDATE osoa.strategic_deliverables
+            SET summary_status = 'HUMAN_VALIDATED', public_summary_fr = :fr, public_summary_en = :en
+            WHERE id = :id
+        """),
+        {"fr": summary_fr, "en": summary_en, "id": deliverable_id},
+    )
+    db.commit()
+
+    return {"deliverable_id": deliverable_id, "summary_status": "HUMAN_VALIDATED", "public_summary_fr": summary_fr, "public_summary_en": summary_en}
+
+
+@router.post(
     "/visions/{vision_id}/generate-opportunity-study-test",
     summary="[TEST] Generer une etude d'opportunite complete de bout en bout, appel synchrone",
     description="Endpoint de test manuel uniquement -- valide le pipeline complet (prompt+modeles+filtre) avant de construire l'infrastructure batch. Pas destine a l'echelle.",
