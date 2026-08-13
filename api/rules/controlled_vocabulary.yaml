@@ -1,0 +1,56 @@
+# ============================================================
+# Controlled Vocabulary Normalizer (CVN) -- registre des alias
+# 13 aout 2026
+# ============================================================
+# Le registre (canonical) fait TOUJOURS autorite -- ce fichier ne
+# modifie JAMAIS le sens scientifique, il convertit seulement des
+# variantes lexicales (accord grammatical, casse, anglicismes) vers
+# les valeurs canoniques deja definies dans les modeles Pydantic.
+# Applique AVANT toute validation Pydantic -- THEO ne voit jamais la
+# variante, seulement la valeur canonique deja normalisee.
+#
+# Trouve le 13 aout 2026 : SCRIBE ecrit naturellement "MOYENNE"/
+# "ELEVEE" (accord feminin avec "probabilite") au lieu de "MOYEN"/
+# "ELEVE" (masculin, forme canonique du registre) -- comportement
+# grammaticalement correct en francais, mais qui casse la validation
+# stricte du vocabulaire controle.
+
+niveau_faible_moyen_eleve:
+  canonical:
+    - FAIBLE
+    - MOYEN
+    - ELEVE
+  aliases:
+    faible: FAIBLE
+    Faible: FAIBLE
+    FAIBLES: FAIBLE
+    faibles: FAIBLE
+    moyen: MOYEN
+    Moyen: MOYEN
+    moyenne: MOYEN
+    Moyenne: MOYEN
+    MOYENNE: MOYEN
+    moyens: MOYEN
+    moyennes: MOYEN
+    eleve: ELEVE
+    Eleve: ELEVE
+    elevee: ELEVE
+    Elevee: ELEVE
+    ELEVEE: ELEVE
+    "élevé": ELEVE
+    "Élevé": ELEVE
+    "ÉLEVÉ": ELEVE
+    "élevée": ELEVE
+    "Élevée": ELEVE
+    "ÉLEVÉE": ELEVE
+    "élevés": ELEVE
+    "élevées": ELEVE
+    high: ELEVE
+    HIGH: ELEVE
+    High: ELEVE
+    medium: MOYEN
+    MEDIUM: MOYEN
+    Medium: MOYEN
+    low: FAIBLE
+    LOW: FAIBLE
+    Low: FAIBLE
