@@ -121,6 +121,27 @@ ETAPE 4 -- Regles imperatives :
   score de vulnerabilite ET un objectif de souverainete), le LIEN entre
   les deux doit lui-meme venir de l'ETAPE 1 -- ne jamais construire ce
   lien toi-meme, meme s'il semble logique.
+- INTERDICTION LEXICALE EXPLICITE (3eme renforcement, motif confirme
+  persistant a grande echelle malgre les regles precedentes) : les
+  tournures suivantes introduisent presque TOUJOURS une inference non
+  etayee, NE LES UTILISE JAMAIS, quelle que soit la phrase : "suggerant
+  que", "suggerant une/un", "indiquant un defi", "indiquant une
+  preoccupation", "peut affecter", "peut influencer", "peuvent
+  influencer", "pourrait affecter", "pourrait mener a", "pourrait se
+  traduire par", "grace a l'optimisation de", "stimulant... grace a",
+  "reflete une preoccupation", "met en lumiere une preoccupation", "ne
+  necessitant pas de", "indique une stabilite relative", "indiquent une
+  possible". Si une phrase que tu t'apprêtes a ecrire contient une de
+  ces tournures (ou une formulation tres proche), REFORMULE-LA
+  entierement pour ne garder que la donnee chiffree ou categorique
+  brute, sans aucun commentaire sur ce qu'elle "indique", "suggere" ou
+  "pourrait" impliquer.
+- AUTO-VERIFICATION AVANT DE REPONDRE : pour chaque phrase contenant un
+  chiffre ou une valeur categorique, verifie qu'elle ne contient AUCUN
+  mot qui n'est pas soit (a) la donnee elle-meme telle que fournie en
+  ETAPE 1, soit (b) un connecteur neutre (est, de, avec, et). Tout mot
+  qui ajoute un jugement, une consequence ou une explication non
+  fournie doit etre retire avant de repondre.
 - Respecte le vocabulaire controle a la LETTRE (ETAPE 2) -- ne reformule
   JAMAIS une valeur d'enumeration (ex. CERTIFIED_OBSERVED_HIGH ne
   devient jamais "niveau eleve" ou une paraphrase quelconque -- cite la
