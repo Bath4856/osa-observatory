@@ -1033,21 +1033,60 @@ def import_batch_results(
             "fr": f"Le job n'est pas encore terminé côté OpenAI (statut réel : {batch.status}).",
             "en": f"The job is not yet completed on OpenAI's side (real status: {batch.status}).",
         })
-    if not batch.output_file_id:
+    if not batch.output_file_id and not batch.error_file_id:
         raise HTTPException(status_code=422, detail={
-            "fr": "Aucun fichier de résultats disponible.",
-            "en": "No results file available.",
+            "fr": "Aucun fichier de résultats ni d'erreurs disponible.",
+            "en": "No results or error file available.",
         })
 
-    try:
-        content = client.files.content(batch.output_file_id).text
-    except Exception as e:
-        raise HTTPException(status_code=502, detail={
-            "fr": f"Échec du téléchargement des résultats : {e}",
-            "en": f"Failed to download results: {e}",
-        })
+    content = ""
+    if batch.output_file_id:
+        try:
+            content = client.files.content(batch.output_file_id).text
+        except Exception as e:
+            raise HTTPException(status_code=502, detail={
+                "fr": f"Échec du téléchargement des résultats : {e}",
+                "en": f"Failed to download results: {e}",
+            })
+
+    # Fichier d'erreurs SEPARE (error_file_id) -- bug reel decouvert le 13
+    # aout 2026 : les elements en echec AU NIVEAU REQUETE (ex. 429
+    # insufficient_quota survenu PENDANT le traitement du lot -- solde
+    # epuise en cours de route) n'apparaissent PAS dans output_file_id,
+    # uniquement ici. Sans ce traitement, ces elements restent SUBMITTED
+    # indefiniment -- la reconciliation les retrouve a chaque vague sans
+    # jamais progresser (boucle infinie observee en conditions reelles).
+    error_content = ""
+    if batch.error_file_id:
+        try:
+            error_content = client.files.content(batch.error_file_id).text
+        except Exception as e:
+            raise HTTPException(status_code=502, detail={
+                "fr": f"Échec du téléchargement du fichier d'erreurs : {e}",
+                "en": f"Failed to download error file: {e}",
+            })
 
     imported, failed = 0, 0
+
+    for line in error_content.strip().split("\n"):
+        if not line:
+            continue
+        result = json.loads(line)
+        custom_id = result.get("custom_id", "")
+        queue_id = int(custom_id.replace("queue-", "")) if custom_id.startswith("queue-") else None
+        if queue_id is None:
+            continue
+        queue_row = db.execute(
+            text("SELECT id FROM mg.ai_generation_queue WHERE id = :id"),
+            {"id": queue_id},
+        ).mappings().first()
+        if not queue_row:
+            continue
+        err_body = result.get("response", {}).get("body", {}).get("error") or result.get("error")
+        _requeue_or_dead_letter(db, queue_id, json.dumps(err_body) if err_body else str(result))
+        db.commit()
+        failed += 1
+
     for line in content.strip().split("\n"):
         if not line:
             continue

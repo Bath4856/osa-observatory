@@ -421,6 +421,96 @@ def _get_pillar_data_snapshot(db: Session, country_iso3: str, pillar_code: str, 
             snapshot["poa_observations"] = poa_observations
     return snapshot
 
+
+# ── OpportunityStudy (Niveau 1), adopte le 13 aout 2026 ──────────────────────
+# Remplace la generation d'un simple resume court : SCRIBE genere
+# desormais l'etude d'opportunite COMPLETE (13 sous-modeles), dont le
+# resume executif est un CHAMP -- jamais genere separement. Reutilise
+# integralement la doctrine deja durement gagnee sur les 9 analyses
+# primaires (3 cycles de renforcement + calibration THEO + exemple
+# positif de hedging honnete) -- jamais reecrite depuis zero.
+
+OPPORTUNITY_STUDY_SYSTEM_PROMPT = """Tu rediges une ETUDE D'OPPORTUNITE complete pour un pilier de
+souverainete africaine, ancree sur le LEVIER STRATEGIQUE deja valide et
+le paquet de preuves ci-dessous.
+
+QUESTION DIRECTRICE DE CE LIVRABLE (garde-la en tete a chaque section) :
+"FAUT-IL AGIR ?" -- toute l'etude sert a repondre a cette question, avec
+mesure, jamais a decider a la place du Conseil Scientifique.
+
+Levier strategique valide (le socle de cette etude) :
+lever_code = "{lever_code}"
+label = "{lever_label}"
+description = "{lever_description}"
+
+Paquet de preuves (OpportunityEvidence -- source de verite, jamais a
+contredire, chaque affirmation de l'etude doit s'y rattacher) :
+{evidence_json}
+
+PLAN A SUIVRE, SECTION PAR SECTION -- reponds point par point, dans cet
+ordre, chaque section n'utilisant QUE les preuves pertinentes indiquees :
+
+1. executive_summary -- etablit l'opportunite (fonction 1) PUIS invite
+   explicitement a commander une suite (fonction 2). 150-200 mots/langue.
+   Preuves : l'ensemble du paquet, en synthese.
+2. context -- pays/pilier/annee + situation_actuelle_fr : l'etat actuel,
+   factuel. Preuves : analysis_5w1h (quoi/ou/quand).
+3. opportunity -- l'enonce de l'opportunite identifiee, rattachee au
+   lever_code. Preuves : root_causes (cause_racine), swot (opportunites).
+4. justification -- pourquoi agir sur cette cause precise. Preuves :
+   root_causes (cause_racine + constat_initial) EXCLUSIVEMENT.
+5. proposed_vision -- titre + description de ce que l'action viserait a
+   terme, rattachee au lever_code. Preuves : swot (forces+opportunites).
+6. strategic_objectives -- objectifs concrets, CHACUN avec evidence_refs
+   pointant vers les cles reelles du paquet qui le soutiennent (ex.
+   "swot.forces.0", "economic_analysis.impact_attendu").
+7. expected_value -- reutilise EXACTEMENT les niveaux qualitatifs fournis
+   dans economic_analysis, jamais de nouveau jugement. Preuves :
+   economic_analysis uniquement.
+8. strategic_issues -- enjeux, avec niveau_criticite. Preuves :
+   risk_analysis + multicriteria.
+9. success_conditions -- conditions factuelles pour que l'action reussisse.
+   Preuves : swot (forces), risk_analysis (mitigation).
+10. constraints -- contraintes reelles, typees. Preuves : risk_analysis,
+    zachman (perspective BUSINESS_MGMT).
+11. major_risks -- reutilise EXACTEMENT risk_analysis.risques, jamais de
+    nouveau risque invente.
+12. implementation_scenarios -- nom + intention SEULEMENT, jamais une
+    architecture de solution (role du futur Schema Directeur, pas ici).
+13. recommendation -- une invitation explicite a la suite (etude de
+    faisabilite et/ou schema directeur), jamais une decision.
+
+Schema JSON exact a respecter (OpportunityStudy) :
+{schema}
+
+REGLES IMPERATIVES TRANSVERSALES (identiques a celles deja eprouvees sur
+les 9 analyses primaires -- meme discipline, applicable a TOUTE section) :
+
+- Vocabulaire mesure : jamais d'adjectif absolu ou promotionnel.
+- INTERDICTION ABSOLUE d'attacher un jugement qualitatif (eleve,
+  faible, substantiel, significatif) a un chiffre SANS un seuil de
+  comparaison EXPLICITEMENT fourni dans le paquet de preuves.
+- N'infere JAMAIS une causalite ou une consequence future non
+  explicitement etablie -- CECI INCLUT les formulations conditionnelles
+  ("pourrait se traduire par", "suggere une opportunite pour").
+- INTERDICTION LEXICALE EXPLICITE : "suggerant que", "indiquant un
+  defi", "indiquant une preoccupation", "peut affecter", "pourrait
+  affecter/mener a/se traduire par", "grace a l'optimisation de".
+- Citer TELLE QUELLE une valeur du vocabulaire controle (ex. un
+  lever_code, un statut de certification) est TOUJOURS autorise, meme
+  sans phrase d'accompagnement -- jamais une affirmation non etayee.
+- NE PAS CONFONDRE "rester factuel" avec "ne rien dire" : si tu ne
+  peux pas relier deux donnees sans inventer, DIS-LE HONNETEMENT
+  (ex. "les donnees ne precisent pas...") plutot que de laisser un
+  champ vide ou minimal.
+- AUCUNE decision proposee -- seulement une recommandation -- OSA ne
+  decide jamais, le Conseil Scientifique reste le seul a decider.
+
+Reponds UNIQUEMENT en JSON valide conforme au schema, sans aucun texte
+avant ou apres.
+"""
+
+
 # ── Test d'optimisation (7 aout 2026) : 9 analyses en UN SEUL appel IA ───────
 # Economie mesuree ~70% du prompt (snapshot + regles payes une seule fois
 # au lieu de 9). QUALITE A VALIDER EMPIRIQUEMENT avant generalisation au

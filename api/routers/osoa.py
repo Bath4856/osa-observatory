@@ -645,7 +645,6 @@ class ContentEconomique(BaseModel):
     potentiel_creation_valeur: Literal["FAIBLE", "MOYEN", "ELEVE"]
     potentiel_reduction_pertes: Literal["FAIBLE", "MOYEN", "ELEVE"]
     potentiel_recettes_publiques: Literal["FAIBLE", "MOYEN", "ELEVE"]
-    ordre_de_grandeur_investissement: Literal["FAIBLE", "MOYEN", "ELEVE"]
     horizon_benefices: Literal["COURT_TERME", "MOYEN_TERME", "LONG_TERME"]
     benefices_attendus_fr: str
     hypotheses_fr: Optional[str] = None
@@ -828,6 +827,159 @@ class ContentSchemaDirecteur(BaseModel):
     zachman: ContentZachman
     gouvernance: ContentGouvernance
     multicritere: ContentMulticritere
+
+
+
+# ── OpportunityStudy (Niveau 1), conception actee le 7 aout, adoptee le
+#    13 aout suite a la proposition de Theo -- remplace la generation
+#    d'un simple resume par la generation de l'etude complete, dont le
+#    resume executif fait partie (executive_summary est un CHAMP de
+#    OpportunityStudy, jamais genere separement). ExpectedValue et Risk
+#    reutilisent ContentEconomique/RisqueItem deja construits, jamais
+#    duplique. Decision RETIREE (doctrine "OSA ne decide jamais",
+#    Recommendation suffit) -- confirme le 13 aout.
+
+class ExecutiveSummary(BaseModel):
+    summary_fr: str
+    summary_en: str
+
+
+class Context(BaseModel):
+    pays: str
+    pilier: str
+    annee: int
+    situation_actuelle_fr: str
+
+
+class Opportunity(BaseModel):
+    enonce_fr: str
+    domaine_concerne: str
+    lever_code: str
+
+
+class Justification(BaseModel):
+    cause_racine_fr: str
+    donnees_a_l_appui_fr: str
+
+
+class Vision(BaseModel):
+    titre_fr: str
+    description_fr: str
+    lever_code: str
+
+
+class StrategicObjective(BaseModel):
+    # evidence_refs ajoute le 13 aout (Theo) : tracabilite explicite --
+    # chaque objectif pointe vers les preuves qui le soutiennent, THEO
+    # n'a plus a deviner si une affirmation est etayee.
+    id: str
+    titre_fr: str
+    description_fr: str
+    evidence_refs: List[str] = Field(default_factory=list)
+
+
+class StrategicIssue(BaseModel):
+    enjeu_fr: str
+    niveau_criticite: Literal["FAIBLE", "MOYEN", "ELEVE"]
+
+
+class SuccessCondition(BaseModel):
+    condition_fr: str
+
+
+class Constraint(BaseModel):
+    contrainte_fr: str
+    type_contrainte: Literal["REGLEMENTAIRE", "FINANCIERE", "ORGANISATIONNELLE", "TECHNIQUE", "POLITIQUE"]
+
+
+class Scenario(BaseModel):
+    # Volontairement minimal (decision du 7 aout) : jamais une esquisse
+    # d'architecture de solution, seulement un nom et une intention.
+    nom_fr: str
+    intention_fr: str
+
+
+class Recommendation(BaseModel):
+    recommandation_fr: str
+
+
+class OpportunityEvidence(BaseModel):
+    # Meme forme exacte que _build_opportunity_evidence() (deja utilisee
+    # pour le resume executif court) -- reutilisee telle quelle ici,
+    # jamais reconstruite.
+    analysis_5w1h: dict
+    swot: dict
+    root_causes: dict
+    risk_analysis: dict
+    economic_analysis: dict
+    multicriteria: dict
+    zachman: dict
+
+
+# Liste EMPIRIQUE (pas generique) -- extraite des vrais signalements de
+# THEO sur des milliers de revues reelles cette nuit (12-13 aout 2026),
+# meme liste que le cycle 3 de renforcement de PRIMARY_ANALYSIS_SYSTEM_PROMPT.
+# Filtre deterministe (0 jeton) AVANT tout envoi a THEO -- propose par
+# Theo suite a une analyse externe partagee, adoptee UNIQUEMENT pour
+# cette liste reelle (la liste generique proposee par l'analyse externe
+# -- "indeniable/majeur/parfait" -- a ete ecartee, deja couverte et pas
+# le vrai motif dominant identifie empiriquement).
+FORBIDDEN_PHRASES_EMPIRICAL = [
+    "suggerant que", "suggérant que", "suggerant un", "suggérant un", "suggerant une", "suggérant une",
+    "indiquant un defi", "indiquant un défi", "indiquant une preoccupation", "indiquant une préoccupation",
+    "peut affecter", "peut influencer", "peuvent influencer",
+    "pourrait affecter", "pourrait mener a", "pourrait mener à", "pourrait se traduire par",
+    "grace a l'optimisation de", "grâce à l'optimisation de",
+    "reflete une preoccupation", "reflète une préoccupation",
+    "met en lumiere une preoccupation", "met en lumière une préoccupation",
+    "ne necessitant pas de", "ne nécessitant pas de",
+    "indique une stabilite relative", "indique une stabilité relative",
+    "indiquent une possible",
+]
+
+
+class OpportunityStudy(BaseModel):
+    executive_summary: ExecutiveSummary
+    context: Context
+    opportunity: Opportunity
+    justification: Justification
+    proposed_vision: Vision
+    strategic_objectives: List[StrategicObjective] = Field(..., min_length=1)
+    expected_value: ContentEconomique
+    strategic_issues: List[StrategicIssue] = Field(..., min_length=1)
+    success_conditions: List[SuccessCondition] = Field(..., min_length=1)
+    constraints: List[Constraint] = Field(default_factory=list)
+    major_risks: List[RisqueItem] = Field(..., min_length=1)
+    implementation_scenarios: List[Scenario] = Field(..., min_length=1)
+    recommendation: Recommendation
+    evidence: OpportunityEvidence
+
+    @model_validator(mode="after")
+    def _check_forbidden_phrases(self) -> "OpportunityStudy":
+        """Filtre deterministe (0 jeton) -- verifie l'ABSENCE des tournures
+        empiriquement liees a une inference non etayee, avant tout envoi
+        a THEO. Leve une ValueError (capturee et geree par la machine a
+        etats _requeue_or_dead_letter deja en place, meme mecanisme que
+        toute autre erreur de validation)."""
+        texts_to_check = [
+            self.executive_summary.summary_fr,
+            self.justification.cause_racine_fr,
+            self.justification.donnees_a_l_appui_fr,
+            self.proposed_vision.description_fr,
+            self.recommendation.recommandation_fr,
+            self.context.situation_actuelle_fr,
+            self.opportunity.enonce_fr,
+        ]
+        texts_to_check += [o.description_fr for o in self.strategic_objectives]
+        texts_to_check += [c.condition_fr for c in self.success_conditions]
+        texts_to_check += [c.contrainte_fr for c in self.constraints]
+
+        full_text = " ".join(texts_to_check).lower()
+        for phrase in FORBIDDEN_PHRASES_EMPIRICAL:
+            if phrase.lower() in full_text:
+                raise ValueError(f"Tournure interdite detectee (motif empirique) : '{phrase}'")
+        return self
+
 
 
 
