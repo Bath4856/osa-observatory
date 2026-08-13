@@ -1634,6 +1634,62 @@ def _build_opportunity_evidence(db: Session, vision_id: int) -> dict:
     }
 
 
+@router.post(
+    "/visions/{vision_id}/generate-opportunity-study-test",
+    summary="[TEST] Generer une etude d'opportunite complete de bout en bout, appel synchrone",
+    description="Endpoint de test manuel uniquement -- valide le pipeline complet (prompt+modeles+filtre) avant de construire l'infrastructure batch. Pas destine a l'echelle.",
+)
+def generate_opportunity_study_test(
+    vision_id: int,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    from api.routers.oim_analysis_gen import OPPORTUNITY_STUDY_SYSTEM_PROMPT, _call_ai
+
+    lever_row = db.execute(
+        text("""
+            SELECT sl.lever_code, sl.label_fr, sl.description_fr
+            FROM mg.lever_evidence le
+            JOIN osoa.strategic_analyses sa ON sa.id = le.analysis_id
+            JOIN rf.strategic_levers sl ON sl.lever_code = le.lever_code
+            WHERE sa.vision_id = :vision_id
+            ORDER BY le.relevance_weight DESC LIMIT 1
+        """),
+        {"vision_id": vision_id},
+    ).mappings().first()
+    if not lever_row:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucun levier promu pour cette vision.",
+            "en": "No promoted lever for this vision.",
+        })
+    lever = dict(lever_row)
+
+    evidence = _build_opportunity_evidence(db, vision_id)
+    evidence_json = json.dumps(evidence, ensure_ascii=False, default=str)
+    schema = OpportunityStudy.model_json_schema()
+    schema_json = json.dumps(schema, ensure_ascii=False)
+
+    system_prompt = OPPORTUNITY_STUDY_SYSTEM_PROMPT.format(
+        lever_code=lever["lever_code"], lever_label=lever["label_fr"],
+        lever_description=lever["description_fr"], evidence_json=evidence_json, schema=schema_json,
+    )
+
+    try:
+        parsed = _call_ai(system_prompt, "Redige l'etude d'opportunite maintenant, selon le plan fourni ci-dessus.")
+        validated = OpportunityStudy(**parsed)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail={
+            "fr": f"Echec de la generation ou de la validation : {e}",
+            "en": f"Generation or validation failed: {e}",
+        })
+
+    return validated.model_dump()
+
+
+
+
 
 
 # ── Boucle SCRIBE/THEO pour le resume executif (Niveau 0), 7 aout 2026 ───────
