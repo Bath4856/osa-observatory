@@ -1733,23 +1733,47 @@ def generate_opportunity_study_test(
             "en": f"Generation or validation failed: {e}",
         })
 
-    study_json = validated.model_dump_json()
-    review_prompt = OPPORTUNITY_STUDY_REVIEWER_SYSTEM_PROMPT.format(
-        evidence_json=evidence_json, study_json=study_json,
-    )
-    try:
+    def _review(study_obj):
+        study_json = study_obj.model_dump_json()
+        review_prompt = OPPORTUNITY_STUDY_REVIEWER_SYSTEM_PROMPT.format(
+            evidence_json=evidence_json, study_json=study_json,
+        )
         review_parsed = _call_ai(review_prompt, "Evalue cette etude d'opportunite maintenant, selon les regles fournies ci-dessus.")
-        review_validated = ContentAnalysisReview(**review_parsed)
+        return ContentAnalysisReview(**review_parsed)
+
+    try:
+        review_validated = _review(validated)
     except Exception as e:
         raise HTTPException(status_code=502, detail={
             "fr": f"Etude generee mais echec de la revue THEO : {e}",
             "en": f"Study generated but THEO review failed: {e}",
         })
 
-    return {
-        "study": validated.model_dump(),
-        "theo_review": review_validated.model_dump(),
-    }
+    cycles = [{"study": validated.model_dump(), "theo_review": review_validated.model_dump()}]
+
+    if review_validated.review_status != "CONFORME":
+        issues_lines = [
+            "- Regle violee: " + issue.rule_violated + " | Preuve: " + issue.evidence + " | Correction proposee: " + issue.proposed_correction
+            for issue in review_validated.issues
+        ]
+        issues_text = "\n".join(issues_lines)
+        feedback_note = (
+            "\n\nCORRECTION REQUISE -- THEO a identifie les problemes suivants "
+            "dans une version precedente :\n" + issues_text +
+            "\nCorrige precisement ces points dans cette nouvelle version, sans "
+            "repeter les memes defauts."
+        )
+        regen_prompt = system_prompt + feedback_note
+        try:
+            regen_parsed = _call_ai(regen_prompt, "Redige la version corrigee de l'etude d'opportunite maintenant.")
+            regen_parsed = normalize_controlled_vocabulary(regen_parsed)
+            regen_validated = OpportunityStudy(**regen_parsed)
+            regen_review = _review(regen_validated)
+            cycles.append({"study": regen_validated.model_dump(), "theo_review": regen_review.model_dump()})
+        except Exception as e:
+            cycles.append({"error": f"Echec du cycle de regeneration : {e}"})
+
+    return {"cycles": cycles}
 
 
 
