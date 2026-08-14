@@ -45,7 +45,7 @@ from pydantic import BaseModel
 
 from api.db import get_db
 from api.routers.auth_affiliates import get_current_affiliate
-from api.routers.osoa import SUMMARY_SYSTEM_PROMPT, METHOD_MODELS, ContentAnalysisReview, _build_opportunity_evidence, SUMMARY_REVIEWER_SYSTEM_PROMPT
+from api.routers.osoa import SUMMARY_SYSTEM_PROMPT, METHOD_MODELS, ContentAnalysisReview, _build_opportunity_evidence, SUMMARY_REVIEWER_SYSTEM_PROMPT, normalize_controlled_vocabulary
 from api.routers.oim_vision import ACTIONS_SYSTEM_PROMPT
 from api.routers.oim_analysis_gen import (
     PRIMARY_METHODS, PRIMARY_ANALYSIS_SYSTEM_PROMPT, MULTICRITERE_SPECIFIC_RULE,
@@ -1113,6 +1113,7 @@ def import_batch_results(
             raw_content = result["response"]["body"]["choices"][0]["message"]["content"]
             parsed = json.loads(raw_content)
             parsed = _strip_null_chars(parsed)
+            parsed = normalize_controlled_vocabulary(parsed)
 
             if queue_row["generation_type"] == "VISION_SUMMARY":
                 db.execute(

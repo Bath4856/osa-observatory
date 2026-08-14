@@ -1965,6 +1965,15 @@ def regenerate_opportunity_study(
         validated = OpportunityStudy(**parsed)
     except HTTPException:
         raise
+    except ValueError as e:
+        # Erreur de VALIDATION (ex. filtre deterministe _check_forbidden_phrases)
+        # -- pas une panne d'infrastructure. 422, jamais 502. Attendu : SCRIBE
+        # peut echouer a corriger du premier coup, l'appelant doit pouvoir
+        # distinguer "reessayer" (422) de "vraie panne" (502).
+        raise HTTPException(status_code=422, detail={
+            "fr": f"Contenu regenere invalide : {e}",
+            "en": f"Regenerated content invalid: {e}",
+        })
     except Exception as e:
         raise HTTPException(status_code=502, detail={
             "fr": f"Echec de la regeneration : {e}",
