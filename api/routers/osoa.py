@@ -1843,6 +1843,148 @@ def validate_opportunity_study(
 
 
 @router.post(
+    "/deliverables/{deliverable_id}/review-opportunity-study",
+    summary="Faire evaluer par THEO une etude d'opportunite deja persistee",
+    description="Reconstruit le paquet de preuves depuis vision_id, appelle THEO, insere le resultat dans mg.summary_review. Reutilisable independamment de la generation.",
+)
+def review_opportunity_study(
+    deliverable_id: int,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    from api.routers.oim_analysis_gen import OPPORTUNITY_STUDY_REVIEWER_SYSTEM_PROMPT, _call_ai, ContentAnalysisReview
+
+    deliverable = db.execute(
+        text("SELECT id, vision_id, content FROM osoa.strategic_deliverables WHERE id = :id AND deliverable_type = 'ETUDE_OPPORTUNITE'"),
+        {"id": deliverable_id},
+    ).mappings().first()
+    if not deliverable:
+        raise HTTPException(status_code=404, detail={"fr": "Livrable introuvable.", "en": "Deliverable not found."})
+
+    evidence = _build_opportunity_evidence(db, deliverable["vision_id"])
+    evidence_json = json.dumps(evidence, ensure_ascii=False, default=str)
+    study_json = json.dumps(deliverable["content"], ensure_ascii=False, default=str)
+
+    review_prompt = OPPORTUNITY_STUDY_REVIEWER_SYSTEM_PROMPT.format(
+        evidence_json=evidence_json, study_json=study_json,
+    )
+    try:
+        review_parsed = _call_ai(review_prompt, "Evalue cette etude d'opportunite maintenant, selon les regles fournies ci-dessus.")
+        review_validated = ContentAnalysisReview(**review_parsed)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail={
+            "fr": f"Echec de la revue THEO : {e}",
+            "en": f"THEO review failed: {e}",
+        })
+
+    issues_json = json.dumps([i.model_dump() for i in review_validated.issues], ensure_ascii=False)
+    db.execute(
+        text("""
+            INSERT INTO mg.summary_review (deliverable_id, review_status, issues)
+            VALUES (:deliverable_id, :status, CAST(:issues AS jsonb))
+        """),
+        {"deliverable_id": deliverable_id, "status": review_validated.review_status, "issues": issues_json},
+    )
+    db.commit()
+
+    return {
+        "deliverable_id": deliverable_id,
+        "review_status": review_validated.review_status,
+        "issues": [i.model_dump() for i in review_validated.issues],
+    }
+
+
+@router.post(
+    "/deliverables/{deliverable_id}/regenerate-opportunity-study",
+    summary="Regenerer une etude d'opportunite en integrant la derniere critique de THEO",
+    description="Reprend la logique deja eprouvee sur les analyses primaires (regenerate_analysis_draft) -- injecte les issues de la derniere revue dans le prompt, met a jour le contenu en place, repasse summary_status a AI_DRAFTED.",
+)
+def regenerate_opportunity_study(
+    deliverable_id: int,
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    from api.routers.oim_analysis_gen import OPPORTUNITY_STUDY_SYSTEM_PROMPT, _call_ai
+
+    deliverable = db.execute(
+        text("SELECT id, vision_id FROM osoa.strategic_deliverables WHERE id = :id AND deliverable_type = 'ETUDE_OPPORTUNITE'"),
+        {"id": deliverable_id},
+    ).mappings().first()
+    if not deliverable:
+        raise HTTPException(status_code=404, detail={"fr": "Livrable introuvable.", "en": "Deliverable not found."})
+    vision_id = deliverable["vision_id"]
+
+    latest_review = db.execute(
+        text("SELECT review_status, issues FROM mg.summary_review WHERE deliverable_id = :id ORDER BY created_at DESC LIMIT 1"),
+        {"id": deliverable_id},
+    ).mappings().first()
+    if not latest_review:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucune revue disponible -- faites-le evaluer d'abord (POST .../review-opportunity-study).",
+            "en": "No review available -- have it evaluated first.",
+        })
+
+    lever_row = db.execute(
+        text("""
+            SELECT sl.lever_code, sl.label_fr, sl.description_fr
+            FROM mg.lever_evidence le
+            JOIN osoa.strategic_analyses sa ON sa.id = le.analysis_id
+            JOIN rf.strategic_levers sl ON sl.lever_code = le.lever_code
+            WHERE sa.vision_id = :vision_id
+            ORDER BY le.relevance_weight DESC LIMIT 1
+        """),
+        {"vision_id": vision_id},
+    ).mappings().first()
+    lever = dict(lever_row)
+
+    evidence = _build_opportunity_evidence(db, vision_id)
+    evidence_json = json.dumps(evidence, ensure_ascii=False, default=str)
+    schema = OpportunityStudy.model_json_schema()
+    schema_json = json.dumps(schema, ensure_ascii=False)
+
+    base_prompt = OPPORTUNITY_STUDY_SYSTEM_PROMPT.format(
+        lever_code=lever["lever_code"], lever_label=lever["label_fr"],
+        lever_description=lever["description_fr"], evidence_json=evidence_json, schema=schema_json,
+    )
+    issues_lines = [
+        "- Regle violee: " + issue["rule_violated"] + " | Preuve: " + issue["evidence"] + " | Correction proposee: " + issue["proposed_correction"]
+        for issue in latest_review["issues"]
+    ]
+    issues_text = "\n".join(issues_lines)
+    feedback_note = (
+        "\n\nCORRECTION REQUISE -- THEO a identifie les problemes suivants "
+        "dans une version precedente :\n" + issues_text +
+        "\nCorrige precisement ces points dans cette nouvelle version, sans "
+        "repeter les memes defauts."
+    )
+    system_prompt = base_prompt + feedback_note
+
+    try:
+        parsed = _call_ai(system_prompt, "Redige la version corrigee de l'etude d'opportunite maintenant.")
+        parsed = normalize_controlled_vocabulary(parsed)
+        validated = OpportunityStudy(**parsed)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail={
+            "fr": f"Echec de la regeneration : {e}",
+            "en": f"Regeneration failed: {e}",
+        })
+
+    db.execute(
+        text("""
+            UPDATE osoa.strategic_deliverables
+            SET content = CAST(:content AS jsonb), summary_status = 'AI_DRAFTED'
+            WHERE id = :id
+        """),
+        {"content": validated.model_dump_json(), "id": deliverable_id},
+    )
+    db.commit()
+
+    return {"deliverable_id": deliverable_id, "status": "AI_DRAFTED"}
+
+
+@router.post(
     "/visions/{vision_id}/generate-opportunity-study-test",
     summary="[TEST] Generer une etude d'opportunite complete de bout en bout, appel synchrone",
     description="Endpoint de test manuel uniquement -- valide le pipeline complet (prompt+modeles+filtre) avant de construire l'infrastructure batch. Pas destine a l'echelle.",
