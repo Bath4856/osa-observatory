@@ -45,13 +45,13 @@ from pydantic import BaseModel
 
 from api.db import get_db
 from api.routers.auth_affiliates import get_current_affiliate
-from api.routers.osoa import SUMMARY_SYSTEM_PROMPT, METHOD_MODELS, ContentAnalysisReview, _build_opportunity_evidence, SUMMARY_REVIEWER_SYSTEM_PROMPT, normalize_controlled_vocabulary
+from api.routers.osoa import SUMMARY_SYSTEM_PROMPT, METHOD_MODELS, ContentAnalysisReview, _build_opportunity_evidence, SUMMARY_REVIEWER_SYSTEM_PROMPT, normalize_controlled_vocabulary, OpportunityStudy
 from api.routers.oim_vision import ACTIONS_SYSTEM_PROMPT
 from api.routers.oim_analysis_gen import (
     PRIMARY_METHODS, PRIMARY_ANALYSIS_SYSTEM_PROMPT, MULTICRITERE_SPECIFIC_RULE,
     BOUNDED_SCORE_FIELDS, _extract_controlled_vocabulary, _get_pillar_data_snapshot,
     REVIEWER_SYSTEM_PROMPT, ANALYSIS_TRIGGER_MESSAGE, REVIEW_TRIGGER_MESSAGE,
-    LEVER_SYSTEM_PROMPT,
+    LEVER_SYSTEM_PROMPT, OPPORTUNITY_STUDY_SYSTEM_PROMPT, OPPORTUNITY_STUDY_REVIEWER_SYSTEM_PROMPT,
 )
 from api.routers.osoa import ContentStrategicLever
 
@@ -506,6 +506,194 @@ def queue_summary(
 
 
 @router.post(
+    "/visions/queue-all-pending-opportunity-studies",
+    summary="Mettre en file d'attente la generation d'etude d'opportunite pour toutes les visions avec un levier promu, sans etude existante",
+)
+def queue_all_pending_opportunity_studies(
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+
+    visions = db.execute(
+        text("""
+            SELECT DISTINCT v.id AS vision_id
+            FROM mg.pillar_strategic_vision v
+            JOIN mg.lever_evidence le ON true
+            JOIN osoa.strategic_analyses sa ON sa.vision_id = v.id AND sa.method = '5_POURQUOI' AND sa.id = le.analysis_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM osoa.strategic_deliverables sd
+                WHERE sd.vision_id = v.id AND sd.deliverable_type = 'ETUDE_OPPORTUNITE'
+            )
+        """),
+    ).mappings().all()
+    if not visions:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucune vision eligible (levier promu, pas encore d'etude d'opportunite).",
+            "en": "No eligible vision (promoted lever, no opportunity study yet).",
+        })
+
+    queued_count = 0
+    skipped = []
+    for v in visions:
+        lever_row = db.execute(
+            text("""
+                SELECT sl.lever_code, sl.label_fr, sl.description_fr
+                FROM mg.lever_evidence le
+                JOIN osoa.strategic_analyses sa ON sa.id = le.analysis_id
+                JOIN rf.strategic_levers sl ON sl.lever_code = le.lever_code
+                WHERE sa.vision_id = :vision_id
+                ORDER BY le.relevance_weight DESC LIMIT 1
+            """),
+            {"vision_id": v["vision_id"]},
+        ).mappings().first()
+        if not lever_row:
+            skipped.append(v["vision_id"])
+            continue
+
+        try:
+            evidence = _build_opportunity_evidence(db, v["vision_id"])
+        except HTTPException:
+            skipped.append(v["vision_id"])
+            continue
+
+        db.execute(
+            text("""
+                INSERT INTO mg.ai_generation_queue (generation_type, target_id, request_payload, created_by)
+                VALUES ('OPPORTUNITY_STUDY_GENERATION', :target_id, CAST(:payload AS jsonb), :created_by)
+            """),
+            {
+                "target_id": v["vision_id"],
+                "payload": json.dumps({
+                    "lever_code": lever_row["lever_code"], "lever_label": lever_row["label_fr"],
+                    "lever_description": lever_row["description_fr"], "evidence": evidence,
+                }, ensure_ascii=False, default=str),
+                "created_by": affiliate_id,
+            },
+        )
+        queued_count += 1
+
+    db.commit()
+    return {"queued_count": queued_count, "visions_skipped": skipped}
+
+
+@router.post(
+    "/deliverables/queue-all-pending-opportunity-study-reviews",
+    summary="Mettre en file d'attente la revue THEO pour toutes les etudes d'opportunite AI_DRAFTED",
+)
+def queue_all_pending_opportunity_study_reviews(
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+
+    deliverables = db.execute(
+        text("""
+            SELECT id, vision_id, content FROM osoa.strategic_deliverables
+            WHERE deliverable_type = 'ETUDE_OPPORTUNITE' AND summary_status = 'AI_DRAFTED'
+        """),
+    ).mappings().all()
+    if not deliverables:
+        raise HTTPException(status_code=422, detail={
+            "fr": "Aucune etude AI_DRAFTED en attente de revue.",
+            "en": "No AI_DRAFTED study pending review.",
+        })
+
+    queued_count = 0
+    skipped = []
+    for d in deliverables:
+        try:
+            evidence = _build_opportunity_evidence(db, d["vision_id"])
+        except HTTPException:
+            skipped.append(d["id"])
+            continue
+
+        db.execute(
+            text("""
+                INSERT INTO mg.ai_generation_queue (generation_type, target_id, request_payload, created_by)
+                VALUES ('OPPORTUNITY_STUDY_REVIEW', :target_id, CAST(:payload AS jsonb), :created_by)
+            """),
+            {
+                "target_id": d["id"],
+                "payload": json.dumps({"evidence": evidence, "study": d["content"]}, ensure_ascii=False, default=str),
+                "created_by": affiliate_id,
+            },
+        )
+        queued_count += 1
+
+    db.commit()
+    return {"queued_count": queued_count, "deliverables_skipped": skipped}
+
+
+@router.post(
+    "/deliverables/queue-all-pending-opportunity-study-regenerations",
+    summary="Mettre en file d'attente la regeneration pour toutes les etudes d'opportunite A_REVOIR/PROBLEME_DETECTE",
+)
+def queue_all_pending_opportunity_study_regenerations(
+    payload: dict = Depends(get_current_affiliate),
+    db: Session = Depends(get_db),
+):
+    affiliate_id = int(payload["sub"])
+
+    deliverables = db.execute(
+        text("""
+            SELECT DISTINCT ON (sd.id) sd.id, sd.vision_id, sr.review_status, sr.issues
+            FROM osoa.strategic_deliverables sd
+            JOIN mg.summary_review sr ON sr.deliverable_id = sd.id
+            WHERE sd.deliverable_type = 'ETUDE_OPPORTUNITE' AND sd.summary_status = 'AI_DRAFTED'
+            ORDER BY sd.id, sr.created_at DESC
+        """),
+    ).mappings().all()
+
+    queued_count = 0
+    skipped = []
+    for d in deliverables:
+        if d["review_status"] == "CONFORME":
+            continue
+
+        lever_row = db.execute(
+            text("""
+                SELECT sl.lever_code, sl.label_fr, sl.description_fr
+                FROM mg.lever_evidence le
+                JOIN osoa.strategic_analyses sa ON sa.id = le.analysis_id
+                JOIN rf.strategic_levers sl ON sl.lever_code = le.lever_code
+                WHERE sa.vision_id = :vision_id
+                ORDER BY le.relevance_weight DESC LIMIT 1
+            """),
+            {"vision_id": d["vision_id"]},
+        ).mappings().first()
+        if not lever_row:
+            skipped.append(d["id"])
+            continue
+
+        try:
+            evidence = _build_opportunity_evidence(db, d["vision_id"])
+        except HTTPException:
+            skipped.append(d["id"])
+            continue
+
+        db.execute(
+            text("""
+                INSERT INTO mg.ai_generation_queue (generation_type, target_id, request_payload, created_by)
+                VALUES ('OPPORTUNITY_STUDY_REGENERATION', :target_id, CAST(:payload AS jsonb), :created_by)
+            """),
+            {
+                "target_id": d["id"],
+                "payload": json.dumps({
+                    "lever_code": lever_row["lever_code"], "lever_label": lever_row["label_fr"],
+                    "lever_description": lever_row["description_fr"], "evidence": evidence,
+                    "issues": d["issues"],
+                }, ensure_ascii=False, default=str),
+                "created_by": affiliate_id,
+            },
+        )
+        queued_count += 1
+
+    db.commit()
+    return {"queued_count": queued_count, "deliverables_skipped": skipped}
+
+
+@router.post(
     "/analysis-drafts/queue-all-pending-regenerations",
     summary="Mettre en file d'attente la regeneration de tous les brouillons A_REVOIR/PROBLEME_DETECTE (batch a l'echelle)",
     description="Reprend la logique de regenerate_analysis_draft (base_prompt + critique de THEO injectee) mais en masse via le pipeline batch. Met a jour le brouillon existant en place (pas de nouvelle ligne).",
@@ -783,6 +971,54 @@ def submit_batch(
                 evidence_json=evidence_json, summary_fr=summary_fr, summary_en=summary_en,
             )
             user_content = "Évalue ce résumé maintenant, selon les règles fournies ci-dessus."
+        elif row["generation_type"] == "OPPORTUNITY_STUDY_GENERATION":
+            lever_code = row["request_payload"]["lever_code"]
+            lever_label = row["request_payload"]["lever_label"]
+            lever_description = row["request_payload"]["lever_description"]
+            evidence = row["request_payload"]["evidence"]
+            evidence_json = json.dumps(evidence, ensure_ascii=False, default=str)
+            schema = OpportunityStudy.model_json_schema()
+            schema_json = json.dumps(schema, ensure_ascii=False)
+            system_prompt = OPPORTUNITY_STUDY_SYSTEM_PROMPT.format(
+                lever_code=lever_code, lever_label=lever_label,
+                lever_description=lever_description, evidence_json=evidence_json, schema=schema_json,
+            )
+            user_content = "Redige l'etude d'opportunite maintenant, selon le plan fourni ci-dessus."
+        elif row["generation_type"] == "OPPORTUNITY_STUDY_REVIEW":
+            evidence = row["request_payload"]["evidence"]
+            study = row["request_payload"]["study"]
+            evidence_json = json.dumps(evidence, ensure_ascii=False, default=str)
+            study_json = json.dumps(study, ensure_ascii=False, default=str)
+            system_prompt = OPPORTUNITY_STUDY_REVIEWER_SYSTEM_PROMPT.format(
+                evidence_json=evidence_json, study_json=study_json,
+            )
+            user_content = "Evalue cette etude d'opportunite maintenant, selon les regles fournies ci-dessus."
+        elif row["generation_type"] == "OPPORTUNITY_STUDY_REGENERATION":
+            lever_code = row["request_payload"]["lever_code"]
+            lever_label = row["request_payload"]["lever_label"]
+            lever_description = row["request_payload"]["lever_description"]
+            evidence = row["request_payload"]["evidence"]
+            issues = row["request_payload"]["issues"]
+            evidence_json = json.dumps(evidence, ensure_ascii=False, default=str)
+            schema = OpportunityStudy.model_json_schema()
+            schema_json = json.dumps(schema, ensure_ascii=False)
+            base_prompt = OPPORTUNITY_STUDY_SYSTEM_PROMPT.format(
+                lever_code=lever_code, lever_label=lever_label,
+                lever_description=lever_description, evidence_json=evidence_json, schema=schema_json,
+            )
+            issues_lines = [
+                "- Regle violee: " + issue["rule_violated"] + " | Preuve: " + issue["evidence"] + " | Correction proposee: " + issue["proposed_correction"]
+                for issue in issues
+            ]
+            issues_text = "\n".join(issues_lines)
+            feedback_note = (
+                "\n\nCORRECTION REQUISE -- THEO a identifie les problemes suivants "
+                "dans une version precedente :\n" + issues_text +
+                "\nCorrige precisement ces points dans cette nouvelle version, sans "
+                "repeter les memes defauts."
+            )
+            system_prompt = base_prompt + feedback_note
+            user_content = "Redige la version corrigee de l'etude d'opportunite maintenant."
         elif row["generation_type"] == "REGENERATION":
             method = row["request_payload"]["method"]
             snapshot = row["request_payload"]["snapshot"]
@@ -1199,6 +1435,47 @@ def import_batch_results(
                         VALUES (:deliverable_id, :status, CAST(:issues AS jsonb))
                     """),
                     {"deliverable_id": queue_row["target_id"], "status": validated.review_status, "issues": issues_json},
+                )
+            elif queue_row["generation_type"] == "OPPORTUNITY_STUDY_GENERATION":
+                parsed = normalize_controlled_vocabulary(parsed)
+                validated = OpportunityStudy(**parsed)
+                required_methods = ["5W1H", "SWOT", "5_POURQUOI", "RISQUE", "ECONOMIQUE", "MULTICRITERE", "ZACHMAN"]
+                analysis_ids_rows = db.execute(
+                    text("SELECT id FROM osoa.strategic_analyses WHERE vision_id = :vision_id AND method = ANY(:methods)"),
+                    {"vision_id": queue_row["target_id"], "methods": required_methods},
+                ).mappings().all()
+                source_ids = [r["id"] for r in analysis_ids_rows]
+                db.execute(
+                    text("""
+                        INSERT INTO osoa.strategic_deliverables
+                            (vision_id, deliverable_type, content, source_analysis_ids, generated_by, summary_status)
+                        VALUES (:vision_id, 'ETUDE_OPPORTUNITE', CAST(:content AS jsonb), :source_ids, :generated_by, 'AI_DRAFTED')
+                    """),
+                    {
+                        "vision_id": queue_row["target_id"], "content": validated.model_dump_json(),
+                        "source_ids": source_ids, "generated_by": int(payload["sub"]),
+                    },
+                )
+            elif queue_row["generation_type"] == "OPPORTUNITY_STUDY_REVIEW":
+                validated = ContentAnalysisReview(**parsed)
+                issues_json = json.dumps([i.model_dump() for i in validated.issues], ensure_ascii=False)
+                db.execute(
+                    text("""
+                        INSERT INTO mg.summary_review (deliverable_id, review_status, issues)
+                        VALUES (:deliverable_id, :status, CAST(:issues AS jsonb))
+                    """),
+                    {"deliverable_id": queue_row["target_id"], "status": validated.review_status, "issues": issues_json},
+                )
+            elif queue_row["generation_type"] == "OPPORTUNITY_STUDY_REGENERATION":
+                parsed = normalize_controlled_vocabulary(parsed)
+                validated = OpportunityStudy(**parsed)
+                db.execute(
+                    text("""
+                        UPDATE osoa.strategic_deliverables
+                        SET content = CAST(:content AS jsonb), summary_status = 'AI_DRAFTED'
+                        WHERE id = :id
+                    """),
+                    {"content": validated.model_dump_json(), "id": queue_row["target_id"]},
                 )
             elif queue_row["generation_type"] == "REGENERATION":
                 method = queue_row["request_payload"]["method"]
