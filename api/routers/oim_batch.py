@@ -374,11 +374,6 @@ def queue_analysis_reviews(
     return {"count": len(created), "items": created}
 
 
-@router.post(
-    "/analysis-drafts/queue-all-pending-reviews",
-    summary="Mettre en file d'attente la revue THEO de TOUTES les analyses AI_DRAFTED du système (toutes visions confondues)",
-    description="Utile pour un test à grande échelle -- évite d'appeler queue-reviews vision par vision. Snapshot mis en cache par (pays, pilier, année) pour éviter de le recalculer 9 fois par vision.",
-)
 def _is_already_queued(db: Session, generation_type: str, target_id: int) -> bool:
     """Verifie qu'aucune ligne QUEUED ou SUBMITTED n'existe deja pour ce
     (generation_type, target_id) -- empeche les doublons de mise en file.
@@ -400,6 +395,11 @@ def _is_already_queued(db: Session, generation_type: str, target_id: int) -> boo
     return row is not None
 
 
+@router.post(
+    "/analysis-drafts/queue-all-pending-reviews",
+    summary="Mettre en file d'attente la revue THEO de TOUTES les analyses AI_DRAFTED du système (toutes visions confondues)",
+    description="Utile pour un test à grande échelle -- évite d'appeler queue-reviews vision par vision. Snapshot mis en cache par (pays, pilier, année) pour éviter de le recalculer 9 fois par vision.",
+)
 def queue_all_pending_reviews(
     payload: dict = Depends(get_current_affiliate),
     db: Session = Depends(get_db),
