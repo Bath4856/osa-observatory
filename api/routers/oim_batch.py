@@ -379,6 +379,27 @@ def queue_analysis_reviews(
     summary="Mettre en file d'attente la revue THEO de TOUTES les analyses AI_DRAFTED du système (toutes visions confondues)",
     description="Utile pour un test à grande échelle -- évite d'appeler queue-reviews vision par vision. Snapshot mis en cache par (pays, pilier, année) pour éviter de le recalculer 9 fois par vision.",
 )
+def _is_already_queued(db: Session, generation_type: str, target_id: int) -> bool:
+    """Verifie qu'aucune ligne QUEUED ou SUBMITTED n'existe deja pour ce
+    (generation_type, target_id) -- empeche les doublons de mise en file.
+    Bug REEL trouve le 15 aout 2026 : 6 endpoints queue-all-pending-*
+    n'avaient aucune verification de ce type -- chaque relance (ex.
+    apres un arret/redemarrage du sequenceur) reinserait une NOUVELLE
+    ligne pour les memes elements deja en attente, non traites. Constate
+    concretement : 9422 lignes QUEUED pour seulement 3456 elements
+    distincts (~2,7x de doublons). Fonction partagee, reutilisee par
+    TOUS les endpoints queue-all-pending-*, jamais dupliquee."""
+    row = db.execute(
+        text("""
+            SELECT 1 FROM mg.ai_generation_queue
+            WHERE generation_type = :gt AND target_id = :tid AND status IN ('QUEUED', 'SUBMITTED')
+            LIMIT 1
+        """),
+        {"gt": generation_type, "tid": target_id},
+    ).first()
+    return row is not None
+
+
 def queue_all_pending_reviews(
     payload: dict = Depends(get_current_affiliate),
     db: Session = Depends(get_db),
@@ -402,7 +423,21 @@ def queue_all_pending_reviews(
 
     snapshot_cache = {}
     created_ids = []
+    skipped_already_conforme = []
+    skipped_already_queued = []
     for d in drafts:
+        latest_status_row = db.execute(
+            text("SELECT review_status FROM mg.analysis_review WHERE draft_id = :id ORDER BY created_at DESC LIMIT 1"),
+            {"id": d["id"]},
+        ).mappings().first()
+        if latest_status_row and latest_status_row["review_status"] == "CONFORME":
+            skipped_already_conforme.append(d["id"])
+            continue
+
+        if _is_already_queued(db, "ANALYSIS_REVIEW", d["id"]):
+            skipped_already_queued.append(d["id"])
+            continue
+
         cache_key = (d["country_iso3"], d["pillar_code"], d["year"])
         if cache_key not in snapshot_cache:
             snapshot_cache[cache_key] = _get_pillar_data_snapshot(db, d["country_iso3"], d["pillar_code"], d["year"])
@@ -426,7 +461,11 @@ def queue_all_pending_reviews(
         created_ids.append(row["id"])
 
     db.commit()
-    return {"count": len(created_ids), "queue_ids": created_ids}
+    return {
+        "count": len(created_ids), "queue_ids": created_ids,
+        "skipped_already_conforme": len(skipped_already_conforme),
+        "skipped_already_queued": len(skipped_already_queued),
+    }
 
 
 def _fetch_lever_for_vision(db: Session, vision_id: int) -> dict:
@@ -601,7 +640,21 @@ def queue_all_pending_opportunity_study_reviews(
 
     queued_count = 0
     skipped = []
+    skipped_already_conforme = []
+    skipped_already_queued = []
     for d in deliverables:
+        latest_status_row = db.execute(
+            text("SELECT review_status FROM mg.summary_review WHERE deliverable_id = :id ORDER BY created_at DESC LIMIT 1"),
+            {"id": d["id"]},
+        ).mappings().first()
+        if latest_status_row and latest_status_row["review_status"] == "CONFORME":
+            skipped_already_conforme.append(d["id"])
+            continue
+
+        if _is_already_queued(db, "OPPORTUNITY_STUDY_REVIEW", d["id"]):
+            skipped_already_queued.append(d["id"])
+            continue
+
         try:
             evidence = _build_opportunity_evidence(db, d["vision_id"])
         except HTTPException:
@@ -622,7 +675,11 @@ def queue_all_pending_opportunity_study_reviews(
         queued_count += 1
 
     db.commit()
-    return {"queued_count": queued_count, "deliverables_skipped": skipped}
+    return {
+        "queued_count": queued_count, "deliverables_skipped": skipped,
+        "skipped_already_conforme": len(skipped_already_conforme),
+        "skipped_already_queued": len(skipped_already_queued),
+    }
 
 
 @router.post(
@@ -647,8 +704,13 @@ def queue_all_pending_opportunity_study_regenerations(
 
     queued_count = 0
     skipped = []
+    already_queued = []
     for d in deliverables:
         if d["review_status"] == "CONFORME":
+            continue
+
+        if _is_already_queued(db, "OPPORTUNITY_STUDY_REGENERATION", d["id"]):
+            already_queued.append(d["id"])
             continue
 
         lever_row = db.execute(
@@ -690,7 +752,7 @@ def queue_all_pending_opportunity_study_regenerations(
         queued_count += 1
 
     db.commit()
-    return {"queued_count": queued_count, "deliverables_skipped": skipped}
+    return {"queued_count": queued_count, "deliverables_skipped": skipped, "deliverables_already_queued": already_queued}
 
 
 @router.post(
@@ -718,6 +780,7 @@ def queue_all_pending_regenerations(
 
     queued_count = 0
     skipped = []
+    already_queued = []
     for d in drafts:
         if d["issues"] is None:
             continue
@@ -726,6 +789,10 @@ def queue_all_pending_regenerations(
             {"id": d["draft_id"]},
         ).mappings().first()
         if not latest_status_row or latest_status_row["review_status"] == "CONFORME":
+            continue
+
+        if _is_already_queued(db, "REGENERATION", d["draft_id"]):
+            already_queued.append(d["draft_id"])
             continue
 
         snapshot = _get_pillar_data_snapshot(db, d["country_iso3"], d["pillar_code"], d["year"])
@@ -751,7 +818,7 @@ def queue_all_pending_regenerations(
         queued_count += 1
 
     db.commit()
-    return {"queued_count": queued_count, "drafts_skipped_no_evidence": skipped}
+    return {"queued_count": queued_count, "drafts_skipped_no_evidence": skipped, "drafts_already_queued": already_queued}
 
 
 @router.post(
@@ -1469,26 +1536,30 @@ def import_batch_results(
             elif queue_row["generation_type"] == "OPPORTUNITY_STUDY_REGENERATION":
                 parsed = normalize_controlled_vocabulary(parsed)
                 validated = OpportunityStudy(**parsed)
-                db.execute(
+                result = db.execute(
                     text("""
                         UPDATE osoa.strategic_deliverables
                         SET content = CAST(:content AS jsonb), summary_status = 'AI_DRAFTED'
-                        WHERE id = :id
+                        WHERE id = :id AND summary_status = 'AI_DRAFTED'
                     """),
                     {"content": validated.model_dump_json(), "id": queue_row["target_id"]},
                 )
+                if result.rowcount == 0:
+                    print(f"REGENERATION PERIMEE IGNOREE -- deliverable {queue_row['target_id']} deja HUMAN_VALIDATED, contenu NON ecrase.", flush=True)
             elif queue_row["generation_type"] == "REGENERATION":
                 method = queue_row["request_payload"]["method"]
                 model_cls = METHOD_MODELS[method]
                 validated = model_cls(**parsed)
-                db.execute(
+                result = db.execute(
                     text("""
                         UPDATE mg.pillar_analysis_drafts
                         SET content = CAST(:content AS jsonb), status = 'AI_DRAFTED', updated_at = NOW()
-                        WHERE id = :id
+                        WHERE id = :id AND status = 'AI_DRAFTED'
                     """),
                     {"content": validated.model_dump_json(), "id": queue_row["target_id"]},
                 )
+                if result.rowcount == 0:
+                    print(f"REGENERATION PERIMEE IGNOREE -- draft {queue_row['target_id']} deja PROMOTED, contenu NON ecrase.", flush=True)
 
             db.execute(
                 text("UPDATE mg.ai_generation_queue SET status = 'COMPLETED', updated_at = NOW() WHERE id = :id"),
