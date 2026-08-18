@@ -1124,7 +1124,7 @@ def submit_batch(
             "method": "POST",
             "url": "/v1/chat/completions",
             "body": {
-                "model": "gpt-4o",
+                "model": "gpt-5.6-luna",
                 "response_format": {"type": "json_object"},
                 "messages": [
                     {"role": "system", "content": system_prompt},
@@ -1135,7 +1135,7 @@ def submit_batch(
 
     if dry_run:
         try:
-            encoding = tiktoken.encoding_for_model("gpt-4o")
+            encoding = tiktoken.encoding_for_model("gpt-5.6-luna")
         except KeyError:
             encoding = tiktoken.get_encoding("o200k_base")
         total_tokens = 0

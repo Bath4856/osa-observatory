@@ -1473,7 +1473,7 @@ def _generate_summary_openai(content_json: str, system_prompt: str = None) -> di
         })
     client = _openai_sdk.OpenAI(api_key=api_key)
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-5.6-luna",
         response_format={"type": "json_object"},
         messages=[
             {"role": "system", "content": system_prompt},

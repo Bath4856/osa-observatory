@@ -520,7 +520,7 @@ def _generate_actions_openai(content_json: str) -> dict:
         })
     client = _openai_sdk_actions.OpenAI(api_key=api_key)
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-5.6-luna",
         response_format={"type": "json_object"},
         messages=[
             {"role": "system", "content": ACTIONS_SYSTEM_PROMPT},

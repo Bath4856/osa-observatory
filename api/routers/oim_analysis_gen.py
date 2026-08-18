@@ -384,7 +384,7 @@ def _call_ai(system_prompt: str, user_content: str) -> dict:
             })
         client = _openai_sdk_gen.OpenAI(api_key=api_key)
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-5.6-luna",
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": system_prompt},
