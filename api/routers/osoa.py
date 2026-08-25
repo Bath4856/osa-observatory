@@ -608,17 +608,27 @@ class ContentRisque(BaseModel):
 
 
 class ContentFaisabilite(BaseModel):
+    # delai_estime_jours_min/max rendus OPTIONNELS le 24 aout 2026 --
+    # bug reel trouve en analysant le residu de la campagne 2020 (69/69
+    # cas non-conformes etaient CE motif, plus les cas DEAD_LETTER) :
+    # le champ etait obligatoire (int, jamais nul), or les donnees
+    # ISA/POA ne contiennent jamais d'estimation de delai en jours --
+    # SCRIBE etait force de choisir entre inventer une valeur (0/1,
+    # signalee a raison comme non etayee par THEO) ou renvoyer null
+    # (rejete par la validation, DEAD_LETTER). Corrige : None est
+    # desormais une reponse honnete et acceptee.
     faisabilite_technique: str
     faisabilite_financiere: str
     faisabilite_organisationnelle: str
-    delai_estime_jours_min: int = Field(..., ge=0)
-    delai_estime_jours_max: int = Field(..., ge=0)
+    delai_estime_jours_min: Optional[int] = Field(default=None, ge=0)
+    delai_estime_jours_max: Optional[int] = Field(default=None, ge=0)
     conclusion: Literal["FAVORABLE", "DEFAVORABLE", "CONDITIONNEL"]
 
     @model_validator(mode="after")
     def _check_delai_range(self):
-        if self.delai_estime_jours_max < self.delai_estime_jours_min:
-            raise ValueError("delai_estime_jours_max doit être >= delai_estime_jours_min")
+        if self.delai_estime_jours_min is not None and self.delai_estime_jours_max is not None:
+            if self.delai_estime_jours_max < self.delai_estime_jours_min:
+                raise ValueError("delai_estime_jours_max doit être >= delai_estime_jours_min")
         return self
 
 
