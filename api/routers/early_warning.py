@@ -118,11 +118,11 @@ def get_amar_all(
         SELECT
             country_iso3, year, risk_band,
             risk_score, confidence_score,
-            risk_interpretation, recommended_action,
+            public_narrative AS risk_interpretation, recommended_action,
             structural_fragility_score, conflict_escalation_score,
             governance_breakdown_score, humanitarian_stress_score,
             resource_conflict_score, information_polarization_score
-        FROM ma.v_p7i_amar_dashboard
+        FROM pub.mv_amar_dashboard
         WHERE 1=1
           {year_filter}
           {band_filter}
@@ -223,7 +223,7 @@ def get_geneco_all(
             resource_capture_risk, logistics_enabling_risk,
             institutional_capture_risk, civilian_exploitation_risk,
             narrative_weaponization_risk
-        FROM ma.v_p7i_amar_geneco_dashboard
+        FROM pub.mv_geneco_dashboard
         WHERE 1=1
           {year_filter}
           {band_filter}

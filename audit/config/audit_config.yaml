@@ -52,7 +52,7 @@ db_name: osa_db
 db_user: postgres
 # db_password: Il1tRBwubTkPd8jd
 # Ne jamais committer un mot de passe en clair.
-db_password: Il1tRBwubTkPd8jd
+db_password: q64XuKOhqMFTJMfOCeEzZa4bVKO82h2e
 
 # ====================================================
 # ISA
