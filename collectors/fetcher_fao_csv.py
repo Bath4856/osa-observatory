@@ -80,6 +80,13 @@ FAO_AREA_TO_ISO3: dict[str, str] = {
 
 # ── URLs bulk FAOSTAT ─────────────────────────────────────
 FAO_BULK_URLS: dict[str, str] = {
+    # URL confirmee via le catalogue officiel FAOSTAT
+    # (bulks-faostat.fao.org/production/datasets_E.json), verifie le
+    # 2026-09-22. Fichier MONDIAL (245 pays, pas pre-filtre Afrique
+    # comme les autres entrees) -- le filtrage par pays se fait au
+    # traitement, pas via une URL _Africa qui n'existe pas officiellement
+    # pour ce domaine.
+    "FO":  "https://bulks-faostat.fao.org/production/Forestry_E_All_Data_(Normalized).zip",
     "GF":  "https://bulks-faostat.fao.org/production/Forestry_E_Africa.zip",
     "RL":  "https://bulks-faostat.fao.org/production/Inputs_LandUse_E_Africa.zip",
     "FBS": "https://bulks-faostat.fao.org/production/FoodBalanceSheets_E_Africa.zip",
@@ -91,6 +98,7 @@ FAO_BULK_URLS: dict[str, str] = {
 
 # Nom du fichier CSV principal dans chaque ZIP
 FAO_BULK_CSV: dict[str, str] = {
+    "FO":  "Forestry_E_All_Data_(Normalized).csv",
     "GF":  "Forestry_E_Africa.csv",
     "RL":  "Inputs_LandUse_E_Africa.csv",
     "FBS": "FoodBalanceSheets_E_Africa.csv",
@@ -102,6 +110,28 @@ FAO_BULK_CSV: dict[str, str] = {
 
 # ── Mapping indicateurs OSA -> config FAOSTAT ─────────────
 FAO_INDICATOR_MAP: dict = {
+    "PRES_PRB": {
+        "dataset":      "FO",
+        "element_code": "5516",
+        "item_code":    "1861",    # Roundwood production
+        "name_fr":      "Production bois rondins (m3)",
+        "unit_code":    "INDEX",
+        "direction":    "+",
+        "multiplier":   1.0,
+        "agg":          "sum",
+        "notes":        "FO -- Item1861_Elem5510, ex endpoint_id=21 en collision avec WB (corrige 2026-09-22).",
+    },
+    "PRES_BEN": {
+        "dataset":      "FO",
+        "element_code": "5516",
+        "item_code":    "1864",    # Wood fuel production
+        "name_fr":      "Production bois energie (m3)",
+        "unit_code":    "INDEX",
+        "direction":    "+",
+        "multiplier":   1.0,
+        "agg":          "sum",
+        "notes":        "FO -- Item1864_Elem5510, ex endpoint_id=21 en collision avec WB (corrige 2026-09-22).",
+    },
     "ENV_FOR": {
         "dataset":      "RL",
         "element_code": "5110",
@@ -394,8 +424,13 @@ def download_fao_bulk(data_dir: Path, datasets: list[str] | None = None) -> None
             zip_path = data_dir / f"_tmp_{code}.zip"
             urllib.request.urlretrieve(url, zip_path)
             with zipfile.ZipFile(zip_path, "r") as z:
-                # Trouver le CSV principal dans le ZIP
-                csv_files = [n for n in z.namelist() if n.endswith("_Africa.csv") and "NOFLAG" not in n]
+                # Trouver le CSV principal dans le ZIP -- utilise le vrai
+                # nom attendu (FAO_BULK_CSV), pas un motif fixe _Africa.csv
+                # qui ne correspond qu'aux fichiers pre-filtres sur l'Afrique
+                # (corrige 2026-09-22, ajout du dataset FO mondial)
+                csv_files = [n for n in z.namelist() if n.endswith(csv_name) and "NOFLAG" not in n]
+                if not csv_files:
+                    csv_files = [n for n in z.namelist() if n.endswith("_Africa.csv") and "NOFLAG" not in n]
                 if csv_files:
                     with z.open(csv_files[0]) as src, open(dest, "wb") as dst:
                         dst.write(src.read())

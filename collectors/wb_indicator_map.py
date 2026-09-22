@@ -24,6 +24,14 @@ WB_INDICATOR_MAP: dict = {
         "multiplier": 1.0,
         "notes":      "Dollars constants base 2015 -- serie longue fiable",
     },
+    "ECO_GNI": {
+        "wb_code":    "NY.GNP.PCAP.KD",
+        "name_fr":    "RNB par habitant (USD const. 2015)",
+        "unit_code":  "USD_CONST",
+        "direction":  "+",
+        "multiplier": 1.0,
+        "notes":      "Dollars constants base 2015 -- meme methode qu ECO_GDP. Candidat POA type 1 : ecart PIB/RNB par habitant, delta interne au SCN.",
+    },
     "ECO_GRW": {
         "wb_code":    "NY.GDP.MKTP.KD.ZG",
         "name_fr":    "Croissance PIB annuelle (%)",

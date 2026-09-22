@@ -290,6 +290,8 @@ class BaseFetcher(ABC):
                 )
                 flag = "OK" if value_conv is not None else "MISSING"
                 conf = 0.88 if value_conv is not None else 0.0
+                reason = None if value_conv is not None else "NOT_PUBLISHED_AT_SOURCE"
+                status = "OBSERVED" if value_conv is not None else "MISSING"
 
                 try:
                     cur.execute(
@@ -305,21 +307,23 @@ class BaseFetcher(ABC):
                                (indicator_code, country_iso3, year,
                                 layer_id, raw_value, processed_value,
                                 method_version_id, source_id,
-                                confidence_score, quality_flag)
+                                confidence_score, quality_flag, missing_reason, value_status)
                            VALUES (%s, %s, %s,
                                    1, %s, %s,
-                                   %s, %s, %s, %s)
+                                   %s, %s, %s, %s, %s, %s)
                            ON CONFLICT (indicator_code, country_iso3, year,
                                         layer_id, method_version_id)
                            DO UPDATE SET
                                raw_value       = EXCLUDED.raw_value,
                                processed_value = EXCLUDED.processed_value,
                                quality_flag    = EXCLUDED.quality_flag,
+                               missing_reason  = EXCLUDED.missing_reason,
+                               value_status    = EXCLUDED.value_status,
                                created_at      = now()""",
                         (osa_code, iso3, year,
                          value_conv, value_conv,
                          self.method_version_id, self.source_id,
-                         conf, flag),
+                         conf, flag, reason, status),
                     )
                     inserted += 1
                 except psycopg2.Error as exc:
