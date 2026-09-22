@@ -115,10 +115,12 @@ def upsert_source_registry(conn, payload: dict, dry_run: bool = False) -> tuple[
                     ),
                 )
 
-                cur.execute(
-                    "DELETE FROM collect.source_registry_indicators WHERE source_id = %s",
-                    (source_id,),
-                )
+                # Correctif 2026-09-22 : le DELETE precedent reinitialisait la
+                # sequence d'ID a chaque execution, provoquant des collisions
+                # avec les ID fixes de collect.provider_endpoints (cf. rapport
+                # d'audit du 21/09/2026, cas PRES_BEN/PRES_PRB). L'UPSERT
+                # ci-dessous (ON CONFLICT source_id, source_code) suffit deja
+                # a maintenir la table a jour sans jamais supprimer de lignes.
 
             source_count += 1
 
