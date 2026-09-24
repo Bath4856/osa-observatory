@@ -319,6 +319,7 @@ class BaseFetcher(ABC):
                                quality_flag    = EXCLUDED.quality_flag,
                                missing_reason  = EXCLUDED.missing_reason,
                                value_status    = EXCLUDED.value_status,
+                               source_id       = EXCLUDED.source_id,
                                created_at      = now()""",
                         (osa_code, iso3, year,
                          value_conv, value_conv,

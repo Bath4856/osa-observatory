@@ -1174,7 +1174,18 @@ def insert_indicator(
         )
         return len(df)
 
-    WB_SOURCE_ID = 11  # collect.source_registry WB (id=11)
+    # Resolution dynamique -- jamais d ID en dur (cf. incident 2026-09-24 :
+    # l ancien WB_SOURCE_ID=11 pointait vers collect.source_registry.id=11,
+    # mais ma.indicator_values.source_id reference mm.source_origins, ou
+    # id=11 designe UNESCO, pas WB -- meme classe de defaut que le patch
+    # de masse Sprint 9 deja documente). Resolu depuis la vraie table
+    # utilisee par ma.indicator_values, comme fetcher_base._get_source_id().
+    with conn.cursor() as _src_cur:
+        _src_cur.execute("SELECT id FROM mm.source_origins WHERE code = %s", ("WB",))
+        _src_row = _src_cur.fetchone()
+        if not _src_row:
+            raise RuntimeError("mm.source_origins : code WB introuvable")
+        WB_SOURCE_ID = _src_row[0]
     batch_data = []
     for _, row in df.iterrows():
         iso3   = str(row["country_iso3"]).strip()
@@ -1193,7 +1204,7 @@ def insert_indicator(
 
         batch_data.append((
             osa_code, iso3, year, LAYER_RAW,
-            scaled, quality_flag, conf, value_status
+            scaled, quality_flag, conf, value_status,
             WB_SOURCE_ID
         ))
 
