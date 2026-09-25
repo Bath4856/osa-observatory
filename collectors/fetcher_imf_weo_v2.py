@@ -120,15 +120,30 @@ def insert_to_db(conn, df, dry_run=False):
                      ind, len(grp), grp["country_iso3"].nunique())
         log.info("  [DRY-RUN] Total : %d valeurs non inserees", len(df))
         return len(df)
+    # Resolution dynamique de source_id (cf. incident 2026-09-24, WB_SOURCE_ID
+    # code en dur dans fetcher_wb_pres_pmil_pnum.py) -- jamais d ID en dur.
+    with conn.cursor() as _src_cur:
+        _src_cur.execute("SELECT id FROM mm.source_origins WHERE code = %s", ("IMF",))
+        _src_row = _src_cur.fetchone()
+        if not _src_row:
+            raise RuntimeError("mm.source_origins : code IMF introuvable")
+        imf_source_id = _src_row[0]
+
     sql = """
         INSERT INTO ma.indicator_values
             (indicator_code, country_iso3, year, layer_id,
-             raw_value, quality_flag, confidence_score, value_status)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        ON CONFLICT DO NOTHING
+             raw_value, quality_flag, confidence_score, value_status, source_id)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (indicator_code, country_iso3, year, layer_id, method_version_id)
+        DO UPDATE SET
+            raw_value        = EXCLUDED.raw_value,
+            quality_flag     = EXCLUDED.quality_flag,
+            confidence_score = EXCLUDED.confidence_score,
+            value_status     = EXCLUDED.value_status,
+            source_id        = EXCLUDED.source_id
     """
     batch = [(r["indicator_code"], r["country_iso3"], int(r["year"]),
-              LAYER_RAW, float(r["raw_value"]), "OK", 1.0, "OBSERVED")
+              LAYER_RAW, float(r["raw_value"]), "OK", 1.0, "OBSERVED", imf_source_id)
              for _, r in df.iterrows()]
     with conn.cursor() as cur:
         execute_batch(cur, sql, batch, page_size=BATCH_SIZE)
