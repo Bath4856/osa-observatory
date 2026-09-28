@@ -191,10 +191,15 @@ class BaseFetcher(ABC):
         return row[0] if row else None
 
     def _get_source_id(self, cur) -> Optional[int]:
-        # Sprint 12 -- source_id depuis collect.data_providers (pas mm.source_origins)
-        # Garantit que source_id reflete le vrai fournisseur PROVIDER_CODE
+        # 2026-09-28 -- source_id lu dans mm.source_origins, le registre que
+        # reference la cle etrangere de ma.indicator_values.source_id.
+        # L'ancienne lecture de collect.data_providers (Sprint 12) donnait des
+        # identifiants differents pour 11 fournisseurs sur 18 (ex. EITI=13 =
+        # UNCTAD dans mm.source_origins) : mauvaise source ecrite sans erreur.
+        # Un code absent de mm.source_origins retourne None : le collecteur
+        # s'arrete (voir connect()) au lieu d'ecrire une source approximative.
         cur.execute(
-            "SELECT id FROM collect.data_providers WHERE code = %s",
+            "SELECT id FROM mm.source_origins WHERE code = %s",
             (self.PROVIDER_CODE,),
         )
         row = cur.fetchone()
