@@ -422,12 +422,29 @@ def insert_records(conn, records: list, dry_run: bool = False) -> int:
         log.info("[DRY-RUN] %d enregistrements non inseres", len(records))
         return len(records)
 
+    # Resolution dynamique de source_id -- jamais d ID en dur (cf. incident
+    # 2026-09-24 : WB_SOURCE_ID=11 code en dur dans fetcher_wb_pres_pmil_pnum.py).
+    # UCDP ajoute a mm.source_origins le 2026-09-25 (n existait pas jusque-la,
+    # ces lignes retombaient sur source_id=11=UNESCO via le patch Sprint 9).
+    with conn.cursor() as _src_cur:
+        _src_cur.execute("SELECT id FROM mm.source_origins WHERE code = %s", ("UCDP",))
+        _src_row = _src_cur.fetchone()
+        if not _src_row:
+            raise RuntimeError("mm.source_origins : code UCDP introuvable")
+        ucdp_source_id = _src_row[0]
+
+    records = [r + (ucdp_source_id,) for r in records]
+
     sql = """
         INSERT INTO ma.indicator_values
             (indicator_code, country_iso3, year, layer_id,
-             raw_value, processed_value, method_version_id, quality_flag)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        ON CONFLICT DO NOTHING
+             raw_value, processed_value, method_version_id, quality_flag, source_id)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (indicator_code, country_iso3, year, layer_id, method_version_id)
+        DO UPDATE SET
+            raw_value       = EXCLUDED.raw_value,
+            quality_flag    = EXCLUDED.quality_flag,
+            source_id       = EXCLUDED.source_id
     """
 
     all_codes = tuple(set(r[0] for r in records))
