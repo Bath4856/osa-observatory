@@ -2,17 +2,18 @@
 OSA Observatory
 collectors/fetcher_ucdp_csv.py -- Ingestion UCDP (Uppsala Conflict Data Program)
 
-Calcule et insere les 9 indicateurs PGEO depuis les fichiers CSV UCDP v25.1 :
+Calcule et insere les 10 indicateurs PGEO depuis les fichiers CSV UCDP v25.1 :
 
-  PGEO_FAT  <- Fatalites totales       (sb + ns + os deaths best estimate)
-  PGEO_EVT  <- Nombre d evenements     (dyades state-based actives)
-  PGEO_INT  <- Part conflits internes  (intrastate / total deaths)
-  PGEO_INS  <- Intensite moyenne       (fatalities / events)
-  PGEO_SPR  <- Dispersion spatiale     (nb de conflits distincts via UcdpPrioConflict)
-  PGEO_TRD  <- Tendance annuelle       ((fat_t - fat_t-1) / (fat_t-1 + 1))
-  PGEO_PEAK <- Annee de pic            (1 si fat == max historique pays)
-  PGEO_STR  <- Structure des victimes  (civils / fatalities)
-  PGEO_PRE  <- Pression cumulee 3 ans  (fat_t + fat_t-1 + fat_t-2)
+  PGEO_FAT      <- Fatalites totales       (sb + ns + os deaths best estimate)
+  PGEO_EVT      <- Nombre d evenements     (dyades state-based actives)
+  PGEO_INT      <- Part conflits internes  (intrastate / total deaths)
+  PGEO_INS      <- Intensite moyenne       (fatalities / events)
+  PGEO_SPR      <- Dispersion spatiale     (nb de conflits distincts via UcdpPrioConflict)
+  PGEO_TRD      <- Tendance annuelle       ((fat_t - fat_t-1) / (fat_t-1 + 1))
+  PGEO_PEAK     <- Annee de pic            (1 si fat == max historique pays)
+  PGEO_STR      <- Structure des victimes, tout acteur organise (civils sb+ns+os / fatalites)
+  PGEO_STR_ETAT <- Structure des victimes, Etat seul (civils sb + os gouvernemental / deces lies a l Etat)
+  PGEO_PRE      <- Pression cumulee 3 ans  (fat_t + fat_t-1 + fat_t-2)
 
 Sources UCDP :
   organizedviolencecy_v25_1.csv  : agregat annuel par pays (source principale)
@@ -20,19 +21,47 @@ Sources UCDP :
 
 Telechargement :
   https://ucdp.uu.se/downloads
-  → UCDP Organized Violence - country-year (v25.1)
-  → UCDP/PRIO Armed Conflict Dataset (v25.1)
+  -> UCDP Organized Violence - country-year (v25.1)
+  -> UCDP/PRIO Armed Conflict Dataset (v25.1)
 
 Valeurs brutes stockees en L1.
 Normalisation [0,1] effectuee par normalize_indicator (pipeline L3).
 
 Notes methodologiques :
   - PGEO_FAT : somme sb + ns + os (state-based + non-state + one-sided)
-  - PGEO_INT : intrastate_deaths / total → mesure conflictualite interne
+  - PGEO_INT : intrastate_deaths / total -> mesure conflictualite interne
   - PGEO_SPR : nb conflits distincts dans UcdpPrioConflict (proxy dispersion)
-  - PGEO_TRD : peut etre negatif (amelioration) → stocker brut
-  - PGEO_PEAK : binaire 0/1 → SCORE_0_1 en base
+  - PGEO_TRD : peut etre negatif (amelioration) -> stocker brut
+  - PGEO_PEAK : binaire 0/1 -> SCORE_0_1 en base
   - PGEO_PRE : rolling 3 ans, min_periods=1 pour les premieres annees
+
+  - PGEO_STR / PGEO_STR_ETAT (revision 2026-09-28, decision utilisateur) :
+    L'ancienne formule (sb_deaths_civilians / pgeo_fat) melangeait un
+    numerateur restreint aux conflits etatiques avec un denominateur incluant
+    aussi les conflits non etatiques et la violence unilateral -- incoherent
+    (mediane mesuree 0,007, alors que la vraie part civile mediane est de
+    l'ordre de 0,17-0,28 selon le perimetre). Remplace par deux mesures
+    emboitees, choix doctrinal du 2026-09-28 : les victimes collaterales des
+    combats (sb, ns) sont retenues ("un Etat fort doit eviter tout conflit"),
+    la violence unilaterale d'acteurs non etatiques est exclue de la version
+    Etat seul.
+      PGEO_STR      = (sb_deaths_civilians_cy + ns_deaths_civilians_cy
+                        + os_total_deaths_best_cy) / pgeo_fat
+                      Part des civils dans TOUTE la violence organisee.
+      PGEO_STR_ETAT = (sb_deaths_civilians_cy + os_any_govt_killings_best_cy)
+                        / (sb_total_deaths_best_cy + os_any_govt_killings_best_cy)
+                      Part des civils dans les deces lies a l'Etat (conflits
+                      ou l'Etat est partie + violence unilaterale gouvernementale).
+    Un denominateur nul est un cas NON DEFINI (aucun deces cette annee-la) :
+    la ligne n'est pas ecrite, jamais transformee en zero.
+
+  - Resolution des noms de pays (revision 2026-09-28) : l'ancien dictionnaire
+    COUNTRY_TO_ISO3 code en dur ne contenait pas "DR Congo (Zaire)",
+    "Kingdom of eSwatini (Swaziland)", "Madagascar (Malagasy)" ni
+    "Zimbabwe (Rhodesia)" -- ces 4 pays etaient silencieusement absents des
+    10 indicateurs. Remplace par collectors/country_resolver.py (rf.countries,
+    normalisation + repli sur le contenu entre parentheses), avec controle de
+    couverture qui arrete le script si un pays actif manque.
 
 Usage :
   python collectors/fetcher_ucdp_csv.py \\
@@ -52,11 +81,15 @@ import logging
 import os
 import sys
 from collections import Counter
+from pathlib import Path
 
 import pandas as pd
 import psycopg2
 from psycopg2.extras import execute_batch
 from dotenv import load_dotenv
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from country_resolver import CountryResolver, CoverageError  # noqa: E402
 
 load_dotenv()
 
@@ -75,43 +108,8 @@ BATCH_SIZE = 500
 # ── Codes OSA produits ────────────────────────────────────────────────────────
 OSA_CODES = [
     "PGEO_FAT", "PGEO_EVT", "PGEO_INT", "PGEO_INS",
-    "PGEO_SPR", "PGEO_TRD", "PGEO_PEAK", "PGEO_STR", "PGEO_PRE",
+    "PGEO_SPR", "PGEO_TRD", "PGEO_PEAK", "PGEO_STR", "PGEO_STR_ETAT", "PGEO_PRE",
 ]
-
-# ── Mapping nom pays UCDP → ISO3 ─────────────────────────────────────────────
-# UCDP n'inclut pas de colonne ISO3 dans organizedviolencecy
-# Ce mapping couvre les 54 pays africains presents dans UCDP v25.1
-COUNTRY_TO_ISO3 = {
-    "Algeria": "DZA", "Angola": "AGO", "Benin": "BEN",
-    "Botswana": "BWA", "Burkina Faso": "BFA", "Burundi": "BDI",
-    "Cameroon": "CMR", "Cape Verde": "CPV",
-    "Central African Republic": "CAF", "Chad": "TCD",
-    "Comoros": "COM", "Congo": "COG",
-    "Democratic Republic of the Congo": "COD",
-    "DR Congo": "COD", "DRC": "COD",
-    "Djibouti": "DJI", "Egypt": "EGY",
-    "Equatorial Guinea": "GNQ", "Eritrea": "ERI",
-    "Eswatini": "SWZ", "Swaziland": "SWZ",
-    "Ethiopia": "ETH", "Gabon": "GAB",
-    "Gambia": "GMB", "Ghana": "GHA",
-    "Guinea": "GIN", "Guinea-Bissau": "GNB",
-    "Ivory Coast": "CIV", "Cote d'Ivoire": "CIV",
-    "Kenya": "KEN", "Lesotho": "LSO",
-    "Liberia": "LBR", "Libya": "LBY",
-    "Madagascar": "MDG", "Malawi": "MWI",
-    "Mali": "MLI", "Mauritania": "MRT",
-    "Mauritius": "MUS", "Morocco": "MAR",
-    "Mozambique": "MOZ", "Namibia": "NAM",
-    "Niger": "NER", "Nigeria": "NGA",
-    "Rwanda": "RWA", "Sao Tome and Principe": "STP",
-    "Senegal": "SEN", "Seychelles": "SYC",
-    "Sierra Leone": "SLE", "Somalia": "SOM",
-    "South Africa": "ZAF", "South Sudan": "SSD",
-    "Sudan": "SDN", "Tanzania": "TZA",
-    "Togo": "TGO", "Tunisia": "TUN",
-    "Uganda": "UGA", "Zambia": "ZMB",
-    "Zimbabwe": "ZWE",
-}
 
 # ── Connexion PostgreSQL ──────────────────────────────────────────────────────
 def get_conn():
@@ -140,7 +138,7 @@ def get_method_version(conn):
 
 
 # ── Chargement organizedviolencecy_v25_1.csv ─────────────────────────────────
-def load_orgvio(filepath: str) -> pd.DataFrame:
+def load_orgvio(filepath: str, resolver: CountryResolver, active_iso3: set) -> pd.DataFrame:
     """
     Charge le fichier UCDP Organized Violence country-year.
     Colonnes utilisees :
@@ -148,7 +146,8 @@ def load_orgvio(filepath: str) -> pd.DataFrame:
       sb_dyad_count_cy,
       sb_deaths_parties_cy, sb_deaths_civilians_cy, sb_deaths_unknown_cy,
       sb_total_deaths_best_cy, sb_intrastate_deaths_best_cy,
-      ns_total_deaths_best_cy, os_total_deaths_best_cy
+      ns_total_deaths_best_cy, ns_deaths_civilians_cy,
+      os_total_deaths_best_cy, os_any_govt_killings_best_cy
     """
     log.info("Chargement : %s", filepath)
     df = pd.read_csv(filepath, low_memory=False)
@@ -159,15 +158,14 @@ def load_orgvio(filepath: str) -> pd.DataFrame:
         log.error("Colonnes manquantes dans organizedviolencecy : %s", missing)
         sys.exit(1)
 
-    # Ajouter ISO3 depuis le mapping nom → code
-    df["iso3"] = df["country_cy"].map(COUNTRY_TO_ISO3)
+    # Resolution des noms de pays -- controle de couverture : arret si un pays
+    # actif OSA n'est retrouve sous aucun nom dans le fichier (cf. incident du
+    # 2026-09-28 : 4 pays perdus en silence par l'ancien dictionnaire en dur).
+    noms = df["country_cy"].dropna().unique().tolist()
+    mapping = resolver.resolve_all(noms, expected=active_iso3, label="UCDP organizedviolencecy")
+    df["iso3"] = df["country_cy"].map(mapping)
 
-    # Filtrer Afrique uniquement
     df_africa = df[df["iso3"].notna()].copy()
-    unmapped  = df[df["iso3"].isna()]["country_cy"].unique()
-    if len(unmapped) > 0:
-        log.debug("Pays non mappés (hors Afrique ou manquants) : %s",
-                  ", ".join(str(c) for c in unmapped[:10]))
 
     # Filtrer plage temporelle
     df_africa["year"] = pd.to_numeric(df_africa["year_cy"], errors="coerce")
@@ -180,12 +178,14 @@ def load_orgvio(filepath: str) -> pd.DataFrame:
         "sb_dyad_count_cy",
         "sb_deaths_parties_cy", "sb_deaths_civilians_cy", "sb_deaths_unknown_cy",
         "sb_total_deaths_best_cy", "sb_intrastate_deaths_best_cy",
-        "ns_total_deaths_best_cy", "os_total_deaths_best_cy",
+        "ns_total_deaths_best_cy", "ns_deaths_civilians_cy",
+        "os_total_deaths_best_cy", "os_any_govt_killings_best_cy",
     ]
     for col in num_cols:
         if col in df_africa.columns:
             df_africa[col] = pd.to_numeric(df_africa[col], errors="coerce").fillna(0)
         else:
+            log.warning("Colonne absente du fichier, remplacee par 0 : %s", col)
             df_africa[col] = 0
 
     log.info("organizedviolencecy : %d lignes africaines (%d-%d)",
@@ -194,11 +194,14 @@ def load_orgvio(filepath: str) -> pd.DataFrame:
 
 
 # ── Chargement UcdpPrioConflict_v25_1.csv (pour PGEO_SPR) ───────────────────
-def load_conflict_spread(filepath: str) -> pd.DataFrame:
+def load_conflict_spread(filepath: str, resolver: CountryResolver) -> pd.DataFrame:
     """
     Charge UcdpPrioConflict pour calculer PGEO_SPR (dispersion spatiale).
     Compte le nombre de conflits distincts (locations) par pays × année.
     La colonne 'location' contient le(s) pays affectés par le conflit.
+
+    Pas de controle de couverture ici : un pays sans conflit actif une annee
+    donnee est un cas normal, pas une perte de donnees.
     """
     log.info("Chargement dispersion : %s", filepath)
     df = pd.read_csv(filepath, low_memory=False)
@@ -207,23 +210,28 @@ def load_conflict_spread(filepath: str) -> pd.DataFrame:
         log.warning("UcdpPrioConflict : colonnes location/year absentes — PGEO_SPR = 0")
         return pd.DataFrame(columns=["iso3", "year", "pgeo_spread"])
 
-    # Explode : un conflit peut toucher plusieurs pays (séparés par virgule)
     df["year"] = pd.to_numeric(df["year"], errors="coerce")
     df = df[
         (df["year"] >= YEAR_FROM) & (df["year"] <= YEAR_TO)
     ]
 
-    rows = []
+    rows, non_resolus = [], set()
     for _, row in df.iterrows():
         locations = str(row["location"]).split(",")
         for loc in locations:
-            iso3 = COUNTRY_TO_ISO3.get(loc.strip())
+            iso3, _mode = resolver.resolve(loc.strip())
             if iso3:
                 rows.append({
                     "iso3": iso3,
                     "year": int(row["year"]),
                     "conflict_id": row.get("conflict_id", 0),
                 })
+            else:
+                non_resolus.add(loc.strip())
+
+    if non_resolus:
+        log.debug("UcdpPrioConflict : lieux non resolus vers un pays OSA (%d) : %s",
+                   len(non_resolus), ", ".join(sorted(non_resolus)[:10]))
 
     if not rows:
         log.warning("UcdpPrioConflict : aucun pays africain identifié")
@@ -240,23 +248,24 @@ def load_conflict_spread(filepath: str) -> pd.DataFrame:
     return spread
 
 
-# ── Calcul des 9 indicateurs PGEO ────────────────────────────────────────────
+# ── Calcul des 10 indicateurs PGEO ───────────────────────────────────────────
 def compute_indicators(df: pd.DataFrame, spread_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Calcule les 9 indicateurs PGEO à partir du DataFrame organizedviolencecy.
+    Calcule les 10 indicateurs PGEO à partir du DataFrame organizedviolencecy.
 
     Formules :
-      PGEO_FAT  = sb_total + ns_total + os_total (best estimates)
-      PGEO_EVT  = sb_dyad_count (dyades actives)
-      PGEO_INT  = sb_intrastate / sb_total (part interne)
-      PGEO_INS  = PGEO_FAT / PGEO_EVT (intensite)
-      PGEO_SPR  = nb conflits distincts (UcdpPrioConflict)
-      PGEO_TRD  = (fat_t - fat_t-1) / (fat_t-1 + 1)
-      PGEO_PEAK = 1 si fat == max(fat_pays), sinon 0
-      PGEO_STR  = sb_deaths_civilians / PGEO_FAT
-      PGEO_PRE  = rolling sum 3 ans
+      PGEO_FAT      = sb_total + ns_total + os_total (best estimates)
+      PGEO_EVT      = sb_dyad_count (dyades actives)
+      PGEO_INT      = sb_intrastate / sb_total (part interne)
+      PGEO_INS      = PGEO_FAT / PGEO_EVT (intensite)
+      PGEO_SPR      = nb conflits distincts (UcdpPrioConflict)
+      PGEO_TRD      = (fat_t - fat_t-1) / (fat_t-1 + 1)
+      PGEO_PEAK     = 1 si fat == max historique pays, sinon 0
+      PGEO_STR      = (sb_civils + ns_civils + os_total) / PGEO_FAT
+      PGEO_STR_ETAT = (sb_civils + os_govt) / (sb_total + os_govt)
+      PGEO_PRE      = rolling sum 3 ans
     """
-    log.info("Calcul des 9 indicateurs PGEO...")
+    log.info("Calcul des 10 indicateurs PGEO...")
 
     agg = df[["iso3", "year",
               "sb_dyad_count_cy",
@@ -264,7 +273,9 @@ def compute_indicators(df: pd.DataFrame, spread_df: pd.DataFrame) -> pd.DataFram
               "sb_total_deaths_best_cy",
               "sb_intrastate_deaths_best_cy",
               "ns_total_deaths_best_cy",
-              "os_total_deaths_best_cy"]].copy()
+              "ns_deaths_civilians_cy",
+              "os_total_deaths_best_cy",
+              "os_any_govt_killings_best_cy"]].copy()
 
     # ── PGEO_FAT : total des fatalités (sb + ns + os) ─────────────────────────
     agg["pgeo_fat"] = (
@@ -277,23 +288,34 @@ def compute_indicators(df: pd.DataFrame, spread_df: pd.DataFrame) -> pd.DataFram
     agg["pgeo_evt"] = agg["sb_dyad_count_cy"]
 
     # ── PGEO_INT : part des conflits internes ────────────────────────────────
-    # sb_intrastate / sb_total → ratio [0,1]
     agg["pgeo_int"] = (
         agg["sb_intrastate_deaths_best_cy"]
         / agg["sb_total_deaths_best_cy"].replace(0, pd.NA)
     )
 
     # ── PGEO_INS : intensité moyenne ─────────────────────────────────────────
-    # fatalities / events → peut être très élevé
     agg["pgeo_ins"] = (
         agg["pgeo_fat"]
         / agg["pgeo_evt"].replace(0, pd.NA)
     )
 
-    # ── PGEO_STR : structure des victimes (part civils) ──────────────────────
+    # ── PGEO_STR : structure des victimes, toute violence organisée ─────────
+    # Numerateur : civils des conflits etatiques + civils des conflits non
+    # etatiques + tous les deces de violence unilaterale (par definition UCDP,
+    # la violence unilaterale ne vise que des civils).
     agg["pgeo_str"] = (
-        agg["sb_deaths_civilians_cy"]
+        (agg["sb_deaths_civilians_cy"] + agg["ns_deaths_civilians_cy"] + agg["os_total_deaths_best_cy"])
         / agg["pgeo_fat"].replace(0, pd.NA)
+    )
+
+    # ── PGEO_STR_ETAT : structure des victimes, Etat seul ───────────────────
+    # Perimetre : conflits ou l'Etat est partie (sb) + violence unilaterale
+    # exercee par un gouvernement (os_any_govt). Exclut les conflits non
+    # etatiques et la violence unilaterale de groupes non etatiques.
+    denom_etat = agg["sb_total_deaths_best_cy"] + agg["os_any_govt_killings_best_cy"]
+    agg["pgeo_str_etat"] = (
+        (agg["sb_deaths_civilians_cy"] + agg["os_any_govt_killings_best_cy"])
+        / denom_etat.replace(0, pd.NA)
     )
 
     # ── Trier pour les calculs temporels ─────────────────────────────────────
@@ -329,7 +351,8 @@ def compute_indicators(df: pd.DataFrame, spread_df: pd.DataFrame) -> pd.DataFram
     agg = agg.drop(columns=[
         "sb_dyad_count_cy", "sb_deaths_civilians_cy",
         "sb_total_deaths_best_cy", "sb_intrastate_deaths_best_cy",
-        "ns_total_deaths_best_cy", "os_total_deaths_best_cy",
+        "ns_total_deaths_best_cy", "ns_deaths_civilians_cy",
+        "os_total_deaths_best_cy", "os_any_govt_killings_best_cy",
         "fat_lag",
     ], errors="ignore")
 
@@ -348,26 +371,28 @@ def build_records(
     Transforme le DataFrame agrégé en liste de tuples pour ma.indicator_values.
 
     Mapping colonne → code OSA :
-      pgeo_fat   → PGEO_FAT
-      pgeo_evt   → PGEO_EVT
-      pgeo_int   → PGEO_INT
-      pgeo_ins   → PGEO_INS
-      pgeo_spread→ PGEO_SPR
-      pgeo_trd   → PGEO_TRD
-      pgeo_peak  → PGEO_PEAK
-      pgeo_str   → PGEO_STR
-      pgeo_pre   → PGEO_PRE
+      pgeo_fat       → PGEO_FAT
+      pgeo_evt       → PGEO_EVT
+      pgeo_int       → PGEO_INT
+      pgeo_ins       → PGEO_INS
+      pgeo_spread    → PGEO_SPR
+      pgeo_trd       → PGEO_TRD
+      pgeo_peak      → PGEO_PEAK
+      pgeo_str       → PGEO_STR
+      pgeo_str_etat  → PGEO_STR_ETAT
+      pgeo_pre       → PGEO_PRE
     """
     col_to_osa = {
-        "pgeo_fat":    "PGEO_FAT",
-        "pgeo_evt":    "PGEO_EVT",
-        "pgeo_int":    "PGEO_INT",
-        "pgeo_ins":    "PGEO_INS",
-        "pgeo_spread": "PGEO_SPR",
-        "pgeo_trd":    "PGEO_TRD",
-        "pgeo_peak":   "PGEO_PEAK",
-        "pgeo_str":    "PGEO_STR",
-        "pgeo_pre":    "PGEO_PRE",
+        "pgeo_fat":       "PGEO_FAT",
+        "pgeo_evt":       "PGEO_EVT",
+        "pgeo_int":       "PGEO_INT",
+        "pgeo_ins":       "PGEO_INS",
+        "pgeo_spread":    "PGEO_SPR",
+        "pgeo_trd":       "PGEO_TRD",
+        "pgeo_peak":      "PGEO_PEAK",
+        "pgeo_str":       "PGEO_STR",
+        "pgeo_str_etat":  "PGEO_STR_ETAT",
+        "pgeo_pre":       "PGEO_PRE",
     }
 
     records      = []
@@ -496,10 +521,10 @@ def print_summary(conn):
         rows = cur.fetchall()
         if rows:
             log.info("Bilan final :")
-            log.info("  %-12s %8s %8s %7s %8s %8s %8s",
+            log.info("  %-14s %8s %8s %7s %8s %8s %8s",
                      "Code", "Total", "NonNull", "Cov%", "Min", "Max", "Mean")
             for code, total, nn, pct, vmin, vmax, vmean in rows:
-                log.info("  %-12s %8d %8d %6.1f%% %8.3f %8.3f %8.3f",
+                log.info("  %-14s %8d %8d %6.1f%% %8.3f %8.3f %8.3f",
                          code, total, nn, pct or 0,
                          vmin or 0, vmax or 0, vmean or 0)
         else:
@@ -509,19 +534,20 @@ def print_summary(conn):
 # ── Point d'entree ────────────────────────────────────────────────────────────
 def main():
     parser = argparse.ArgumentParser(
-        description="OSA -- Fetcher UCDP CSV (9 indicateurs PGEO)",
+        description="OSA -- Fetcher UCDP CSV (10 indicateurs PGEO)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Indicateurs calcules :
-  PGEO_FAT  Fatalites totales        (sb + ns + os best estimates)
-  PGEO_EVT  Nombre d evenements      (dyades state-based)
-  PGEO_INT  Part conflits internes   (intrastate / total)
-  PGEO_INS  Intensite moyenne        (fat / events)
-  PGEO_SPR  Dispersion spatiale      (conflits distincts)
-  PGEO_TRD  Tendance annuelle        ((fat_t - fat_t1) / (fat_t1 + 1))
-  PGEO_PEAK Annee de pic             (1 si max historique)
-  PGEO_STR  Structure des victimes   (civils / total)
-  PGEO_PRE  Pression cumulee 3 ans   (rolling sum)
+  PGEO_FAT      Fatalites totales        (sb + ns + os best estimates)
+  PGEO_EVT      Nombre d evenements      (dyades state-based)
+  PGEO_INT      Part conflits internes   (intrastate / total)
+  PGEO_INS      Intensite moyenne        (fat / events)
+  PGEO_SPR      Dispersion spatiale      (conflits distincts)
+  PGEO_TRD      Tendance annuelle        ((fat_t - fat_t1) / (fat_t1 + 1))
+  PGEO_PEAK     Annee de pic             (1 si max historique)
+  PGEO_STR      Structure des victimes, toute violence organisee (civils / total)
+  PGEO_STR_ETAT Structure des victimes, Etat seul (civils / deces lies a l Etat)
+  PGEO_PRE      Pression cumulee 3 ans   (rolling sum)
 
 Exemples :
   python fetcher_ucdp_csv.py \\
@@ -574,27 +600,33 @@ Exemples :
     log.info("OSA -- Fetcher UCDP CSV")
     log.info("Fichier    : %s", args.file)
     log.info("Conflict   : %s", args.conflict or "non fourni (PGEO_SPR = fallback)")
-    log.info("Indicateur : %s", args.indicator or "tous (9)")
+    log.info("Indicateur : %s", args.indicator or "tous (10)")
     log.info("Annees     : %d -> %d", args.year_from, args.year_to)
     log.info("Dry-run    : %s", args.dry_run)
     log.info("=" * 60)
 
     conn = get_conn()
     try:
-        african_iso3   = get_african_countries(conn)
+        african_iso3  = get_african_countries(conn)
+        active_iso3   = CountryResolver.expected_from_db(conn)
+        resolver      = CountryResolver.from_db(conn)
         method_version = get_method_version(conn)
 
         # ── 1. Charger organizedviolencecy (source principale) ────────────────
-        df = load_orgvio(args.file)
+        try:
+            df = load_orgvio(args.file, resolver, active_iso3)
+        except CoverageError as exc:
+            log.error(str(exc))
+            sys.exit(1)
 
         # ── 2. Charger UcdpPrioConflict (PGEO_SPR) ───────────────────────────
         spread_df = pd.DataFrame()
         if args.conflict and os.path.exists(args.conflict):
-            spread_df = load_conflict_spread(args.conflict)
+            spread_df = load_conflict_spread(args.conflict, resolver)
         elif args.conflict:
             log.warning("Fichier conflict introuvable : %s", args.conflict)
 
-        # ── 3. Calculer les 9 indicateurs ─────────────────────────────────────
+        # ── 3. Calculer les 10 indicateurs ─────────────────────────────────────
         agg = compute_indicators(df, spread_df)
 
         # ── 4. Construire les enregistrements L1 ──────────────────────────────
