@@ -16,6 +16,26 @@ Valeurs brutes [0,1] stockees en L1 après ×100 → [0,100].
 Normalisation finale effectuee par normalize_indicator (pipeline L3).
 Les annees non couvertes (2011, 2013...) sont interpolees par imputer_v3.
 
+============================================================
+CORRECTIF DU 2026-10-02 -- A LIRE AVANT TOUTE MODIFICATION
+============================================================
+source_id n'etait jamais renseigne dans l'INSERT (colonne absente),
+rejete par chk_l1_source_id_not_null -- ces lignes ne pouvaient en
+fait jamais s'inserer avec un vrai source_id ; elles retombaient sur
+UNESCO via le patch de masse Sprint 9, meme defaut que partout ailleurs
+dans ce chantier. De plus, EGDI n'existait pas du tout dans
+mm.source_origins (voir add_egdi_source_20261002.sql) -- aucune des
+deux tables de sources ne le connaissait.
+
+Corrige : source_id resolu dynamiquement (code 'EGDI'), jamais d'ID en
+dur, et ON CONFLICT ... DO UPDATE (au lieu de DO NOTHING) pour corriger
+les lignes deja existantes.
+
+Pas de resolution de noms de pays a construire ici : le fichier source
+fournit deja directement la colonne iso3 -- contrairement a
+ACLED/UCDP/USGS, aucun country_resolver necessaire pour le parsing.
+============================================================
+
 Usage :
   python collectors/fetcher_egdi.py --dry-run
   python collectors/fetcher_egdi.py --egdi-file data/raw/egdi/egdi_all.xlsx
@@ -73,7 +93,7 @@ def get_conn():
     return psycopg2.connect(
         host=os.getenv("OSA_DB_HOST", "localhost"),
         port=int(os.getenv("OSA_DB_PORT", 5432)),
-        dbname=os.getenv("OSA_DB_NAME", "osa_db"),
+        dbname=os.getenv("OSA_DB_NAME", "osa_user"),
         user=os.getenv("OSA_DB_USER", "osa_user"),
         password=os.getenv("OSA_DB_PASS", ""),
     )
@@ -92,6 +112,18 @@ def get_african_countries(conn) -> set:
     with conn.cursor() as cur:
         cur.execute("SELECT iso3 FROM rf.countries WHERE iso3 IS NOT NULL")
         return {r[0] for r in cur.fetchall()}
+
+
+def get_egdi_source_id(conn) -> int:
+    with conn.cursor() as cur:
+        cur.execute("SELECT id FROM mm.source_origins WHERE code = %s", ("EGDI",))
+        row = cur.fetchone()
+        if not row:
+            raise RuntimeError(
+                "mm.source_origins : code EGDI introuvable -- "
+                "executer add_egdi_source_20261002.sql avant de collecter"
+            )
+        return row[0]
 
 
 # ── Chargement du fichier EGDI ────────────────────────────────────────────────
@@ -202,19 +234,29 @@ def build_records(
 # ── Insertion batch ───────────────────────────────────────────────────────────
 def insert_records(conn, records: list, dry_run: bool = False) -> int:
     if dry_run:
-        log.info("[DRY-RUN] %s → %d enregistrements (non insérés)", 
+        log.info("[DRY-RUN] %s → %d enregistrements (non insérés)",
                  records[0][0] if records else "?", len(records))
         return len(records)
 
     if not records:
         return 0
 
+    # Resolution dynamique de source_id -- jamais d ID en dur (cf. incident
+    # 2026-09-24 : WB_SOURCE_ID=11 code en dur dans fetcher_wb_pres_pmil_pnum.py).
+    # EGDI ajoute a mm.source_origins le 2026-10-02 (n existait pas jusque-la).
+    egdi_source_id = get_egdi_source_id(conn)
+    records = [r + (egdi_source_id,) for r in records]
+
     sql = """
         INSERT INTO ma.indicator_values
             (indicator_code, country_iso3, year, layer_id,
-             raw_value, processed_value, method_version_id, quality_flag)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        ON CONFLICT DO NOTHING
+             raw_value, processed_value, method_version_id, quality_flag, source_id)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (indicator_code, country_iso3, year, layer_id, method_version_id)
+        DO UPDATE SET
+            raw_value       = EXCLUDED.raw_value,
+            quality_flag    = EXCLUDED.quality_flag,
+            source_id       = EXCLUDED.source_id
     """
 
     osa_code  = records[0][0]
