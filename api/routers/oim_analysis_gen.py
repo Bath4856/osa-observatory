@@ -313,6 +313,7 @@ def _get_poa_observations(db: Session, country_iso3: str, pillar_code: str, year
             FROM rf.poa_catalog p
             JOIN rf.indicators i ON i.code = p.indicator_code
             WHERE i.pillar_code = :pillar_code
+              AND i.is_active
         """),
         {"pillar_code": pillar_code},
     ).mappings().all()
