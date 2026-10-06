@@ -108,6 +108,7 @@ normalized AS (
     JOIN rf.indicators i ON i.code = iv.indicator_code
     WHERE iv.indicator_code IN ('PHUM_VALUE_CAPTURE', 'PMIN_VALUE_LEAKAGE')
       AND iv.layer_id = 3
+      AND i.is_active
 ),
 raw_obs AS (
     SELECT
@@ -124,6 +125,7 @@ raw_obs AS (
     FROM collect.raw_data rd
     JOIN rf.indicators i ON i.code = rd.indicator_code
     WHERE rd.indicator_code = 'PMIN_SMUGGLING_SIGNAL_RANK'
+      AND i.is_active
 ),
 combined AS (
     SELECT * FROM normalized
@@ -247,10 +249,12 @@ def get_poa_catalog(db: Session = Depends(get_db)):
             FROM ma.indicator_values
             WHERE indicator_code IN ('PHUM_VALUE_CAPTURE', 'PMIN_VALUE_LEAKAGE')
               AND layer_id = 3
+              AND indicator_code IN (SELECT ia.code FROM rf.indicators ia WHERE ia.is_active)
             UNION ALL
             SELECT country_iso3, year, indicator_code
             FROM collect.raw_data
             WHERE indicator_code = 'PMIN_SMUGGLING_SIGNAL_RANK'
+              AND indicator_code IN (SELECT ia.code FROM rf.indicators ia WHERE ia.is_active)
         ),
         -- Uniquement les annees dans le perimetre de publication reel
         -- (rf.publication_policy) -- jamais toute la fenetre de collecte brute.
