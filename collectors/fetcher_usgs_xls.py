@@ -4,14 +4,32 @@ Fetcher USGS Mineral Yearbook Africa (XLS/XLSX)
 Source : USGS Minerals Yearbook, Volume III, Africa
 URL    : https://www.usgs.gov/centers/national-minerals-information-center/africa
 
-Indicateurs produits (un code par minerai, voir correctif du 2026-09-30) :
-  MIN_BAU — Bauxite (thousand metric tons)
-  MIN_CHR — Chromite, mine output, gross weight (thousand metric tons)
-  MIN_COB — Cobalt, mine output, Co content (metric tons)
-  MIN_COP — Copper, mine output, Cu content (thousand metric tons)
-  MIN_GOL — Gold, mine output (kilograms)
-  MIN_IRO — Iron ore, gross weight (thousand metric tons)
-  MIN_MAN — Manganese ore, mine output, Mn content (thousand metric tons)
+Indicateurs produits (un code par minerai, voir note du 2026-10-07 ci-dessous) :
+  MIN_PRD_BAU — Bauxite (thousand metric tons)
+  MIN_PRD_CHR — Chromite, mine output, gross weight (thousand metric tons)
+  MIN_PRD_COB — Cobalt, mine output, Co content (metric tons)
+  MIN_PRD_COP — Copper, mine output, Cu content (thousand metric tons)
+  MIN_PRD_GOL — Gold, mine output (kilograms)
+  MIN_PRD_IRN — Iron ore, gross weight (thousand metric tons)
+  MIN_PRD_MAN — Manganese ore, mine output, Mn content (thousand metric tons)
+
+============================================================
+NOTE DU 2026-10-07 -- CODES D'ECRITURE CHANGES
+============================================================
+Ce collecteur ecrit desormais sous les codes MIN_PRD_* (famille deja
+cablee : declaration p4a, collect.indicator_source, catalogue POA, collecteur
+de contrebande) et non plus sous MIN_BAU/MIN_CHR/MIN_COB/MIN_COP/MIN_GOL/
+MIN_IRO/MIN_MAN, crees le 2026-10-01 puis deprecies (REPLACED_BY MIN_PRD_*) :
+  bauxite -> MIN_PRD_BAU   chromite -> MIN_PRD_CHR   cobalt -> MIN_PRD_COB
+  cuivre  -> MIN_PRD_COP   or       -> MIN_PRD_GOL   fer    -> MIN_PRD_IRN
+  manganese -> MIN_PRD_MAN
+Les lignes de l'ancienne famille avaient ete generees en lisant une colonne a
+indice fixe dans tous les blocs de la table : 114 des 312 lignes de couche 1
+etaient une autre matiere (zinc, diamants, graphite, phosphate, charbon,
+petrole, plomb) et ont ete purgees avant ce rechargement.
+La partie "CORRECTIF DU 2026-09-30" ci-dessous decrit l'origine du collecteur ;
+ses mentions de MIN_BAU et al. designent les anciens noms.
+============================================================
 
 ============================================================
 CORRECTIF DU 2026-09-30 -- A LIRE AVANT TOUTE MODIFICATION
@@ -115,13 +133,13 @@ SHEET_MARKER = "PRODUCTION OF SELECTED MINERAL"
 # Chaque entree : (mots-cles dans l'en-tete concatene, osa_code, multiplicateur)
 # Plus aucun partage de code entre minerais -- c'etait le bug corrige.
 COLUMN_MAP = [
-    (["bauxite"],                  "MIN_BAU", 1.0),    # thousand metric tons
-    (["chromite","chrome"],        "MIN_CHR", 1.0),    # thousand metric tons
-    (["cobalt","co content"],      "MIN_COB", 1.0),    # metric tons
-    (["copper","cu content"],      "MIN_COP", 1.0),    # thousand metric tons
-    (["gold","au content"],        "MIN_GOL", 1.0),    # kilograms
-    (["iron ore","usable ore"],    "MIN_IRO", 1.0),    # thousand metric tons
-    (["manganese","mn content"],   "MIN_MAN", 1.0),    # thousand metric tons
+    (["bauxite"],                  "MIN_PRD_BAU", 1.0),    # thousand metric tons
+    (["chromite","chrome"],        "MIN_PRD_CHR", 1.0),    # thousand metric tons
+    (["cobalt","co content"],      "MIN_PRD_COB", 1.0),    # metric tons
+    (["copper","cu content"],      "MIN_PRD_COP", 1.0),    # thousand metric tons
+    (["gold","au content"],        "MIN_PRD_GOL", 1.0),    # kilograms
+    (["iron ore","usable ore"],    "MIN_PRD_IRN", 1.0),    # thousand metric tons
+    (["manganese","mn content"],   "MIN_PRD_MAN", 1.0),    # thousand metric tons
 ]
 
 def get_pg_conn():

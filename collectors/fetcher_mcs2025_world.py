@@ -2,8 +2,9 @@
 OSA Observatory — collectors/fetcher_mcs2025_world.py
 Extraction ciblee depuis MCS2025_World_Data.csv (USGS Mineral Commodity
 Summaries 2025) pour combler 2023-2024 sur les 7 indicateurs mineraux
-deja crees par fetcher_usgs_xls.py (MIN_BAU, MIN_CHR, MIN_COB, MIN_COP,
-MIN_GOL, MIN_IRO, MIN_MAN).
+ecrits par fetcher_usgs_xls.py sous les codes MIN_PRD_BAU, MIN_PRD_CHR, MIN_PRD_COB,
+MIN_PRD_COP, MIN_PRD_GOL, MIN_PRD_IRN, MIN_PRD_MAN (codes changes le 2026-10-07 : ils s'appelaient
+MIN_BAU, MIN_CHR, MIN_COB, MIN_COP, MIN_GOL, MIN_IRO, MIN_MAN, depuis deprecies).
 
 ============================================================
 CONTEXTE ET LIMITES -- A LIRE AVANT USAGE
@@ -23,13 +24,13 @@ Deux pieges corriges en construisant ce script (2026-10-02) :
   1. Le fer (Iron Ore) apparait DEUX FOIS par pays dans le fichier
      source, sous deux TYPE distincts : "Mine production, iron
      content" (metal contenu) et "Mine production, usable ore" (poids
-     brut). Notre serie MIN_IRO (fetcher_usgs_xls.py, mots-cles ["iron
+     brut). Notre serie MIN_PRD_IRN (fetcher_usgs_xls.py, mots-cles ["iron
      ore","usable ore"]) suit le poids brut -- seul TYPE_IRON_ORE
      ci-dessous est retenu, jamais "iron content", pour ne pas
      mélanger deux bases differentes (meme piege que bauxite brute vs
      aluminium raffine deja rencontre).
   2. L'or est exprime en TONNES METRIQUES dans ce fichier, alors que
-     MIN_GOL est en KILOGRAMMES dans toute la serie historique (verifie
+     MIN_PRD_GOL est en KILOGRAMMES dans toute la serie historique (verifie
      par comparaison directe : Burkina Faso 45 000 kg en 2019 vs
      57-60 tonnes/57 000-60 000 kg en 2023-2024, Ghana 141 982 kg en
      2019 vs 126-130 tonnes/126 000-130 000 kg -- ordres de grandeur
@@ -68,13 +69,13 @@ GOLD_MULTIPLIER = 1000.0  # tonnes metriques -> kilogrammes, voir note ci-dessus
 # dans le fichier source) -> (osa_code, multiplicateur, TYPE exact a
 # retenir ; None = n'importe quel TYPE contenant "mine production")
 MINERAL_MAP = {
-    "Bauxite":    ("MIN_BAU", 1.0, None),
-    "Chromium":   ("MIN_CHR", 1.0, None),
-    "Cobalt":     ("MIN_COB", 1.0, None),
-    "Copper ":    ("MIN_COP", 1.0, None),
-    "Gold ":      ("MIN_GOL", GOLD_MULTIPLIER, None),
-    "Iron Ore  ": ("MIN_IRO", 1.0, "usable ore"),  # jamais "iron content" -- voir note
-    "Manganese":  ("MIN_MAN", 1.0, None),
+    "Bauxite":    ("MIN_PRD_BAU", 1.0, None),
+    "Chromium":   ("MIN_PRD_CHR", 1.0, None),
+    "Cobalt":     ("MIN_PRD_COB", 1.0, None),
+    "Copper ":    ("MIN_PRD_COP", 1.0, None),
+    "Gold ":      ("MIN_PRD_GOL", GOLD_MULTIPLIER, None),
+    "Iron Ore  ": ("MIN_PRD_IRN", 1.0, "usable ore"),  # jamais "iron content" -- voir note
+    "Manganese":  ("MIN_PRD_MAN", 1.0, None),
 }
 
 
